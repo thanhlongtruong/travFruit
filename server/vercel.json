@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node",
+      "config": {
+        "maxDuration": 30,
+        "memory": 1024
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/server.js"
+    }
+  ],
+  "env": {
+    "MONGO_URI": "mongodb+srv://thanhlong:TTTravelDB@atlascluster.ra3ur9s.mongodb.net/dbTravel",
+    "PORT": "4001",
+    "JWT_SECRET": "I7ZvMn/1xGvkSAuqFUx30sIeIrOQ2/Z69jHQQFlvySKhtf/f7m1yqtWvfSU/gs34/1Z8JC4g74nIe576F/+rowOYOYhj2JITM+xETZaKBCiZNeO2AaEoZ2tvGX59SuTuQgtKXrb5hshR522XohmggOJf8NkI1HHG56+HHDJbGYaY1pyne6cy+uAu3AYFcZO5R/zH0vfvZKGWGCnrfvdXTZXwAUCExdlqPV6b93LubluNISMd4iLQKsdyaSYXDj937fswTJfX7spt+t6z6sRAmj4IO/6sB6HUjSgIMs982O1pQnfFDfl7PF9+Z6bFDRlkx4/hAvEtCaivuWRBSMw6/A==",
+    "REFRESH_TOKEN": "wBpkKxKBy/Fbe9eH6fuj6zwsLoFXxXTEhcQqQ8zFcPzJ42o38dg7cXQtI3+dKdJAU3xtnT/Kd3x24ldep+ll4wlpdd1+OREBMLl0IKi99KnuOYs7d/0wAEsUybAtM+c4S6PiEYMNgcIIgpP0spV5MIP9em6eoiXLyIunPpeh1EAxSyfsQA4OtcQOZZDGPrNd07Gjn4iLb/J4sud5sFrwAhIyfJErDuPb5X5/VH1q7y4tVxtQHGJbR0YilEc3Z+MuyIHjqYOVO5ilWmq4UPTwv17BFnTyNJqkYv/kAjHfTjhg1rQb9zeT6YQHQzMXwS5vIDZy+P8RWQSX+h7MkCnh/Q=="
+  }
+}
