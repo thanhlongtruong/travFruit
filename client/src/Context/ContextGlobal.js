@@ -479,6 +479,7 @@ export const OrderProvider = ({ children }) => {
 
     await axios.delete(`/user/logout`);
     localStorage.removeItem("user");
+    setShowChatbot(false);
     naviReload("/");
     // Trường hợp 2: Dùng Http Only cookie > gọi api xử lý remove cookie
   };
@@ -600,15 +601,17 @@ export const OrderProvider = ({ children }) => {
 
   // loading
   const [isLoading, setLoading] = useState(false);
-  
+
   // state hien chat bot
   const [isShowChatbot, setShowChatbot] = useState(false);
 
   return (
     <CONTEXT.Provider
       value={{
-        isShowChatbot, setShowChatbot,
-        isLoading, setLoading,
+        isShowChatbot,
+        setShowChatbot,
+        isLoading,
+        setLoading,
         stateFlightShowCalendar,
         setStateFlightShowCalendar,
         handleReplacePriceAirport,

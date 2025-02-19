@@ -6,7 +6,8 @@ const UserManual = (props) => {
   const options = ["Tài khoản", "Chuyến bay", "Đơn hàng"];
 
   const messageFlights = [
-    "Tìm chuyến bay 02-03-2025",
+    "Tìm chuyến bay ngày mai",
+    "Tìm chuyến bay 25-3 chuyến bay đi",
     "Tìm chuyến bay Cần Thơ đến Quy Nhơn",
     "Tìm chuyến bay Vinh đến Vũng Tàu chuyến bay đi",
     "Tìm chuyến bay Hải Phòng đến Phú Quốc 15-03-2025",

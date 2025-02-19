@@ -53,6 +53,10 @@ class ActionProvider {
         res = await axios.get(
           `/bot/flights/search/?from=${city?.from}&to=${city?.to}&date=${date}&loaiChuyenBay=${loaiChuyenBay}&type=${type}`
         );
+      } else if (type === "dateloaicb") {
+        res = await axios.get(
+          `/bot/flights/search/?date=${date}&loaiChuyenBay=${loaiChuyenBay}&type=${type}`
+        );
       }
 
       const flights = res?.data?.flights || [];
@@ -61,12 +65,8 @@ class ActionProvider {
         flights: flights,
       }));
       if (flights.length > 0) {
-        // this.setState((state) => ({
-        //   ...state,
-        //   messages: [...state.messages, flights],
-        // }));
         const message = this.createChatBotMessage(
-          `Đang tìm chuyến bay ${type === "date" ? `vào ngày ${date}` : type === "city" ? `từ ${city.from} đến ${city.to}` : type === "citydate" ? `từ ${city.from} đến ${city.to} vào ngày ${date}` : type === "cityloaicb" ? `từ ${city.from} đến ${city.to} ${loaiChuyenBay}` : type === "citydateloaicb" ? `từ ${city.from} đến ${city.to} vào ngày ${date} ${loaiChuyenBay}` : "..."}`,
+          `Đang tìm chuyến bay ${type === "date" ? `vào ngày ${date}` : type === "city" ? `từ ${city.from} đến ${city.to}` : type === "citydate" ? `từ ${city.from} đến ${city.to} vào ngày ${date}` : type === "cityloaicb" ? `từ ${city.from} đến ${city.to} ${loaiChuyenBay}` : type === "citydateloaicb" ? `từ ${city.from} đến ${city.to} vào ngày ${date} ${loaiChuyenBay}` : type === "dateloaicb" ? `vào ngày ${date} ${loaiChuyenBay}` : "..."}`,
           {
             widget: "flights",
             payload: { flights },
@@ -121,6 +121,16 @@ class ActionProvider {
       }));
 
       this.fetchFlights(date, city, "", "citydate");
+    } else if (moment(date, "DD-MM-YYYY", true).isValid() && loaiChuyenBay) {
+      this.setState((state) => ({
+        ...state,
+        messages:
+          type === "user"
+            ? [...state.messages, { message: m, type: type }]
+            : state.messages,
+        // lastMessage: date,
+      }));
+      this.fetchFlights(date, "", loaiChuyenBay, "dateloaicb");
     } else if (city.from && city.to && loaiChuyenBay) {
       this.setState((state) => ({
         ...state,

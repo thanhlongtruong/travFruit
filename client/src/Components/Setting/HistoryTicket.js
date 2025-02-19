@@ -123,25 +123,11 @@ function History() {
     });
   };
 
-  const handleChooseOptionShow = (index) => {
+  const handleChooseOptionShow = async (index) => {
     const types = ["Đã hủy", "Đã thanh toán", "Chưa thanh toán", "All"];
     const page = 1;
-    switch (index) {
-      case 0:
-        getReservation(page, types[index]);
-        break;
-      case 1:
-        getReservation(page, types[index]);
-        break;
-      case 2:
-        getReservation(page, types[index]);
-        break;
-      case 3:
-        getReservation(page, types[index]);
-        break;
-      default:
-        getReservation(page, types[3]);
-    }
+
+    await getReservation(page, types[index]);
 
     updateUrl(page, types[index]);
     stateOptionShow([index + 1]);
@@ -335,12 +321,7 @@ function OptionShowHistoryOrder({
   );
 }
 
-function HistoryDon({
-  isLoading,
-  dataReservation,
-  setLoading,
-  isSearch,
-}) {
+function HistoryDon({ isLoading, dataReservation, setLoading, isSearch }) {
   const { convertDateToVNDate, handleReplacePriceAirport, naviReload } =
     useContext(CONTEXT);
 
