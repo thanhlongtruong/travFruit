@@ -3,7 +3,7 @@ const DonHang = require("../models/DonHang.js");
 const Ticket = require("../models/Ticket.js");
 const Account = require("../models/User.js");
 const handleDelTickets_UpdateFlight = require("../service/delTickets_UpdateFlight.js");
-const Payment = require("../models/payment.js");
+const Payment = require("../models/Payment.js");
 const Flight = require("../models/Flight.js");
 const { mongoose } = require("mongoose");
 
