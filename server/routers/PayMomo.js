@@ -2,7 +2,7 @@ const axios = require("axios");
 const express = require("express");
 const crypto = require("crypto");
 const { authMiddleware } = require("../middleware/authorization");
-const Payment = require("../models/payment");
+const Payment = require("../models/Payment.js");
 const DonHang = require("../models/DonHang");
 
 var accessKey = "F8BBA842ECF85";
