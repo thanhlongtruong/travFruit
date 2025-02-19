@@ -1,430 +1,417 @@
 import { CONTEXT } from "../../Context/ContextGlobal";
 import { useEffect, useContext, useState, useCallback, memo } from "react";
 import InfoTicket from "../Plane/InfoTicket.js";
+import ReactLoading from "react-loading";
 import Loading from "../Loading.js";
 import { ToastContainer } from "react-toastify";
 import notify from "../Noti/notify.js";
 import "react-toastify/dist/ReactToastify.css";
 import ReactPaginate from "react-paginate";
-import { authorizedAxiosInstance } from "../Utils/authAxios";
+import axios from "../Utils/authAxios.js";
 import { useLocation, useNavigate } from "react-router-dom";
-import { SocketContext } from "../../Context/SocketContext.js";
 
 function History() {
-  const { convertDateToVNDate } = useContext(CONTEXT);
+  const { isLoading, setLoading } = useContext(CONTEXT);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const [loadingTicketPremium, setLoadTicketPremium] = useState(true);
-  const [dataGetTicketPremium, setDataTicketPremium] = useState(null);
-  const [showOrdersAfterFilter, setShowOrdersAfterFilter] = useState(null);
-  const [totalOrder, setTotalOrder] = useState(0);
-  // const [page, setPage] = useState(1);
-  // const stateShowOrder = ["Canceled", "Paid", "Pending", 'All'];
-  const [stateShowOrder, setStateShowOrder] = useState([
+  const [dataReservation, setDataReservation] = useState([]);
+
+  //1. so page hien tai 2. tong so page
+  const [totalPage, setTotalPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  /* 1. trang thai hien option
+  2. da huy
+  3. da thanh toan
+  4. chua thanh toan
+  5. all
+  */
+  const [optionShow, setOptionShow] = useState([
+    false,
     false,
     false,
     false,
     true,
   ]);
-  // Action show filter
-  const [rotateIconAction, setRotateIconAction] = useState(false);
-  const [iconActionSearch, setIconActionSearch] = useState(false);
-  const [changeSearchForAnimation, setChangeSearchForAnimation] = useState("");
-  const actionShowFilter = () => {
-    setRotateIconAction(!rotateIconAction);
-    setIconActionSearch(false);
-  };
-  const actionSearch = () => {
-    if (!changeSearchForAnimation) {
-      setIconActionSearch(!iconActionSearch);
-      setRotateIconAction(false);
-    }
-  };
 
-  const findOrderByOnChange = async () => {
-    if (showOrdersAfterFilter !== null || dataGetTicketPremium !== null) {
-      setShowOrdersAfterFilter(
-        dataGetTicketPremium.filter((order) => {
-          const tickets = order.tickets;
-
-          return tickets.some((ticket) => {
-            const [timePart, datePart] = convertDateToVNDate(
-              order.createdAt
-            ).split(" ");
-            const [date, month, year] = datePart.split("/");
-            const dateString = date + month + year;
-
-            return (
-              (ticket.maDon === changeSearchForAnimation.trim() ||
-                ticket.phoneNumber === changeSearchForAnimation.trim() ||
-                datePart === changeSearchForAnimation.trim() ||
-                dateString.includes(changeSearchForAnimation.trim())) &&
-              order._id === ticket.maDon
-            );
-          });
-        })
-      );
-    }
-    if (!changeSearchForAnimation) {
-      if (dataGetTicketPremium !== null) {
-        setShowOrdersAfterFilter(
-          dataGetTicketPremium.length > 0 ? dataGetTicketPremium : []
-        );
-      }
-    }
-  };
-
-  useEffect(() => {
-    findOrderByOnChange();
-  }, [changeSearchForAnimation]);
-
-  const toggleStates = (indexes) => {
-    setStateShowOrder((prev) =>
+  // thay doi trang thai cua option hien don hang
+  const stateOptionShow = (indexes) => {
+    setOptionShow((prev) =>
       prev.map((value, index) => {
         if (indexes.includes(index)) {
           return true;
-        } else {
-          return false;
         }
+        return index !== 0 ? false : value;
       })
     );
   };
 
-  const getTicketPremium = async (page) => {
+  // 1. trang thai hien search 2. content search
+  const [isSearch, setIsSearch] = useState([false, ""]);
+
+  // const findOrderByOnChange = async () => {
+  //   if (dataReservation !== null) {
+  //     setDataReservation(
+  //       dataReservation.filter((order) => {
+  //         const tickets = order.tickets;
+
+  //         return tickets.some((ticket) => {
+  //           const [timePart, datePart] = convertDateToVNDate(
+  //             order.createdAt
+  //           ).split(" ");
+  //           const [date, month, year] = datePart.split("/");
+  //           const dateString = date + month + year;
+
+  //           return (
+  //             (ticket.maDon === isSearch[1]?.trim() ||
+  //               ticket.phoneNumber === isSearch[1]?.trim() ||
+  //               datePart === isSearch.trim() ||
+  //               dateString.includes(isSearch[1]?.trim())) &&
+  //             order._id === ticket.maDon
+  //           );
+  //         });
+  //       })
+  //     );
+  //   }
+  // };
+
+  const getReservation = async (page, type) => {
     try {
-      const res = await authorizedAxiosInstance.post(
-        `https://travrel-server.vercel.app/user/get_reservation-flights?page=${page}`
+      setLoading(true);
+      const res = await axios.get(
+        `/user/reservation?page=${page}&type=${type}`
       );
+
       if (res.status === 200) {
-        if (res.data.length === 0) {
-          setDataTicketPremium([]);
-          setShowOrdersAfterFilter([]);
-          return;
-        }
+        const { orders, totalPage } = res.data;
 
-        toggleStates([3]);
+        setDataReservation(orders);
 
-        setShowOrdersAfterFilter(res.data.orders);
-        setDataTicketPremium(res.data.orders);
-        setTotalOrder(res.data.totalOrder);
-      } else {
-        return console.error("Error get ticket premium", res);
+        setTotalPage(totalPage);
       }
     } catch (err) {
-      return;
+      notify(
+        "Warn",
+        err?.response?.data?.message || "Xảy ra lỗi khi xem lịch sử đơn hàng"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    getTicketPremium();
+    const handlePage = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const page = urlParams.get("page") || 1;
+      const type = urlParams.get("type") || "All";
+      setCurrentPage(Number(page) - 1);
+      getReservation(page, type);
+    };
+
+    handlePage();
   }, []);
 
-  useEffect(() => {
-    if (showOrdersAfterFilter !== null && dataGetTicketPremium !== null) {
-      setLoadTicketPremium(false);
-    }
-  }, [showOrdersAfterFilter, dataGetTicketPremium]);
-
-  useEffect(() => {
-    const hash = window.location.hash.substring(1);
-    if (hash) {
-      const element = document.getElementById(hash);
-
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth" });
-        element.classList.add(
-          "drop-shadow-[0_7px_3px_rgb(34,211,238)]",
-          "outline-0"
-        );
-        setTimeout(() => {
-          element.classList.remove(
-            "drop-shadow-[0_7px_3px_rgb(34,211,238)]",
-            "outline-0"
-          );
-        }, 1000);
-      }
-    }
-  }, [loadingTicketPremium]);
-
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const updateUrl = (page) => {
+  const updateUrl = (page, type) => {
     const params = new URLSearchParams(location.search);
-    params.set("page", page); // Cập nhật tham số 'page'
+    params.set("page", page);
+    params.set("type", type);
 
-    // Cập nhật URL mà không tải lại trang
     navigate({
       pathname: location.pathname,
       search: params.toString(),
     });
   };
 
-  if (loadingTicketPremium) {
-    return <Loading />;
-  }
+  const handleChooseOptionShow = (index) => {
+    const types = ["Đã hủy", "Đã thanh toán", "Chưa thanh toán", "All"];
+    const page = 1;
+    switch (index) {
+      case 0:
+        getReservation(page, types[index]);
+        break;
+      case 1:
+        getReservation(page, types[index]);
+        break;
+      case 2:
+        getReservation(page, types[index]);
+        break;
+      case 3:
+        getReservation(page, types[index]);
+        break;
+      default:
+        getReservation(page, types[3]);
+    }
 
-  const funcSearchOrderCancel = () => {
-    toggleStates([0]);
-
-    setShowOrdersAfterFilter(
-      dataGetTicketPremium.filter((order) => order.trangThai === "Đã hủy")
-        .length > 0
-        ? dataGetTicketPremium.filter((order) => order.trangThai === "Đã hủy")
-        : []
-    );
-  };
-  const funcSearchOrderPaid = () => {
-    toggleStates([1]);
-
-    setShowOrdersAfterFilter(
-      dataGetTicketPremium.filter(
-        (order) => order.trangThai === "Đã thanh toán"
-      ).length > 0
-        ? dataGetTicketPremium.filter(
-            (order) => order.trangThai === "Đã thanh toán"
-          )
-        : []
-    );
-  };
-  const funcSearchOrderPendingPay = () => {
-    toggleStates([2]);
-
-    setShowOrdersAfterFilter(
-      dataGetTicketPremium.filter(
-        (order) => order.trangThai === "Đang chờ thanh toán"
-      ).length > 0
-        ? dataGetTicketPremium.filter(
-            (order) => order.trangThai === "Đang chờ thanh toán"
-          )
-        : []
-    );
-  };
-  const funcCancelSearchOrder = () => {
-    toggleStates([3]);
-
-    setShowOrdersAfterFilter(
-      dataGetTicketPremium.length > 0 ? dataGetTicketPremium : []
-    );
+    updateUrl(page, types[index]);
+    stateOptionShow([index + 1]);
+    setCurrentPage(0);
   };
 
-  const handlePageClick = (event) => {
-    getTicketPremium(+event.selected + 1);
-    updateUrl(+event.selected + 1);
+  const handlePageClick = async (event) => {
+    const types = ["Đã hủy", "Đã thanh toán", "Chưa thanh toán", "All"];
+    const firstTrueIndex = optionShow.findIndex(
+      (value, index) => value === true && index !== 0
+    );
+
+    const selectedPage = event.selected + 1;
+    setCurrentPage(event.selected);
+    updateUrl(selectedPage, types[firstTrueIndex - 1]);
+    await getReservation(selectedPage, types[firstTrueIndex - 1]);
   };
 
   return (
     <>
       <ToastContainer />
-      <div className="relative flex items-center w-full h-[42px] my-5 text-xl font-semibold select-none overflow-hidden">
-        <div
-          className={`flex h-[42px] justify-center w-fit items-center right-[12%] absolute ${rotateIconAction ? "opacity-0 pointer-events-none" : "opacity-100"}`}
-        >
-          {iconActionSearch && (
-            <>
-              <input
-                type="search"
-                value={changeSearchForAnimation}
-                className={`w-[420px] h-full p-2 outline-none border-b font-normal text-lg transition ${changeSearchForAnimation ? "border-b-[#0194f3] animate-pulse" : ""}`}
-                placeholder="Ngày đặt đơn hàng hoặc mã đơn hàng"
-                onChange={(event) =>
-                  setChangeSearchForAnimation(event.target.value)
-                }
-              />
-            </>
-          )}
 
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="1.5"
-            className={`transition-transform duration-300 cursor-pointer size-7 ${iconActionSearch ? "-rotate-12" : "rotate-90"} ${changeSearchForAnimation ? "stroke-[#DC2626]" : "stroke-[#0194f3]"}`}
-            onClick={actionSearch}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-            />
-          </svg>
-        </div>
-
-        <div
-          className={`absolute w-fit transform -translate-x-1/2 left-[50%] whitespace-nowrap transition-opacity duration-300 ${rotateIconAction || iconActionSearch ? "opacity-0 pointer-events-none" : "opacity-100"}`}
-        >
-          Lịch sử đơn hàng
-        </div>
-        {!iconActionSearch && (
-          <div
-            className={`flex h-[42px] w-fit items-center absolute left-[12%]`}
-          >
-            {!rotateIconAction && (
-              <span className="relative flex w-3 h-3 left-2">
-                <span className="absolute inline-flex w-full h-full rounded-full opacity-75 animate-ping bg-sky-400"></span>
-              </span>
-            )}
-
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="#0194f3"
-              className="transition-transform duration-300 cursor-pointer size-7"
-              style={!rotateIconAction ? { transform: "rotate(-90deg)" } : {}}
-              onClick={actionShowFilter}
+      {isLoading ? (
+        <Loading />
+      ) : (
+        <>
+          <div className="relative flex items-center w-full h-[42px] my-5 text-xl font-semibold select-none overflow-hidden">
+            {/* <div
+              className={`flex h-[42px] justify-center w-fit items-center right-[12%] absolute ${optionShow[0] ? "opacity-0 pointer-events-none" : "opacity-100"}`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
-              />
-            </svg>
+              {isSearch[0] && (
+                <input
+                  type="search"
+                  value={isSearch[1]}
+                  className={`w-[420px] h-full p-2 outline-none border-b font-normal text-lg transition ${isSearch[1] ? "border-b-[#0194f3]" : ""}`}
+                  placeholder="Ngày đặt đơn hàng hoặc mã đơn hàng"
+                  onChange={(event) =>
+                    setIsSearch((pre) => [pre[0], event.target.value])
+                  }
+                />
+              )}
+
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                className={`transition-transform duration-300 cursor-pointer size-7 stroke-[#0194f3] ${!isSearch[0] ? "-rotate-12" : "rotate-90"}`}
+                onClick={() => {
+                  setIsSearch((pre) => [!pre[0], pre[1]]);
+                }}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                />
+              </svg>
+            </div> */}
 
             <div
-              className={`ml-3 gap-x-3 w-[420px] h-[42px] transition-opacity duration-300 flex ${rotateIconAction ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+              className={`absolute w-fit transform -translate-x-1/2 left-[50%] whitespace-nowrap transition-opacity duration-300 ${optionShow[0] || isSearch[0] ? "opacity-0 pointer-events-none" : "opacity-100"}`}
             >
-              <button
-                type="button"
-                className={`${stateShowOrder[0] ? "bg-[#109AF4] text-white" : "text-[#109AF4]"} select-none flex font-medium p-2 text-base rounded-xl border border-[#109AF4] transition duration-0 hover:duration-700 hover:ease-in-out`}
-                onClick={funcSearchOrderCancel}
-              >
-                Đã hủy
-              </button>
-              <button
-                type="button"
-                className={`${stateShowOrder[1] ? "bg-[#109AF4] text-white" : "text-[#109AF4]"} select-none flex font-medium p-2 rounded-xl text-base border border-[#109AF4] transition duration-0 hover:duration-700 hover:ease-in-out`}
-                onClick={funcSearchOrderPaid}
-              >
-                Đã thanh toán
-              </button>
-              <button
-                type="button"
-                className={`${stateShowOrder[2] ? "bg-[#109AF4] text-white" : "text-[#109AF4]"} flex  font-medium p-2 rounded-xl border text-base border-[#109AF4] select-none transition duration-0 hover:duration-700 hover:ease-in-out`}
-                onClick={funcSearchOrderPendingPay}
-              >
-                Chưa thanh toán
-              </button>
-              <button
-                type="button"
-                className={`${stateShowOrder[3] ? "bg-[#109AF4] text-white" : "text-[#109AF4]"} transition duration-0 hover:duration-700 text-base hover:ease-in-out flex font-medium p-2 rounded-xl border border-[#109AF4] select-none`}
-                onClick={funcCancelSearchOrder}
-              >
-                All
-              </button>
+              Lịch sử đơn hàng
             </div>
-          </div>
-        )}
-      </div>
-      <div className="px-5 pt-5 border-t">
-        {showOrdersAfterFilter !== null && (
-          <HistoryDon
-            showOrdersAfterFilter={showOrdersAfterFilter}
-            loadingTicketPremium={loadingTicketPremium}
-            setLoadTicketPremium={setLoadTicketPremium}
-            refreshOrders={getTicketPremium}
-          />
-        )}
 
-        {showOrdersAfterFilter.length === 0 && (
-          <div className="flex items-center select-none gap-11">
-            <img
-              alt="nodata"
-              src="https://ik.imagekit.io/tvlk/image/imageResource/2020/07/10/1594367281441-5ec1b573d106b7aec243b19efa02ac56.svg?tr=h-96,q-75,w-96"
-            />
-            <p className="text-center text-gray-500 h-fit">
-              Không có đơn hàng nào.
-            </p>
+            {!isSearch[0] && (
+              <div
+                className={`flex h-[42px] w-fit items-center absolute left-[12%]`}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  className="transition-transform duration-300 cursor-pointer size-7 stroke-[#0194f3]"
+                  style={!optionShow[0] ? { transform: "rotate(-90deg)" } : {}}
+                  onClick={() =>
+                    setOptionShow((pre) => [
+                      !pre[0],
+                      pre[1],
+                      pre[2],
+                      pre[3],
+                      pre[4],
+                    ])
+                  }
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
+                  />
+                </svg>
+
+                <div
+                  className={`ml-3 gap-x-3 w-[420px] h-[42px] transition-opacity duration-300 flex ${optionShow[0] ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                >
+                  {Array.from({ length: 4 }, (_, i) => (
+                    <OptionShowHistoryOrder
+                      index={i}
+                      content={
+                        i === 0
+                          ? "Đã hủy"
+                          : i === 1
+                            ? "Đã thanh toán"
+                            : i === 2
+                              ? "Chưa thanh toán"
+                              : "All"
+                      }
+                      stateChoose={
+                        i === 0
+                          ? optionShow[1]
+                          : i === 1
+                            ? optionShow[2]
+                            : i === 2
+                              ? optionShow[3]
+                              : optionShow[4]
+                      }
+                      handleChooseOptionShow={handleChooseOptionShow}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      <ReactPaginate
-        className="flex justify-center gap-x-4 text-lg font-mono border p-4"
-        nextLabel="next >"
-        onPageChange={handlePageClick}
-        pageRangeDisplayed={3}
-        marginPagesDisplayed={2}
-        pageCount={totalOrder}
-        previousLabel="< previous"
-        pageClassName="page-item"
-        pageLinkClassName="page-link"
-        previousClassName="page-item"
-        previousLinkClassName="page-link"
-        nextClassName="page-item"
-        nextLinkClassName="page-link"
-        breakLabel="..."
-        breakClassName="page-item"
-        breakLinkClassName="page-link"
-        containerClassName="pagination"
-        activeClassName="bg-blue-500 text-white rounded-md w-7 h-full text-center"
-        renderOnZeroPageCount={null}
-      />
+
+          <div className="px-5 pt-5 border-t">
+            {dataReservation?.length > 0 ? (
+              <HistoryDon
+                dataReservation={dataReservation}
+                isLoading={isLoading}
+                setLoading={setLoading}
+                isSearch={isSearch}
+              />
+            ) : (
+              <div className="flex items-center select-none gap-11">
+                <img
+                  alt="nodata"
+                  src="https://ik.imagekit.io/tvlk/image/imageResource/2020/07/10/1594367281441-5ec1b573d106b7aec243b19efa02ac56.svg?tr=h-96,q-75,w-96"
+                />
+                <p className="text-center text-gray-500 h-fit">
+                  Không có đơn hàng nào.
+                </p>
+              </div>
+            )}
+          </div>
+          {dataReservation?.length > 0 && (
+            <ReactPaginate
+              className="flex justify-center gap-x-4 text-lg font-mono border p-4"
+              nextLabel="next >"
+              onPageChange={handlePageClick}
+              pageRangeDisplayed={3}
+              marginPagesDisplayed={2}
+              pageCount={totalPage}
+              previousLabel="< previous"
+              pageClassName="page-item"
+              pageLinkClassName="page-link"
+              previousClassName="page-item"
+              previousLinkClassName="page-link"
+              nextClassName="page-item"
+              nextLinkClassName="page-link"
+              breakLabel="..."
+              breakClassName="page-item"
+              breakLinkClassName="page-link"
+              containerClassName="pagination"
+              activeClassName="bg-blue-500 text-white rounded-md w-7 h-full text-center"
+              renderOnZeroPageCount={null}
+              forcePage={currentPage}
+            />
+          )}
+        </>
+      )}
     </>
   );
 }
 
+function OptionShowHistoryOrder({
+  index,
+  content,
+  stateChoose,
+  handleChooseOptionShow,
+}) {
+  return (
+    <button
+      type="button"
+      className={`${stateChoose ? "bg-[#109AF4] text-white" : "text-[#109AF4]"} select-none flex font-medium p-2 text-base rounded-xl border border-[#109AF4] transition duration-0 hover:duration-700 hover:ease-in-out`}
+      onClick={() => handleChooseOptionShow(index)}
+    >
+      {content}
+    </button>
+  );
+}
+
 function HistoryDon({
-  loadingTicketPremium,
-  showOrdersAfterFilter,
-  setLoadTicketPremium,
-  refreshOrders,
+  isLoading,
+  dataReservation,
+  setLoading,
+  isSearch,
 }) {
   const { convertDateToVNDate, handleReplacePriceAirport, naviReload } =
     useContext(CONTEXT);
 
-  const { showNotificationSocket, setShowNotificationSocket, socket } =
-    useContext(SocketContext);
-
   const payment = JSON.parse(localStorage.getItem("payment"));
 
   const huyOrder = async (_id) => {
-    setLoadTicketPremium(true);
+    setLoading(true);
 
     try {
-      const response = await authorizedAxiosInstance.post(
-        `https://travrel-server.vercel.app/order/update_status`,
-        {
-          status: 201,
-          orderID: _id,
-        }
-      );
+      const response = await axios.post(`/order/update_status`, {
+        status: 201,
+        orderID: _id,
+      });
       if (response.status === 200) {
-        if (socket) {
-          socket.emit();
-        }
-
         if (payment && payment.split(" ")[0].replace(/"/g, "") === _id) {
           localStorage.removeItem("payment");
         }
-        await refreshOrders();
+        window.location.reload();
       }
     } catch (error) {
       notify("Error", "Hủy đơn hàng không thành công, vui lòng thử lại sau");
     } finally {
-      setLoadTicketPremium(false);
+      setLoading(false);
     }
   };
 
-  const thanhToan = (order) => {
-    const data = {
-      timeEndPayOrder: convertDateToVNDate(order.expiredAt),
-      objectOrder: {
-        idDH: order._id,
-        priceOrder: order.tongGia,
-        createAt: order.createdAt,
-        expiredAt: order.expiredAt,
-        dataTickets: order.tickets,
-      },
-    };
-    naviReload("/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan", {
-      state: {
-        data: data,
-      },
-    });
+  const thanhToan = async (order) => {
+    const airportDeparture = order.tickets.filter(
+      (ticket) => ticket.flights?.loaiChuyenBay === "Chuyến bay đi"
+    );
+    const airportReturn = order.tickets.filter(
+      (ticket) => ticket.flights?.loaiChuyenBay === "Chuyến bay khứ hồi"
+    );
+
+    try {
+      setLoading(true);
+      const response = await axios.post(`/payment/pending`, {
+        orderId: order._id,
+      });
+      if (response.status === 200) {
+        if (response.data.payment?.payUrl === "NO payURL") {
+          const data = {
+            timeEndPayOrder: convertDateToVNDate(order.expiredAt),
+            objectOrder: {
+              idDH: order._id,
+              priceOrder: order.tongGia,
+              createAt: order.createdAt,
+              expiredAt: order.expiredAt,
+              dataTickets: order.tickets,
+            },
+            airportDeparture: airportDeparture[0].flights,
+            airportReturn:
+              airportReturn.length > 0 ? airportReturn[0].flights : {},
+          };
+          naviReload("/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan", {
+            state: {
+              data: data,
+            },
+          });
+        } else {
+          window.location.href = response.data.payment.payUrl;
+        }
+      }
+    } catch (error) {
+    } finally {
+      setLoading(false);
+    }
   };
 
   const huyVeKhuHoi = async (order) => {
-    setLoadTicketPremium(true);
+    setLoading(true);
     const tickets = order.tickets.filter(
       (ticket) => ticket.loaiChuyenBay === "Chuyến bay đi"
     );
@@ -441,17 +428,13 @@ function HistoryDon({
       ) + " VND";
 
     try {
-      const response = await authorizedAxiosInstance.post(
-        `https://travrel-server.vercel.app/order/ccc`,
-        {
-          orderID: order._id,
-          priceNew: priceNew,
-        }
-      );
+      const response = await axios.post(`/order/ccc`, {
+        orderID: order._id,
+        priceNew: priceNew,
+      });
       if (response.status === 200) {
         await notify("Success", "Hủy vé khứ hồi thành công");
-
-        await refreshOrders();
+        window.location.reload();
       }
       if (response.status === 404) {
         notify("Warn", response.data.message);
@@ -459,7 +442,7 @@ function HistoryDon({
     } catch (error) {
       notify("Error", "Hủy đơn hàng không thành công, vui lòng thử lại sau");
     } finally {
-      setLoadTicketPremium(false);
+      setLoading(false);
     }
   };
 
@@ -472,21 +455,10 @@ function HistoryDon({
     [historyVe]
   );
 
-  const [isBeginUpdateTicket, setBeginUpdateTicket] = useState(false);
-  const funcUpdateTicket = () => {
-    setBeginUpdateTicket(true);
-    notify("Info", "Coming soon");
-  };
-
-  if (loadingTicketPremium) {
-    return <Loading />;
-  }
-
   return (
     <>
-      {showOrdersAfterFilter.map((order, index) => (
+      {dataReservation?.map((order, index) => (
         <div
-          id={`${order._id}`}
           key={order._id}
           className={`w-full p-2 mb-5 hover:text-zinc-800 outline-slate-300 hover:duration-500 transition-all overflow-hidden duration-300 relative outline outline-1  rounded-lg select-none min-h-[110px]`}
         >
@@ -514,15 +486,23 @@ function HistoryDon({
                   {order.trangThai === "Đã thanh toán" && (
                     <span className="text-[#0bc175]">{order.trangThai}</span>
                   )}
-                  {order.trangThai === "Đang chờ thanh toán" && (
+                  {order.trangThai === "Chưa thanh toán" && (
                     <span className="text-[#ffd000]">{order.trangThai}</span>
                   )}
                   {order.trangThai === "Đã hủy" && (
                     <span className="text-red-600">{order.trangThai}</span>
                   )}
                   {order.trangThai ===
-                    "Đang chờ thanh toán chuyến đi (Đã hủy vé khứ hồi)" && (
+                    "Chưa thanh toán chuyến đi (Đã hủy vé khứ hồi)" && (
                     <span className="text-[#0bc175]">{order.trangThai}</span>
+                  )}
+                </p>
+                <p className="line-clamp-1">
+                  {order.trangThai === "Chưa thanh toán" && (
+                    <span className="text-red-500">
+                      • {convertDateToVNDate(order.expiredAt)} đơn hàng sẽ bị
+                      xóa nếu không thanh toán
+                    </span>
                   )}
                 </p>
               </div>
@@ -530,23 +510,16 @@ function HistoryDon({
 
             {historyVe === index && (
               <>
-                <HistoryVe
-                  isBeginUpdateTicket={isBeginUpdateTicket}
-                  ves={showOrdersAfterFilter[index].tickets}
-                  dtChuyenBays={showOrdersAfterFilter[index]}
-                  donhang={showOrdersAfterFilter}
-                />
+                <HistoryVe order={dataReservation[index]} />
               </>
             )}
           </div>
 
-          {showOrdersAfterFilter[index].trangThai.includes(
-            "Đang chờ thanh toán"
-          ) && (
+          {dataReservation[index].trangThai.includes("Chưa thanh toán") && (
             <div className="absolute z-10 flex top-2 right-2 gap-x-3">
               <button
                 className={`font-semibold line-clamp-1 rounded-md text-[14px] p-2 self-center text-white transition ease-in-out active:bg-slate-200 ${order.trangThai === "Đã hủy" || order.trangThai === "Đã thanh toán" ? "bg-slate-500 cursor-not-allowed" : "cursor-pointer bg-red-500"}`}
-                onClick={() => huyOrder(showOrdersAfterFilter[index]._id)}
+                onClick={() => huyOrder(dataReservation[index]._id)}
               >
                 Hủy đơn
               </button>
@@ -557,24 +530,28 @@ function HistoryDon({
               ) && (
                 <button
                   className={`font-semibold line-clamp-1 rounded-md text-[14px] p-2 self-center text-white transition ease-in-out active:bg-slate-200 ${order.trangThai === "Đã hủy" || order.trangThai === "Đã thanh toán" ? "bg-slate-500 cursor-not-allowed" : "cursor-pointer bg-red-500"}`}
-                  onClick={() => huyVeKhuHoi(showOrdersAfterFilter[index])}
+                  onClick={() => huyVeKhuHoi(dataReservation[index])}
                 >
                   Hủy vé khứ hồi
                 </button>
               )}
 
               <button
-                className={`font-semibold line-clamp-1 rounded-md text-[14px] p-2 self-center text-white transition ease-in-out active:bg-slate-200 bg-[#109AF4]`}
-                onClick={() => thanhToan(showOrdersAfterFilter[index])}
+                className={`transition-all duration-500 font-semibold line-clamp-1 rounded-md text-[14px] p-2 self-center text-white ease-in-out active:bg-slate-200 bg-[#109AF4]`}
+                onClick={() => thanhToan(dataReservation[index])}
               >
-                Thanh toán
+                {isLoading ? (
+                  <ReactLoading
+                    className="w-2 h-2 size-2"
+                    type="bubbles"
+                    color="#ffff"
+                    height={20}
+                    width={20}
+                  />
+                ) : (
+                  "Thanh toán"
+                )}
               </button>
-              {/* <button
-                className={`font-semibold line-clamp-1 rounded-md text-[14px] transition ease-in-out active:bg-slate-200 p-2 self-center text-white ${order.trangThai === "Đã hủy" || order.trangThai === "Đã thanh toán" ? "bg-slate-500 cursor-not-allowed" : "cursor-pointer bg-[#109AF4]"}`}
-                onClick={funcUpdateTicket}
-              >
-                Sửa vé
-              </button> */}
             </div>
           )}
         </div>
@@ -583,7 +560,7 @@ function HistoryDon({
   );
 }
 
-function HistoryVe({ isBeginUpdateTicket, ves, dtChuyenBays }) {
+function HistoryVe({ order }) {
   const [indexChooseTicket, setIndexChooseTicket] = useState(null);
 
   const hanldeChooseTicket = useCallback(
@@ -595,41 +572,32 @@ function HistoryVe({ isBeginUpdateTicket, ves, dtChuyenBays }) {
 
   return (
     <div className="flex w-full p-2 overflow-x-scroll gap-x-3">
-      {ves &&
-        ves.map((ve, index) => (
+      {order.tickets &&
+        order.tickets.map((ticket, index) => (
           <div className={`flex w-fit h-fit}`}>
             <div
-              className={`w-fit h-fit ${isBeginUpdateTicket ? "cursor-pointer" : ""} `}
+              className={`w-fit h-fit`}
               onClick={() => hanldeChooseTicket(index)}
             >
-              <InfoTicket airport={dtChuyenBays.tickets[index]} />
+              <InfoTicket
+                airport={{
+                  loaiChuyenBay: ticket.flights.loaiChuyenBay,
+                  diemBay: ticket.flights.diemBay,
+                  diemDen: ticket.flights.diemDen,
+                  gioBay: ticket.flights.gioBay,
+                  gioDen: ticket.flights.gioDen,
+                  ngayBay: ticket.flights.ngayBay,
+                  ngayDen: ticket.flights.ngayDen,
+                  hangBay: ticket.flights.hangBay,
+                  loaiTuoi: ticket.loaiTuoi,
+                  hangVe: ticket.hangVe,
+                  giaVe: ticket.giaVe,
+                  Ten: ticket.Ten,
+                  ngaySinh: ticket.ngaySinh,
+                  trangThaiVe: ticket.trangThaiVe,
+                }}
+              />
             </div>
-
-            {isBeginUpdateTicket && indexChooseTicket === index && (
-              <>
-                <div className="w-[300px] h-full ml-3 bg-gray-500">
-                  <InfoTicket
-                    dataFlight={dtChuyenBays}
-                    dataTicket={ve}
-                    enableUpdateTIcket={isBeginUpdateTicket}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-        ))}
-    </div>
-  );
-}
-
-function ShowUIChooseTicketUpdateAnima({ dtChuyenBays, ve }) {
-  //assssaaaaaaa
-  return (
-    <div className="fixed inset-0 z-20 w-screen h-full bg-orange-400 opacity-50">
-      {ve &&
-        ve.map((ve, index) => (
-          <div className="w-fit">
-            <InfoTicket dataFlight={dtChuyenBays} dataTicket={ve} />
           </div>
         ))}
     </div>

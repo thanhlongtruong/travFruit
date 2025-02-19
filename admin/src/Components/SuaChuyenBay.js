@@ -113,7 +113,7 @@ const SuaThongTinChuyenBay = ({ isVisible, onClose, flight }) => {
 <<<<<<< HEAD:admin_/src/Components/SuaChuyenBay.js
         `https://adminverold.vercel.app/api/update/flight/${flight._id}`,
 =======
-        `https://travrel-server.vercel.app/api/update/flight/${flight._id}`,
+        `http://localhost:4001/api/update/flight/${flight._id}`,
 >>>>>>> mainv2:admin/src/Components/SuaChuyenBay.js
         {
           method: "PATCH",

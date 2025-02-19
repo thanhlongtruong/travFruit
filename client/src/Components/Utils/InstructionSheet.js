@@ -1,6 +1,4 @@
-import { memo } from "react";
-
-function InstructionSheet({ content }) {
+export function InstructionSheet({ content }) {
   return (
     <>
       <div className="relative">
@@ -41,5 +39,3 @@ function InstructionSheet({ content }) {
     </>
   );
 }
-
-export default memo(InstructionSheet);

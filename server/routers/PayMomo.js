@@ -1,6 +1,9 @@
 const axios = require("axios");
 const express = require("express");
 const crypto = require("crypto");
+const { authMiddleware } = require("../middleware/authorization");
+const Payment = require("../models/payment");
+const DonHang = require("../models/DonHang");
 
 var accessKey = "F8BBA842ECF85";
 var secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
@@ -15,7 +18,7 @@ router.post("/payment-momo", async (req, res) => {
   var orderInfo = "pay with MoMo";
   // var redirectUrl = "https://vercel-travrelhome.vercel.app";
   var redirectUrl = "https://travfruit.vercel.app/";
-  var ipnUrl = "https://travrel-server.vercel.app/callback";
+  var ipnUrl = "http://localhost:4001/callback";
   var requestType = "payWithMethod";
 
   var extraData = "";
@@ -51,6 +54,8 @@ router.post("/payment-momo", async (req, res) => {
     .createHmac("sha256", secretKey)
     .update(rawSignature)
     .digest("hex");
+
+  var expire = Math.floor(Date.now() / 1000) + 300;
 
   //json object send to MoMo endpoint
   const requestBody = JSON.stringify({
@@ -123,6 +128,62 @@ router.get("/transaction-status/:orderId", async (req, res) => {
 
   let result = await axios(options);
   return res.status(200).json(result.data);
+});
+
+router.post("/payment/update/payurl", async (req, res) => {
+  try {
+    const { orderId, payUrl } = req.body;
+
+    const payment = await Payment.findOne({ orderId: orderId });
+
+    const updatePayment = await Payment.findOneAndUpdate(
+      { orderId: payment.orderId },
+      { payUrl }
+    );
+
+    if (updatePayment) {
+      return res.status(200).json({ message: "Cập nhật payUrl thành công!" });
+    } else {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy đơn hàng với orderId này." });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      error: {
+        name: error.name,
+        message: error.message || "Lỗi khi update payment",
+        stack: error.stack,
+      },
+    });
+  }
+});
+
+router.post("/payment/pending", async (req, res) => {
+  try {
+    const { orderId } = req.body;
+
+    const payment = await Payment.findOne({ orderId: orderId });
+    if (!payment) {
+      return res.status(404).json({
+        message: `Không tìm thấy đơn hàng ${orderId}`,
+        order,
+      });
+    }
+    console.log(payment);
+
+    return res.status(200).json({ payment });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      error: {
+        name: error.name,
+        message: error.message || "Lỗi khi tìm payment pending",
+        stack: error.stack,
+      },
+    });
+  }
 });
 
 module.exports = router;

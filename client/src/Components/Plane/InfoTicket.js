@@ -51,16 +51,18 @@ function InfoTicket({ airport, enableUpdateTIcket }) {
       <div className="flex-col p-4 shadow-sm">
         <div className="mt-[-5px] mb-5 text-base font-semibold text-[#0194F3] flex flex-col gap-y-2">
           <h4 className="">
-            • {airport?.loaiChuyenBay}: {airport?.gioBay} {" - "}
+            • {airport?.loaiChuyenBay}: {airport?.gioBay}{", "}
             {airport?.ngayBay}
           </h4>
-          <h4>
-            • Hãng bay:{" "}
-            {airport?.hangBay}
+          <h4 className="">
+            • Thời gian đến nơi: {airport?.gioDen}
+            {", "}
+            {airport?.ngayDen}
           </h4>
+          <h4>• Hãng máy bay: {airport?.hangBay}</h4>
           <h4>
             • Loại hành khách:{" "}
-            {airport?.ageType.split(" thứ")[0] || airport?.ageType}{" "}
+            {airport?.loaiTuoi.split(" thứ")[0] || airport?.loaiTuoi}{" "}
           </h4>
           <h4>• Hạng vé: {airport?.hangVe || "Ngồi chung với người lớn"}</h4>
           <h4>• Giá vé: {airport?.giaVe}</h4>

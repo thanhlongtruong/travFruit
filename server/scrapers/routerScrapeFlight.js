@@ -16,12 +16,10 @@ router.post("/api/realflight", async (req, res) => {
       departureDate = match[1];
       returnDate = match[2] || null;
     }
- 
+
     const flightsData = await scrapeFlight(flightUrl);
 
-    res
-      .status(200)
-      .json({flightsData });
+    res.status(200).json({ flightsData });
   } catch (error) {
     console.error("Scraping failed:", error);
     res.status(500).json({ error: "ServerError" });

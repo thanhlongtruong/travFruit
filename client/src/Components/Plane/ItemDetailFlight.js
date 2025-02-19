@@ -13,15 +13,13 @@ const ItemDetailFlight = (props) => {
           <div className="w-[12px] md:w-[24px] h-[12px] md:h-[24px] border-2 border-[#109AF4] bg-[#109AF4] rounded-full"></div>
         </div>
         <ul className="text-base flex flex-col items-start justify-between text-[#109AF4] font-bold">
-          <li>
-            Hãng máy bay: {props.hangBay} - Loại: {props.loaiMayBay} - Số hiệu:{" "}
-            {props.soHieu}
-          </li>
-
-          <li>Thời gian bay: {props.thoigianBay}</li>
+          <li>Ngày cất cánh: {props.ngayBay}</li>
+          <li>Hãng máy bay: {props.hangBay}</li>
 
           <li>Số vé thường còn lại: {props.PhoThong}</li>
           <li>Số vé thương gia còn lại: {props.ThuongGia}</li>
+          <li>Ngày đến: {props.ngayDen}</li>
+          <li className="text-green-500">Trạng thái chuyến bay: {props.trangThaiChuyenBay}</li>
         </ul>
       </div>
     </button>

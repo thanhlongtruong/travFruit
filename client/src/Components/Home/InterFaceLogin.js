@@ -2,12 +2,10 @@ import { memo, useContext, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { CONTEXT } from "../../Context/ContextGlobal";
 import notify from "../Noti/notify";
-import { authorizedAxiosInstance } from "../Utils/authAxios";
-import { SocketContext } from "../../Context/SocketContext";
+import axios from "../Utils/authAxios.js";
 
 function InterFaceLogin({ registerTrue = false }) {
   const { setShowInterfaceLogin } = useContext(CONTEXT);
-  const { socket, changeStateConnectSocket } = useContext(SocketContext);
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -86,22 +84,18 @@ function InterFaceLogin({ registerTrue = false }) {
   const funcLogin = async (data) => {
     setloadingLogin(true);
     try {
-      const response = await authorizedAxiosInstance.post(
-        `https://travrel-server.vercel.app/user/auth-login`,
-        {
-          numberPhone: data.phoneLogin,
-          password: data.passwordLogin,
-        }
-      );
+      const response = await axios.post(`/user/login`, {
+        numberPhone: data.phoneLogin,
+        password: data.passwordLogin,
+      });
 
       if (response.status === 200) {
-        const res = await authorizedAxiosInstance.get(
-          `https://travrel-server.vercel.app/user/get`
-        );
+        const { accessToken } = response.data;
+        localStorage.setItem("accessToken", accessToken);
+        const res = await axios.get(`/user/get`);
         if (res.status === 200) {
           localStorage.setItem("user", JSON.stringify(res.data));
           setShowInterfaceLogin(false);
-          changeStateConnectSocket(true);
 
           notify("Success", "Đăng nhập thành công");
         }
@@ -136,16 +130,13 @@ function InterFaceLogin({ registerTrue = false }) {
   const funcRegister = async (data) => {
     setloadingRegister(true);
     try {
-      const response = await authorizedAxiosInstance.post(
-        "https://travrel-server.vercel.app/user/register",
-        {
-          numberPhone: data.phone,
-          fullName: data.fullName,
-          gender: data.gender,
-          birthday: data.birthday,
-          password: data.password,
-        }
-      );
+      const response = await axios.post("/user/register", {
+        numberPhone: data.phone,
+        fullName: data.fullName,
+        gender: data.gender,
+        birthday: data.birthday,
+        password: data.password,
+      });
       if (response.status === 200) {
         setShowInterfaceLogin(false);
         notify("Success", "Đăng kí thành công");
@@ -188,10 +179,7 @@ function InterFaceLogin({ registerTrue = false }) {
       newPassword: showChoosePassword && data.newPassword,
     };
     try {
-      const res = await authorizedAxiosInstance.post(
-        "https://travrel-server.vercel.app/user/update",
-        req
-      );
+      const res = await axios.post("/user/update", req);
       if (res.status === 200) {
         notify("Success", "Cập nhật thành công");
         notify(

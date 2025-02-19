@@ -3,7 +3,9 @@ const DonHang = require("../models/DonHang.js");
 const Ticket = require("../models/Ticket.js");
 const Account = require("../models/User.js");
 const handleDelTickets_UpdateFlight = require("../service/delTickets_UpdateFlight.js");
-const e = require("express");
+const Payment = require("../models/payment.js");
+const Flight = require("../models/Flight.js");
+const { mongoose } = require("mongoose");
 
 const router = express.Router();
 
@@ -19,14 +21,14 @@ router.post("/ccc", async (req, res) => {
     }
 
     const orderUpdate = await DonHang.findByIdAndUpdate(orderID, {
-      trangThai: "Đang chờ thanh toán chuyến đi (Đã hủy vé khứ hồi)",
+      trangThai: "Chưa thanh toán chuyến đi (Đã hủy vé khứ hồi)",
       tongGia: priceNew,
     });
 
     if (!orderUpdate) {
-        return res.status(404).json({ message: "Order not found" });
+      return res.status(404).json({ message: "Order not found" });
     }
-    
+
     const tickets = await Ticket.find({ maDon: orderID });
 
     if (tickets.length > 0) {
@@ -89,30 +91,38 @@ router.post("/order-ticket_delete", async (req, res) => {
 });
 
 // router create order, ticker and update flight
-router.post("/order-ticket_create", async (req, res) => {
+router.post("/create", async (req, res) => {
   const accessTokenDecoded = req.jwtDecoded;
   const _id = accessTokenDecoded._id;
+
   const {
     airportDeparture,
     airportReturn,
     totalQuantityTickets,
     totalPriceTickets,
+    soGhePhoThongDeparture,
+    soGheThuongGiaDeparture,
+    soGhePhoThongReturn,
+    soGheThuongGiaReturn,
   } = req.body;
 
   const now = new Date();
-  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+  const fifteenMinutesLater = new Date(now.getTime() + 15 * 60 * 1000);
+
   try {
     const createOrder = await DonHang.create({
       userId: _id,
       soLuongVe: totalQuantityTickets,
       tongGia: totalPriceTickets,
       createdAt: now,
-      expiredAt: oneHourLater,
+      expiredAt: fifteenMinutesLater,
     });
 
-    if (!createOrder) {
-      return res.status(500).json({ message: "Create Order Fail" });
-    }
+    const createPayment = await Payment.create({
+      orderId: createOrder._id,
+      payUrl: "NO payURL",
+      expiredAt: fifteenMinutesLater,
+    });
 
     const arrTickets = airportDeparture.map((ticket) => ({
       ...ticket,
@@ -126,19 +136,60 @@ router.post("/order-ticket_create", async (req, res) => {
     const createTickets = await Ticket.insertMany(arrTickets);
     const createTicketsReturn = await Ticket.insertMany(arrTicketsReturn);
 
-    if (!createTickets || !createTicketsReturn) {
-      return res.status(500).json({ message: "Create tickets fail" });
-    }
     const allTickets = createTickets.concat(createTicketsReturn);
+
+    const normalTicketsCount = createTickets.filter(
+      (ticket) => ticket.hangVe === "Vé thường"
+    ).length;
+    const businessTicketsCount = createTickets.filter(
+      (ticket) => ticket.hangVe === "Vé thương gia"
+    ).length;
+
+    const normalTicketsCountReturn = createTicketsReturn.filter(
+      (ticket) => ticket.hangVe === "Vé thường"
+    ).length;
+    const businessTicketsCountReturn = createTicketsReturn.filter(
+      (ticket) => ticket.hangVe === "Vé thương gia"
+    ).length;
+
+    const updateFlight = await Flight.findByIdAndUpdate(
+      createTickets[0].maChuyenBay,
+      {
+        $inc: {
+          soGhePhoThong: -normalTicketsCount,
+          soGheThuongGia: -businessTicketsCount,
+        },
+      },
+      { new: true }
+    );
+
+    const updateFlightReturn = await Flight.findByIdAndUpdate(
+      createTicketsReturn[0]?.maChuyenBay,
+      {
+        $inc: {
+          soGhePhoThong: -normalTicketsCountReturn,
+          soGheThuongGia: -businessTicketsCountReturn,
+        },
+      },
+      { new: true }
+    );
+
     return res.status(200).json({
       idDH: createOrder._id,
       priceOrder: totalPriceTickets,
       createAt: createOrder.createdAt,
-      expiredAt: oneHourLater,
+      expiredAt: fifteenMinutesLater,
       dataTickets: allTickets,
     });
   } catch (error) {
-    return res.status(500).json({ message: "Internal server error::" });
+    return res.status(500).json({
+      message: "Internal server error",
+      error: {
+        name: error.name,
+        message: error.message || "Lỗi khi tạo đơn hàng",
+        stack: error.stack,
+      },
+    });
   }
 });
 
@@ -146,6 +197,69 @@ router.post("/order-ticket_create", async (req, res) => {
 router.get("/get_all", async (req, res) => {
   const donhang = await DonHang.find().sort({ createdAt: -1 });
   res.status(200).json(donhang);
+});
+router.get("/get", async (req, res) => {
+  try {
+    const accessTokenDecoded = req.jwtDecoded;
+    const _id = accessTokenDecoded._id;
+
+    if (!mongoose.Types.ObjectId.isValid(_id)) {
+      return res.status(404).json({
+        message: "Tài khoản không tồn tại",
+      });
+    }
+
+    const order = await DonHang.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(req.query.orderID),
+        },
+      },
+      {
+        $lookup: {
+          from: "tickets",
+          let: { orderId: { $toString: "$_id" } },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$maDon", "$$orderId"] } } },
+            {
+              $lookup: {
+                from: "flights",
+                let: { cbId: { $toObjectId: "$maChuyenBay" } },
+                pipeline: [{ $match: { $expr: { $eq: ["$_id", "$$cbId"] } } }],
+                as: "flights",
+              },
+            },
+            {
+              $unwind: {
+                path: "$flights",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+          ],
+          as: "tickets",
+        },
+      },
+    ]);
+    if (!order) {
+      return res.status(404).json({
+        message: "Không tìm thấy đơn hàng",
+        order: [],
+      });
+    }
+    return res.status(200).json({
+      message: "Tìm đơn hàng thành công",
+      order: order[0],
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: {
+        name: error.name,
+        message: error.message || "Lỗi khi tìm đơn hàng",
+        stack: error.stack,
+      },
+    });
+  }
 });
 
 router.post("/get_pending", async (req, res) => {

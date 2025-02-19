@@ -21,7 +21,7 @@ const XoaChuyenBay = ({ isVisible, onClose, flight }) => {
 <<<<<<< HEAD:admin_/src/Components/XoaChuyenBay.js
           `https://adminverold.vercel.app/api/delete/flight/${isId._id}`,
 =======
-          `https://travrel-server.vercel.app/api/delete/flight/${isId._id}`,
+          `http://localhost:4001/api/delete/flight/${isId._id}`,
 >>>>>>> mainv2:admin/src/Components/XoaChuyenBay.js
           {
             method: "DELETE", // Phương thức HTTP

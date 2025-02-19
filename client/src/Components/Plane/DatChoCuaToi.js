@@ -6,7 +6,7 @@ import InfoTicket from "./InfoTicket";
 import { CONTEXT } from "../../Context/ContextGlobal";
 import notify from "../Noti/notify";
 import { ToastContainer } from "react-toastify";
-import { authorizedAxiosInstance } from "../Utils/authAxios";
+import axios from "../Utils/authAxios.js";
 
 function DatChoCuaToi() {
   const dataTicketLocation = useLocation();
@@ -23,17 +23,15 @@ function DatChoCuaToi() {
     quantityTicketsReturn,
     airportDeparture,
     airportReturn,
-    ngayBay,
+    
   } = dataTicketLocation.state;
 
   const {
     convertDateToVNDate,
     naviReload,
-    AirportFrom,
-    AirportTo,
-    Departure_Return_Date,
-    convertStringToOjectDate,
     handleReplacePriceAirport,
+    setLoading,
+    isLoading,
   } = useContext(CONTEXT);
 
   const {
@@ -41,7 +39,6 @@ function DatChoCuaToi() {
     handleSubmit,
     setValue,
     control,
-    reset,
     watch,
     formState: { errors },
   } = useForm({
@@ -53,18 +50,12 @@ function DatChoCuaToi() {
           quantityTicketsDeparture.quantityTicketsOfChild[1] +
           quantityTicketsDeparture.quantityTicketsOfBaby
       ).fill({
-        ageType: "",
+        loaiTuoi: "",
         Ten: "",
         ngaySinh: "",
         hangVe: "",
         giaVe: 0,
-        hangBay: `${airportDeparture.hangBay} - ${airportDeparture.loaiMayBay} - ${airportDeparture.soHieu}`,
-        loaiChuyenBay: "Chuyến bay đi",
-        diemBay: AirportFrom,
-        diemDen: AirportTo,
-        gioBay: airportDeparture.gioBay,
-        ngayBay: convertDateToVNDate(ngayBay[0]).split(" ")[1],
-        gioDen: airportDeparture.gioDen,
+        maChuyenBay: airportDeparture._id,
       }),
       ...(oneWayFlight
         ? {}
@@ -76,18 +67,12 @@ function DatChoCuaToi() {
                 quantityTicketsReturn.quantityTicketsOfChild[1] +
                 quantityTicketsReturn.quantityTicketsOfBaby
             ).fill({
-              ageType: "",
+              loaiTuoi: "",
               Ten: "",
               ngaySinh: "",
               hangVe: "",
               giaVe: 0,
-              hangBay: `${airportReturn.hangBay} - ${airportReturn.loaiMayBay} - ${airportReturn.soHieu}`,
-              loaiChuyenBay: "Chuyến bay khứ hồi",
-              diemBay: AirportTo,
-              diemDen: AirportFrom,
-              gioBay: airportReturn.gioBay,
-              ngayBay: convertDateToVNDate(ngayBay[1]).split(" ")[1],
-              gioDen: airportReturn.gioDen,
+              maChuyenBay: airportReturn._id,
             }),
           }),
     },
@@ -103,14 +88,9 @@ function DatChoCuaToi() {
     name: "itemsB",
   });
 
-  const [
-    loadingCreateOrder_Ticket_UpdateFlight,
-    setLoadingCreateOrder_Ticket_UpdateFlight,
-  ] = useState(false);
-
   const funcCreateOrder_Ticket_updateFlight = async (data) => {
     try {
-      setLoadingCreateOrder_Ticket_UpdateFlight(true);
+      setLoading(true);
       const array = Object.values(data);
 
       const payload = {
@@ -132,32 +112,41 @@ function DatChoCuaToi() {
         totalPriceTickets:
           new Intl.NumberFormat("vi-VN").format(
             data.items.reduce((acc, item) => {
-              const giaVeSo = handleReplacePriceAirport(
-                item.giaVe.replace(/\./g, ",")
-              );
+              const giaVeSo = handleReplacePriceAirport(item.giaVe);
 
               return acc + giaVeSo;
             }, 0) +
               (data.itemsB || []).reduce((acc, item) => {
-                const giaVeSo = handleReplacePriceAirport(
-                  item.giaVe.replace(/\./g, ",")
-                );
+                const giaVeSo = handleReplacePriceAirport(item.giaVe);
 
                 return acc + giaVeSo;
               }, 0)
           ) + " VND",
+        soGhePhoThongDeparture:
+          quantityTicketsDeparture.quantityTicketsOfAdult[0] +
+          quantityTicketsDeparture.quantityTicketsOfChild[0],
+        soGheThuongGiaDeparture:
+          quantityTicketsDeparture.quantityTicketsOfAdult[1] +
+          quantityTicketsDeparture.quantityTicketsOfChild[1],
+        soGhePhoThongReturn: airportReturn
+          ? quantityTicketsReturn.quantityTicketsOfAdult[0] +
+            quantityTicketsReturn.quantityTicketsOfAdult[0]
+          : 0,
+        soGheThuongGiaReturn: airportReturn
+          ? quantityTicketsReturn.quantityTicketsOfAdult[1] +
+            quantityTicketsReturn.quantityTicketsOfAdult[1]
+          : 0,
       };
 
-      const res = await authorizedAxiosInstance.post(
-        "https://travrel-server.vercel.app/order/order-ticket_create",
-        payload
-      );
+      const res = await axios.post("/order/create", payload);
 
       if (res.status === 200) {
         const timeEnd = convertDateToVNDate(res.data.expiredAt);
         const data = {
           timeEndPayOrder: timeEnd,
           objectOrder: res.data,
+          airportDeparture: airportDeparture,
+          airportReturn: oneWayFlight ? {} : airportReturn,
         };
 
         localStorage.setItem(
@@ -180,7 +169,7 @@ function DatChoCuaToi() {
       }
       return;
     } finally {
-      setLoadingCreateOrder_Ticket_UpdateFlight(false);
+      setLoading(false);
     }
   };
 
@@ -342,20 +331,20 @@ function DatChoCuaToi() {
             )}
             {fields.map((item, index) => (
               <div
-                key={airportDeparture.soHieu + index}
+                key={airportDeparture._id + index}
                 className={`flex justify-between mb-6 transition-all duration-0 ${hideAirportsDeparture ? "h-0 overflow-hidden duration-500" : ""}`}
               >
                 <InfoTicket
                   airport={{
                     loaiChuyenBay: "Chuyến bay đi",
-                    diemBay: AirportFrom,
-                    diemDen: AirportTo,
+                    diemBay: airportDeparture.diemBay,
+                    diemDen: airportDeparture.diemDen,
                     gioBay: airportDeparture.gioBay,
-                    ngayBay: convertDateToVNDate(
-                      Departure_Return_Date[0]
-                    ).split(" ")[1],
-                    hangBay: `${airportDeparture.hangBay} - ${airportDeparture.loaiMayBay} - ${airportDeparture.soHieu}`,
-                    ageType: watch(`items.${index}.ageType`),
+                    gioDen: airportDeparture.gioDen,
+                    ngayBay: airportDeparture.ngayBay,
+                    ngayDen: airportDeparture.ngayDen,
+                    hangBay: airportDeparture.hangBay,
+                    loaiTuoi: watch(`items.${index}.loaiTuoi`),
                     hangVe: watch(`items.${index}.hangVe`),
                     giaVe: watch(`items.${index}.giaVe`),
                   }}
@@ -416,22 +405,21 @@ function DatChoCuaToi() {
                 </div>
                 {fieldsB.map((item, index) => (
                   <div
-                    key={airportReturn.soHieu + index}
+                    key={airportReturn._id + index}
                     className={`flex justify-between mb-6 transition-all duration-0 ${hideAirportsReturn ? "h-0 overflow-hidden duration-500" : "h-fit duration-500"}`}
                   >
                     <InfoTicket
                       airport={{
                         loaiChuyenBay: "Chuyến bay khứ hồi",
-                        diemBay: AirportTo,
-                        diemDen: AirportFrom,
+                        diemBay: airportReturn.diemBay,
+                        diemDen: airportReturn.diemDen,
                         gioBay: airportReturn.gioBay,
-                        ageType: watch(`itemsB.${index}.ageType`),
-                        ngayBay: convertDateToVNDate(
-                          Departure_Return_Date[1]
-                        ).split(" ")[1],
-                        hangBay: `${airportReturn.hangBay} - ${airportReturn.loaiMayBay} - ${airportReturn.soHieu}`,
+                        gioDen: airportReturn.gioDen,
+                        loaiTuoi: watch(`itemsB.${index}.loaiTuoi`),
+                        ngayBay: airportReturn.ngayBay,
+                        ngayDen: airportReturn.ngayDen,
+                        hangBay: airportReturn.hangBay,
                         loaiMayBay: airportReturn.loaiMayBay,
-                        soHieu: airportReturn.soHieu,
                         hangVe: watch(`itemsB.${index}.hangVe`),
                         giaVe: watch(`itemsB.${index}.giaVe`),
                       }}
@@ -453,12 +441,10 @@ function DatChoCuaToi() {
             )}
 
             <button
-              type={
-                loadingCreateOrder_Ticket_UpdateFlight ? "button" : "submit"
-              }
+              type={isLoading ? "button" : "submit"}
               className="flex p-3 bg-[#0194F3] text-white mt-3 float-right font-semibold rounded-lg gap-x-3 items-center justify-center"
             >
-              {loadingCreateOrder_Ticket_UpdateFlight ? (
+              {isLoading ? (
                 <svg
                   className="w-5 h-5 mr-3 border-r-2 border-white rounded-full animate-spin"
                   viewBox="0 0 24 24"
@@ -507,7 +493,7 @@ function ThongTinHanhKhach({
       `${item}.${index}.hangVe`,
       passenger.quantityTicketsOfAdult[0] > 0 &&
         index + 1 <= passenger.quantityTicketsOfAdult[0]
-        ? "Vé thường"
+        ? "Vé phổ thông"
         : passenger.quantityTicketsOfAdult[1] > 0 &&
             index <
               passenger.quantityTicketsOfAdult[0] +
@@ -518,15 +504,15 @@ function ThongTinHanhKhach({
                 passenger.quantityTicketsOfChild[0] +
                   passenger.quantityTicketsOfAdult[0] +
                   passenger.quantityTicketsOfAdult[1]
-            ? "Vé thường"
+            ? "Vé phổ thông"
             : passenger.quantityTicketsOfChild[1] > 0
               ? "Vé thương gia"
-              : "",
+              : "Ngồi chung với người lớn",
       { shouldValidate: true }
     );
 
     setValue(
-      `${item}.${index}.ageType`,
+      `${item}.${index}.loaiTuoi`,
       passenger.quantityTicketsOfAdult[0] +
         passenger.quantityTicketsOfAdult[1] >
         0 &&
@@ -568,27 +554,30 @@ function ThongTinHanhKhach({
 
     setValue(
       `${item}.${index}.giaVe`,
-      watch(`${item}.${index}.ageType`).split(" thứ")[0] === "người lớn" &&
-        watch(`${item}.${index}.hangVe`) === "Vé thường"
+      watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] === "người lớn" &&
+        watch(`${item}.${index}.hangVe`) === "Vé phổ thông"
         ? new Intl.NumberFormat("vi-VN").format(
             handleReplacePriceAirport(airport.gia)
           ) + " VND"
-        : watch(`${item}.${index}.ageType`).split(" thứ")[0] === "người lớn" &&
+        : watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] === "người lớn" &&
             watch(`${item}.${index}.hangVe`) === "Vé thương gia"
           ? new Intl.NumberFormat("vi-VN").format(
-              handleReplacePriceAirport(airport.gia) * 1.5
+              Math.floor(handleReplacePriceAirport(airport.gia) * 1.5)
             ) + " VND"
-          : watch(`${item}.${index}.ageType`).split(" thứ")[0] === "trẻ em" &&
-              watch(`${item}.${index}.hangVe`) === "Vé thường"
+          : watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] === "trẻ em" &&
+              watch(`${item}.${index}.hangVe`) === "Vé phổ thông"
             ? new Intl.NumberFormat("vi-VN").format(
-                handleReplacePriceAirport(airport.gia) * 0.75
+                Math.floor(handleReplacePriceAirport(airport.gia) * 0.75)
               ) + " VND"
-            : watch(`${item}.${index}.ageType`).split(" thứ")[0] === "trẻ em" &&
+            : watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
+                  "trẻ em" &&
                 watch(`${item}.${index}.hangVe`) === "Vé thương gia"
               ? new Intl.NumberFormat("vi-VN").format(
-                  handleReplacePriceAirport(airport.gia) * 0.75 * 1.5
+                  Math.floor(
+                    handleReplacePriceAirport(airport.gia) * 0.75 * 1.5
+                  )
                 ) + " VND"
-              : watch(`${item}.${index}.ageType`).split(" thứ")[0] === "em bé"
+              : watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] === "em bé"
                 ? "0 VND"
                 : ""
     );
@@ -605,7 +594,7 @@ function ThongTinHanhKhach({
   return (
     <div className="bg-white shadow-lg rounded-md p-5 w-2/3">
       <h3 className="text-xl font-bold mb-6">
-        Thông tin vé cho {watch(`${item}.${index}.ageType`)}{" "}
+        Thông tin vé cho {watch(`${item}.${index}.loaiTuoi`)}{" "}
       </h3>
 
       <div className="flex gap-x-5 mb-6 text-base font-semibold">
@@ -654,7 +643,7 @@ function ThongTinHanhKhach({
                     (today.getMonth() === birthDate.getMonth() &&
                       today.getDate() >= birthDate.getDate());
                   if (
-                    watch(`${item}.${index}.ageType`).split(" thứ")[0] ===
+                    watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
                     "người lớn"
                   ) {
                     return (
@@ -664,7 +653,7 @@ function ThongTinHanhKhach({
                     );
                   }
                   if (
-                    watch(`${item}.${index}.ageType`).split(" thứ")[0] ===
+                    watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
                     "trẻ em"
                   ) {
                     return (
@@ -674,7 +663,7 @@ function ThongTinHanhKhach({
                     );
                   }
                   if (
-                    watch(`${item}.${index}.ageType`).split(" thứ")[0] ===
+                    watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
                     "em bé"
                   ) {
                     return (
@@ -698,7 +687,7 @@ function ThongTinHanhKhach({
 
       <div className="flex justify-between w-full">
         <button
-          className={`border-2 rounded-lg h-fit flex justify-center gap-x-4 w-[47%] p-2  mb-6 ${watch(`${item}.${index}.hangVe`) === "Vé thường" ? "border-[#0194F3] " : "border-gray-300 opacity-50 cursor-not-allowed"} `}
+          className={`border-2 rounded-lg h-fit flex justify-center gap-x-4 w-[47%] p-2  mb-6 ${watch(`${item}.${index}.hangVe`) === "Vé phổ thông" ? "border-[#0194F3] " : "border-gray-300 opacity-50 cursor-not-allowed"} `}
           type="button"
         >
           <img
@@ -707,14 +696,14 @@ function ThongTinHanhKhach({
             src="https://ik.imagekit.io/tvlk/image/imageResource/2022/12/20/1671519148670-d3ca3132946e435bd467ccc096730670.png"
           />
           <div className="flex flex-col">
-            <span className="text-base font-bold">Vé thường</span>
+            <span className="text-base font-bold">Vé phổ thông</span>
             <span className="text-lg font-semibold text-[#FF5E1F]">
-              {watch(`${item}.${index}.ageType`).split(" thứ")[0] ===
+              {watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
               "người lớn"
                 ? new Intl.NumberFormat("vi-VN").format(
                     handleReplacePriceAirport(airport.gia)
                   )
-                : watch(`${item}.${index}.ageType`).split(" thứ")[0] ===
+                : watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
                     "trẻ em"
                   ? new Intl.NumberFormat("vi-VN").format(
                       handleReplacePriceAirport(airport.gia) * 0.75
@@ -741,15 +730,17 @@ function ThongTinHanhKhach({
               Vé thương gia
             </span>
             <span className="text-lg font-semibold text-[#FF5E1F]">
-              {watch(`${item}.${index}.ageType`).split(" thứ")[0] ===
+              {watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
               "người lớn"
                 ? new Intl.NumberFormat("vi-VN").format(
-                    handleReplacePriceAirport(airport.gia) * 1.5
+                    Math.floor(handleReplacePriceAirport(airport.gia) * 1.5)
                   )
-                : watch(`${item}.${index}.ageType`).split(" thứ")[0] ===
+                : watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
                     "trẻ em"
                   ? new Intl.NumberFormat("vi-VN").format(
-                      handleReplacePriceAirport(airport.gia) * 0.75 * 1.5
+                      Math.floor(
+                        handleReplacePriceAirport(airport.gia) * 0.75 * 1.5
+                      )
                     )
                   : "0"}{" "}
               {" VND"}

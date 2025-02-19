@@ -10,14 +10,14 @@ import InterFaceLogin from "./InterFaceLogin.js";
 import { CONTEXT } from "../../Context/ContextGlobal.js";
 import { LoginSuccess } from "../Setting/StateLoginSucces.js";
 import { ToastContainer } from "react-toastify";
-import { authorizedAxiosInstance } from "../Utils/authAxios.js";
+import axios from "../Utils/authAxios.js";
 import notify from "../Noti/notify.js";
 import Loading from "../Loading.js";
-import InstructionSheet from "../Utils/InstructionSheet.js";
-import NotificationSocket, {
-  Notification,
-} from "../Noti/NotificationSocket.js";
-import { SocketContext } from "../../Context/SocketContext.js";
+import FlightShowCalendar from "../FlightShowCalendar.js";
+import FuncChatbot from "../Chatbot/FuncChatbot.js";
+import { InstructionSheet } from "../Utils/InstructionSheet.js";
+registerLocale("vi", vi);
+
 registerLocale("vi", vi);
 
 function ComponentHome() {
@@ -27,10 +27,12 @@ function ComponentHome() {
     setShowOptionSetting_LoginSuccess,
     handleShowAirports,
     bayMotChieu,
-    handleSearchRealFlight,
+    handleSearchFlight,
+    stateFlightShowCalendar,
+    isLoading,
+    setLoading,
+    isShowChatbot,
   } = useContext(CONTEXT);
-
-  const { showNotificationSocket } = useContext(SocketContext);
 
   const handleOffOption = () => {
     if (isShowOptionSetting_LoginSuccess) {
@@ -38,20 +40,17 @@ function ComponentHome() {
     }
   };
 
-  const [loadingTransaction, setLoadingTransaction] = useState(false);
   const handleTransactionStatus = async (orderId) => {
     try {
-      setLoadingTransaction(true);
-      const reqTransaction = await authorizedAxiosInstance.get(
-        `https://travrel-server.vercel.app/transaction-status/${orderId}`
-      );
+      setLoading(true);
+      const reqTransaction = await axios.get(`/transaction-status/${orderId}`);
       if (reqTransaction.status === 200) {
         if (
           reqTransaction.data.message === "Thành công." ||
           reqTransaction.data.resultCode === 0
         ) {
-          const reqChangeStatusOrder = await authorizedAxiosInstance.post(
-            `https://travrel-server.vercel.app/order/update_status`,
+          const reqChangeStatusOrder = await axios.post(
+            `/order/update_status`,
             {
               status: 200,
               orderID: orderId,
@@ -61,9 +60,9 @@ function ComponentHome() {
             localStorage.removeItem("payment");
             notify("Success", `Đơn hàng ${orderId} thanh toán thành công`);
             // Xóa tất cả các query parameters
-            // const url = window.location.origin + window.location.pathname;
+            const url = window.location.origin + window.location.pathname;
             // Thay đổi URL mà không tải lại trang
-            // window.history.replaceState(null, "", url);
+            window.history.replaceState(null, "", url);
             return;
           } else if (reqChangeStatusOrder.status === 404) {
             notify("Error", `Mã đơn hàng ${orderId} không tồn tại`);
@@ -81,7 +80,7 @@ function ComponentHome() {
       notify(`Error", "Có lỗi cập nhập trạng thái đơn hàng ${orderId}`);
       return;
     } finally {
-      setLoadingTransaction(false);
+      setLoading(false);
     }
   };
 
@@ -109,31 +108,31 @@ function ComponentHome() {
 
       notify(
         "Warn",
-        `Có đơn hàng đang chờ thanh toán, mã đơn hàng: ${payment.split(" ")[0].replace(/"/g, "")}`
+        `Có đơn hàng chưa thanh toán, mã đơn hàng: ${payment.split(" ")[0].replace(/"/g, "")}`
       );
     }
   }, []);
 
-  if (loadingTransaction) {
+  if (isLoading) {
     return <Loading />;
   }
+
   return (
     <>
       <ToastContainer />
 
       {isShowInterfaceLogin && <InterFaceLogin />}
-      {showNotificationSocket && <NotificationSocket />}
+      {stateFlightShowCalendar && <FlightShowCalendar />}
 
       <div onClick={handleOffOption} className="relative w-full h-full">
         <Header />
+        {isShowChatbot && <FuncChatbot />}
         {isShowOptionSetting_LoginSuccess && <LoginSuccess />}
         <div className="relative px-[50px] py-5 w-full h-screen bg-[url('https://ik.imagekit.io/tvlk/image/imageResource/2023/09/27/1695776209619-17a750c3f514f7a8cccde2d0976c902a.png?tr=q-75')] bg-center bg-no-repeat bg-cover">
           <div
             className="border-2 border-[#0194f3] min-h-[400px] rounded-md bg-[#4444] z-0 w-full"
             onClick={() => handleShowAirports([0, 1, 2], [false, false, false])}
           >
-            {/* <div className="w-0 h-0 border-l-[13px] border-r-[13px] border-b-[20px] border-transparent border-b-[#0194f3] absolute -top-0 left-[43%]"></div> */}
-
             <div className="flex items-center mb-10 text-lg font-semibold text-white uppercase w-fit gap-x-6">
               <p className="p-2 bg-[#0194f3] rounded-br-md">
                 <span className={`${!bayMotChieu ? "opacity-70" : ""}`}>
@@ -153,7 +152,11 @@ function ComponentHome() {
               div2_1="w-fit"
               div2="w-fit"
               textDatePicker="text-center"
-              handleSearchRealFlight={handleSearchRealFlight}
+              handleSearchFlight={handleSearchFlight}
+              styleLocationShowListAirline={{
+                left: "left-[412px]",
+                top: "top-[78px]",
+              }}
             />
           </div>
         </div>
@@ -170,7 +173,8 @@ function CSearchTicketFlight({
   div2_1,
   div2,
   textDatePicker,
-  handleSearchRealFlight,
+  handleSearchFlight,
+  styleLocationShowListAirline,
 }) {
   const {
     handleShowAirports,
@@ -262,6 +266,7 @@ function CSearchTicketFlight({
               AirportsVN={AirportsVN}
               AirportFrom={AirportFrom}
               AirportTo={AirportTo}
+              styleLocationShowListAirline={styleLocationShowListAirline}
             />
           </div>
 
@@ -594,7 +599,11 @@ function CSearchTicketFlight({
                 selected={Departure_Return_Date[1]}
                 onChange={(date) => handlePickDeparture_Return_Date(date, 1)}
                 dateFormat={"dd/MM/yyyy"}
-                minDate={Departure_Return_Date[1]}
+                minDate={
+                  new Date(
+                    Departure_Return_Date[0].getTime() + 2 * 24 * 60 * 60 * 1000
+                  )
+                }
                 maxDate={new Date("2030-01-01")}
                 locale={"vi"}
                 renderDayContents={(day, date) => {
@@ -618,7 +627,7 @@ function CSearchTicketFlight({
           className={`${invalid_AirportFrom_AirportTo[0].status || invalid_AirportFrom_AirportTo[1].status ? "bg-slate-500 cursor-not-allowed" : "bg-[#ff5e1f] cursor-pointer"} p-5 rounded-2xl border-4 border-[rgba(205,208,209,0.50)] w-fit h-fit`}
           type="button"
           onClick={() =>
-            handleSearchRealFlight({
+            handleSearchFlight({
               departure: AirportFrom,
               arrival: AirportTo,
               dateDeparture: Departure_Return_Date[0],
@@ -653,6 +662,7 @@ const FilterAirport = ({
   type,
   AirportFrom,
   AirportTo,
+  styleLocationShowListAirline,
 }) => {
   const removeAccents = (str) => {
     return str
@@ -663,7 +673,7 @@ const FilterAirport = ({
   return (
     <>
       <ul
-        className={`${showAirports[0] && filteredAirports.length !== 0 ? "min-h-0 max-h-44 overflow-y-auto" : "w-0 h-0 overflow-hidden p-0"} top-[78px] absolute z-10 ${type === "Origin" ? "left-0" : type === "Destination" ? "left-[335px]" : ""} font-semibold bg-white w-fit tracking-wider transition-all duration-1000`}
+        className={`${showAirports[0] && filteredAirports.length !== 0 ? "min-h-0 max-h-44 overflow-y-auto" : "w-0 h-0 overflow-hidden p-0"} ${styleLocationShowListAirline?.top} absolute z-10 ${type === "Origin" ? "left-0" : type === "Destination" ? styleLocationShowListAirline?.left : ""} font-semibold bg-white w-fit tracking-wider transition-all duration-1000`}
       >
         {filteredAirports
           .filter((item) => {

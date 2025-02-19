@@ -18,7 +18,7 @@ function QuanLyDonHang() {
 <<<<<<< HEAD:admin_/src/Components/QuanLyDonHang.js
           `https://adminverold.vercel.app/api/get/all_donhang`
 =======
-          `https://travrel-server.vercel.app/api/get/all_donhang`
+          `http://localhost:4001/api/get/all_donhang`
 >>>>>>> mainv2:admin/src/Components/QuanLyDonHang.js
         );
         if (!response.ok) {
@@ -42,7 +42,7 @@ function QuanLyDonHang() {
 <<<<<<< HEAD:admin_/src/Components/QuanLyDonHang.js
         `https://adminverold.vercel.app/api/get_all_tickets`
 =======
-        `https://travrel-server.vercel.app/api/get_all_tickets`
+        `http://localhost:4001/api/get_all_tickets`
 >>>>>>> mainv2:admin/src/Components/QuanLyDonHang.js
       );
       if (!response.ok) {
@@ -70,7 +70,7 @@ function QuanLyDonHang() {
 <<<<<<< HEAD:admin_/src/Components/QuanLyDonHang.js
           `https://adminverold.vercel.app/api/get_donhang/${stateDon}`
 =======
-          `https://travrel-server.vercel.app/api/get_donhang/${stateDon}`
+          `http://localhost:4001/api/get_donhang/${stateDon}`
 >>>>>>> mainv2:admin/src/Components/QuanLyDonHang.js
         );
         if (!response.ok) {

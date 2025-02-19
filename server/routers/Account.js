@@ -4,12 +4,13 @@ const _ = require("lodash");
 const ms = require("ms");
 const User = require("../models/User");
 const DonHang = require("../models/DonHang");
+const Flight = require("../models/Flight");
+const Ticket = require("../models/Ticket");
 const { mongoose } = require("mongoose");
 const { hashPass, comparePass } = require("../service/hashpass");
 const { checkBody, arrayError } = require("../service/checkBodyRegister");
-const { generateToken, verifyToken } = require("../service/authJWT");
-const { authMiddleware } = require("../service/authMiddlleware");
-const { sendNotification } = require("../Socket/connect-socket-client");
+const { signToken, verifyToken } = require("../service/JWT");
+const { authorization } = require("../middleware/authorization");
 
 const router = express.Router();
 
@@ -40,97 +41,92 @@ router.post("/register", checkBody("register"), async (req, res) => {
   }
 });
 
-router.post(
-  "/update",
-  authMiddleware,
-  checkBody("update"),
-  async (req, res) => {
-    try {
-      if (!arrayError(req, res).isEmpty()) {
-        return res.status(400).send(arrayError(req, res).array());
-      }
-
-      const accessTokenDecoded = req.jwtDecoded;
-      const _id = accessTokenDecoded._id;
-
-      const oldUser = await User.findById(_id);
-
-      if (!oldUser) {
-        return res.status(404).json({ message: "Id User not found" });
-      }
-
-      const { numberPhone, fullName, gender, birthday, password, newPassword } =
-        req.body;
-
-      const userBody = {
-        numberPhone: numberPhone,
-        fullName: fullName,
-        gender: gender,
-        birthday: birthday,
-      };
-
-      const userCurrent = {
-        numberPhone: oldUser.numberPhone,
-        fullName: oldUser.fullName,
-        gender: oldUser.gender,
-        birthday: oldUser.birthday,
-      };
-
-      const areEqual = _.isEqual(userBody, userCurrent);
-      if (areEqual && !password && newPassword === "false") {
-        return res.status(200).json({ message: "Update_NotChange Success" });
-      }
-
-      if (req.body.numberPhone) {
-        const existedNumberPhone = await User.findOne({
-          numberPhone: req.body.numberPhone,
-          _id: { $ne: _id }, // Trừ _id hiện tại
-        });
-        if (existedNumberPhone) {
-          return res.status(409).json({ message: "This phone already exists" });
-        }
-      }
-
-      let passNewHash;
-      if (password && newPassword !== "false") {
-        const checkPass = await comparePass(password, oldUser.password);
-        if (!checkPass) {
-          return res.status(400).json({ message: "Old password Fail" });
-        }
-        passNewHash = await hashPass(newPassword);
-      }
-
-      const newUser = await User.findOneAndUpdate(
-        { _id: _id },
-        {
-          numberPhone,
-          fullName,
-          gender,
-          birthday,
-          password: passNewHash || oldUser.password,
-        }
-      );
-
-      if (!newUser) {
-        return res.status(409).josn({ message: "Update Fail" });
-      }
-
-      return res.status(200).json({
-        message: "success",
-        data: {
-          numberPhone: newUser.numberPhone,
-          fullName: newUser.fullName,
-          gender: newUser.gender,
-          birthday: newUser.birthday,
-        },
-      });
-    } catch (error) {
-      return res.status(500).json({ message: "Internal Server Error" });
+router.post("/update", authorization, checkBody("update"), async (req, res) => {
+  try {
+    if (!arrayError(req, res).isEmpty()) {
+      return res.status(400).send(arrayError(req, res).array());
     }
-  }
-);
 
-router.get("/get_all", authMiddleware, async (req, res) => {
+    const accessTokenDecoded = req.jwtDecoded;
+    const _id = accessTokenDecoded._id;
+
+    const oldUser = await User.findById(_id);
+
+    if (!oldUser) {
+      return res.status(404).json({ message: "Id User not found" });
+    }
+
+    const { numberPhone, fullName, gender, birthday, password, newPassword } =
+      req.body;
+
+    const userBody = {
+      numberPhone: numberPhone,
+      fullName: fullName,
+      gender: gender,
+      birthday: birthday,
+    };
+
+    const userCurrent = {
+      numberPhone: oldUser.numberPhone,
+      fullName: oldUser.fullName,
+      gender: oldUser.gender,
+      birthday: oldUser.birthday,
+    };
+
+    const areEqual = _.isEqual(userBody, userCurrent);
+    if (areEqual && !password && newPassword === "false") {
+      return res.status(200).json({ message: "Update_NotChange Success" });
+    }
+
+    if (req.body.numberPhone) {
+      const existedNumberPhone = await User.findOne({
+        numberPhone: req.body.numberPhone,
+        _id: { $ne: _id }, // Trừ _id hiện tại
+      });
+      if (existedNumberPhone) {
+        return res.status(409).json({ message: "This phone already exists" });
+      }
+    }
+
+    let passNewHash;
+    if (password && newPassword !== "false") {
+      const checkPass = await comparePass(password, oldUser.password);
+      if (!checkPass) {
+        return res.status(400).json({ message: "Old password Fail" });
+      }
+      passNewHash = await hashPass(newPassword);
+    }
+
+    const newUser = await User.findOneAndUpdate(
+      { _id: _id },
+      {
+        numberPhone,
+        fullName,
+        gender,
+        birthday,
+        password: passNewHash || oldUser.password,
+      }
+    );
+
+    if (!newUser) {
+      return res.status(409).josn({ message: "Update Fail" });
+    }
+
+    return res.status(200).json({
+      message: "success",
+      data: {
+        numberPhone: newUser.numberPhone,
+        fullName: newUser.fullName,
+        gender: newUser.gender,
+        birthday: newUser.birthday,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+router.post("/status", authorization, async (req, res) => {
   try {
     const accessTokenDecoded = req.jwtDecoded;
     const _id = accessTokenDecoded._id;
@@ -139,16 +135,71 @@ router.get("/get_all", authMiddleware, async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const users = await User.find().sort({ createdAt: -1 });
+    const { status, id } = req.body;
+
+    const oldUser = await User.findById(id);
+
+    if (!oldUser) {
+      return res.status(404).json({ message: "Id User not found" });
+    }
+
+    let updateStatus;
+    if (status.toLowerCase() === "unlock" || status.toLowerCase() === "lock") {
+      updateStatus = await User.findOneAndUpdate(
+        { _id: id },
+        {
+          status:
+            status === "unlock" ? "Đang hoạt động" : "Tài khoản đã bị khóa",
+        }
+      );
+    } else {
+      return res.status(400).josn({ message: "Status không hợp lệ" });
+    }
+
+    if (!updateStatus) {
+      return res
+        .status(409)
+        .josn({ message: "Update status không thành công" });
+    }
+
+    return res.status(200).json({
+      message: "Update status thành công",
+      data: {
+        numberPhone: updateStatus.numberPhone,
+        fullName: updateStatus.fullName,
+        gender: updateStatus.gender,
+        birthday: updateStatus.birthday,
+        status: updateStatus.status,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+router.get("/get_all", authorization, async (req, res) => {
+  try {
+    const accessTokenDecoded = req.jwtDecoded;
+    const _id = accessTokenDecoded._id;
+
+    if (_id !== process.env.ID_ADMIN) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const users = await User.find()
+      .select("birthday fullName gender numberPhone status _id")
+      .sort({ createdAt: -1 });
+
     res.status(200).json(users);
   } catch (error) {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-router.get("/get", authMiddleware, async (req, res) => {
+router.get("/get", authorization, async (req, res) => {
   try {
     const accessTokenDecoded = req.jwtDecoded;
+
     const _id = accessTokenDecoded._id;
     if (!mongoose.Types.ObjectId.isValid(_id)) {
       return res.status(404).send(`Not found user`);
@@ -168,80 +219,138 @@ router.get("/get", authMiddleware, async (req, res) => {
   }
 });
 
-router.post("/auth-login",async (req, res) => {
+router.get("/search/with/flight", authorization, async (req, res) => {
+  try {
+    const accessTokenDecoded = req.jwtDecoded;
+    const _id = accessTokenDecoded._id;
+    if (_id !== process.env.ID_ADMIN) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const idF = req.query.idF;
+    const trangThai = req.query.trangThai;
+
+    if (!idF) {
+      return res.status(400).json({ error: "idF is required" });
+    }
+
+    const Tickets = await Ticket.find({ maChuyenBay: idF });
+
+    if (Tickets.length < 0) {
+      return res.status(404).json({ message: "Không tìm thấy vé nào." });
+    }
+
+    const idDHs = Tickets.map((ticket) => ticket.maDon);
+
+    const matchCondition = {
+      _id: { $in: idDHs.map((id) => new mongoose.Types.ObjectId(id)) },
+    };
+
+    if (trangThai && trangThai !== "undefined") {
+      matchCondition.trangThai = trangThai;
+    }
+
+    const orders = await DonHang.aggregate([
+      { $match: matchCondition },
+      {
+        $lookup: {
+          from: "tickets",
+          let: { orderId: { $toString: "$_id" } },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$maDon", "$$orderId"] } } },
+            {
+              $lookup: {
+                from: "flights",
+                let: { cbId: { $toObjectId: "$maChuyenBay" } },
+                pipeline: [{ $match: { $expr: { $eq: ["$_id", "$$cbId"] } } }],
+                as: "flights",
+              },
+            },
+            {
+              $unwind: {
+                path: "$flights",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+          ],
+          as: "tickets",
+        },
+      },
+      { $sort: { createdAt: -1 } },
+    ]);
+    return res.status(200).json(orders);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: {
+        name: error.name,
+        message: error.message || "Lỗi khi tìm đơn hàng",
+        stack: error.stack,
+      },
+    });
+  }
+});
+
+router.post("/login", async (req, res) => {
   try {
     const { numberPhone, password } = req.body;
 
     const user = await User.findOne({ numberPhone: numberPhone });
+
     if (!user) {
-      return res.status(404).json({ message: "Number not found" });
-    }
-    if (user.status === "Tài khoản đã bị khóa") {
-      return res.status(403).json({ message: "locked" });
-    }
-    const checkPass = await comparePass(password, user.password);
-    if (!checkPass) {
-      return res.status(400).json({ message: "Password invalid" });
+      return res
+        .status(404)
+        .json({ message: "So dien thoai chua duoc dang ki" });
     }
 
-    const payloadToken = {
+    if (user.status === "Tài khoản đã bị khóa") {
+      return res.status(403).json({ message: "Tai khoan da bi khoa" });
+    }
+
+    const checkPass = await comparePass(password, user.password);
+
+    if (!checkPass) {
+      return res.status(400).json({ message: "Mat khau sai" });
+    }
+
+    const payload = {
       _id: user._id,
     };
 
-    const accessToken = await generateToken(
-      payloadToken,
-      process.env.JWT_SECRET,
-      "1h"
-    );
-    const refreshToken = await generateToken(
-      payloadToken,
-      process.env.REFRESH_TOKEN,
-      "7d"
-    );
+    const accessToken = await signToken(payload, process.env.JWT_SECRET, "1d");
 
-    /*
-    Xử lý trường hợp trả về http only cookie cho phía trình duyệt
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    maxAge - thời gian sống của cookie
-    thời gian sống của cookie khác với thời gian sống của token
-*/
-    res.cookie("AcT", accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-      maxAge: ms("7d"),
-      path: "/",
-    });
-    res.cookie("RfT", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-      maxAge: ms("7d"),
-      path: "/",
-    });
-
-    /*Nếu dùng cookie lưu token thì không cần lưu ở localStorage và ngược lại */
-    // Return payload and tokens cho frontend và lưu vào localStorage
     res.status(200).json({
-      payloadToken,
+      payload,
       accessToken,
-      refreshToken,
     });
-
-    // Gửi thông báo cho client
-    sendNotification(numberPhone, message);
-  } catch (err) {
-    return res.status(500).json({ message: "Internal Server Error" });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Lỗi khi dang nhap",
+      error: {
+        name: error.name,
+        message: error.message || "Lỗi khi dang nhap",
+        stack: error.stack,
+      },
+    });
   }
 });
 
-router.post("/get_reservation-flights", authMiddleware, async (req, res) => {
+router.get("/reservation", authorization, async (req, res) => {
   try {
     const accessTokenDecoded = req.jwtDecoded;
     const _id = accessTokenDecoded._id;
 
     if (!mongoose.Types.ObjectId.isValid(_id)) {
-      return res.status(404).send(`Not found user`);
+      return res.status(404).json({
+        message: "Tài khoản không tồn tại",
+      });
+    }
+
+    let idUser = _id;
+    if (_id === process.env.ID_ADMIN) {
+      const { id } = req.query;
+
+      idUser = id || _id;
     }
 
     const page_size = 2;
@@ -253,13 +362,43 @@ router.post("/get_reservation-flights", authMiddleware, async (req, res) => {
     page = parseInt(page);
     let start = (page - 1) * page_size;
 
+    const { type } = req.query;
+
+    const decodedType = decodeURIComponent(type).split(" (")[0];
+
+    const matchCondition = { userId: idUser };
+    if (
+      decodedType !== "All" &&
+      decodedType !== null &&
+      decodedType !== undefined &&
+      decodedType !== "undefined"
+    ) {
+      matchCondition.trangThai = decodedType;
+    }
+
     const orders = await DonHang.aggregate([
-      { $match: { userId: _id } },
+      { $match: matchCondition },
       {
         $lookup: {
           from: "tickets",
           let: { orderId: { $toString: "$_id" } },
-          pipeline: [{ $match: { $expr: { $eq: ["$maDon", "$$orderId"] } } }],
+          pipeline: [
+            { $match: { $expr: { $eq: ["$maDon", "$$orderId"] } } },
+            {
+              $lookup: {
+                from: "flights",
+                let: { cbId: { $toObjectId: "$maChuyenBay" } },
+                pipeline: [{ $match: { $expr: { $eq: ["$_id", "$$cbId"] } } }],
+                as: "flights",
+              },
+            },
+            {
+              $unwind: {
+                path: "$flights",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+          ],
           as: "tickets",
         },
       },
@@ -268,16 +407,30 @@ router.post("/get_reservation-flights", authMiddleware, async (req, res) => {
       { $limit: page_size },
     ]);
 
-    const totalOrder = await DonHang.countDocuments({ userId: _id });
+    const countOrder = await DonHang.countDocuments(matchCondition);
+
+    if (orders.length <= 0) {
+      return res.status(200).json({
+        message: "Không tìm thấy đơn hàng nào",
+        orders: orders,
+      });
+    }
 
     return res.status(200).json({
-      totalOrder: Math.ceil(totalOrder / page_size),
+      message: "Tìm đơn hàng thành công",
+      page: page,
+      totalPage: Math.ceil(countOrder / page_size),
       orders: orders,
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", err: error });
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: {
+        name: error.name,
+        message: error.message || "Lỗi khi tìm đơn hàng",
+        stack: error.stack,
+      },
+    });
   }
 });
 
@@ -298,21 +451,7 @@ router.put("/refresh-token", async (req, res) => {
       _id: refreshTokenDecoded._id,
     };
 
-    // Tạo mới accessToken
-    const accessToken = await generateToken(
-      (payloadToken = payload),
-      (key = process.env.JWT_SECRET),
-      (exp = "1h")
-    );
-
-    // Res lại cookie accessToken mới cho cookie
-    res.cookie("AcT", accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-      maxAge: ms("7d"),
-      path: "/",
-    });
+    const accessToken = await signToken(payload, process.env.JWT_SECRET, "1h");
 
     return res.status(200).json({ accessToken });
   } catch (error) {

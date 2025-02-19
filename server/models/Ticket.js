@@ -10,7 +10,7 @@ const TicketSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    ageType: {
+    loaiTuoi: {
       type: String,
       required: true,
     },
@@ -25,38 +25,14 @@ const TicketSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    hangBay: {
-      type: String,
-      required: true,
-    },
-    loaiChuyenBay: {
-      type: String,
-      required: true,
-    },
-    diemBay: {
-      type: String,
-      required: true,
-    },
-    diemDen: {
-      type: String,
-      required: true,
-    },
-    gioBay: {
-      type: String,
-      required: true,
-    },
-    ngayBay: {
-      type: String,
-      required: true,
-    },
-    gioDen: {
+    maChuyenBay: {
       type: String,
       required: true,
     },
     trangThaiVe: {
       type: String,
       required: true,
-      default: "Đang chờ thanh toán",
+      default: "Chưa thanh toán",
     },
   },
   { timestamps: true }

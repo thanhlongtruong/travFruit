@@ -106,7 +106,7 @@ const ThemChuyenBay = ({ isVisible, onClose }) => {
 <<<<<<< HEAD:admin_/src/Components/ThemChuyenBay.js
         "https://adminverold.vercel.app/api/add_flight",
 =======
-        "https://travrel-server.vercel.app/api/add_flight",
+        "http://localhost:4001/api/add_flight",
 >>>>>>> mainv2:admin/src/Components/ThemChuyenBay.js
         {
           method: "POST",

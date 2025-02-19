@@ -1,14 +1,16 @@
 import { useContext, useEffect, useRef } from "react";
 import { CONTEXT } from "../Context/ContextGlobal";
 import { Link } from "react-router-dom";
-import { SocketContext } from "../Context/SocketContext";
 
 function Header() {
-  const { setShowInterfaceLogin, handleShowOptionSetting_LoginSuccess } =
-    useContext(CONTEXT);
-
-  const { showNotificationSocket, setShowNotificationSocket } =
-    useContext(SocketContext);
+  const {
+    setShowInterfaceLogin,
+    handleShowOptionSetting_LoginSuccess,
+    stateFlightShowCalendar,
+    setStateFlightShowCalendar,
+    setShowChatbot,
+    isShowChatbot,
+  } = useContext(CONTEXT);
 
   const url = window.location.href;
 
@@ -52,35 +54,25 @@ function Header() {
       {!url.includes("/XemDanhSachChuyenbBay/DatChoCuaToi") &&
       !url.includes("/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan") ? (
         <ul className="text-base font-semibold uppercase transition-all div-flex-adjust-justify-between w-fit gap-x-10 duration-0 text-[#444444]">
-          {/* {existUser && (
+          {existUser && (
             <>
               <li
                 className="relative flex items-center justify-center p-2 cursor-pointer"
+                onClick={() => setShowChatbot(!isShowChatbot)}
+              >
+                Trợ lý
+              </li>
+
+              <li
+                className="relative flex items-center justify-center p-2 cursor-pointer"
                 onClick={() =>
-                  setShowNotificationSocket(!showNotificationSocket)
+                  setStateFlightShowCalendar(!stateFlightShowCalendar)
                 }
               >
-                <span className="relative flex w-3 h-3 -right-3 -top-3">
-                  <span className="absolute inline-flex w-full h-full rounded-full opacity-75 animate-ping bg-sky-400"></span>
-                  <span className="relative inline-flex w-3 h-3 rounded-full bg-sky-500"></span>
-                </span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="absolute z-20 size-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5"
-                  />
-                </svg>
+                Xem lịch chuyến bay
               </li>
             </>
-          )} */}
+          )}
 
           {!existUser && (
             <>

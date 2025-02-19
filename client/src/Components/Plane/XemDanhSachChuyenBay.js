@@ -20,13 +20,12 @@ import { LoginSuccess } from "../Setting/StateLoginSucces.js";
 import InterFaceLogin from "../Home/InterFaceLogin.js";
 import { differenceInMinutes, format, parse } from "date-fns";
 import { vi } from "date-fns/locale";
-import Loading from "../Loading.js";
 import notify from "../Noti/notify.js";
 import { ToastContainer } from "react-toastify";
-import { authorizedAxiosInstance } from "../Utils/authAxios.js";
-import axios from "axios";
+import axios from "../Utils/authAxios.js";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { SearchTicketFlight } from "../Home/Home.js";
+import FlightShowCalendar from "../FlightShowCalendar.js";
 
 function XemDanhSachChuyenBay() {
   const {
@@ -61,229 +60,49 @@ function XemDanhSachChuyenBay() {
     setEditQuantityPassenger,
     setDeparture_Return_Date,
     convertStringToOjectDate,
-    handleSearchRealFlight,
+    handleSearchFlight,
     handleReplacePriceAirport,
     naviReload,
+    stateFlightShowCalendar,
+    isLoading,
+    setLoading,
   } = useContext(CONTEXT);
-
-  const flight = {
-    flightsData: {
-      departureFlights: [
-        {
-          hangBay: "VietJet",
-          soHieu: "VJ603",
-          loaiMayBay: "321",
-          gioBay: "09:25",
-          diemBay: "CXR",
-          gioDen: "10:30",
-          diemDen: "SGN",
-          gia: "430,000 VND",
-          ThuongGia: 16,
-          PhoThongDacBiet: 0,
-          PhoThong: 162,
-        },
-        {
-          hangBay: "VNA",
-          soHieu: "VN1341",
-          loaiMayBay: "321",
-          gioBay: "08:40",
-          diemBay: "CXR",
-          gioDen: "09:50",
-          diemDen: "SGN",
-          gia: "789,000 VND",
-          ThuongGia: 16,
-          PhoThongDacBiet: 0,
-          PhoThong: 162,
-        },
-        {
-          hangBay: "Pacific Airlines",
-          soHieu: "VN6151",
-          loaiMayBay: "321",
-          gioBay: "19:55",
-          diemBay: "CXR",
-          gioDen: "21:05",
-          diemDen: "SGN",
-          gia: "1,049,000 VND",
-          ThuongGia: 16,
-          PhoThongDacBiet: 0,
-          PhoThong: 162,
-        },
-        {
-          hangBay: "BamBoo",
-          soHieu: "QH1313",
-          loaiMayBay: "321",
-          gioBay: "18:40",
-          diemBay: "CXR",
-          gioDen: "19:45",
-          diemDen: "SGN",
-          gia: "1,215,000 VND",
-          ThuongGia: 16,
-          PhoThongDacBiet: 0,
-          PhoThong: 162,
-        },
-        {
-          hangBay: "VNA",
-          soHieu: "VN7351",
-          loaiMayBay: "321",
-          gioBay: "11:00",
-          diemBay: "CXR",
-          gioDen: "12:10",
-          diemDen: "SGN",
-          gia: "1,237,000 VND",
-          ThuongGia: 16,
-          PhoThongDacBiet: 0,
-          PhoThong: 162,
-        },
-        {
-          hangBay: "VNA",
-          soHieu: "VN1345",
-          loaiMayBay: "321",
-          gioBay: "13:50",
-          diemBay: "CXR",
-          gioDen: "15:00",
-          diemDen: "SGN",
-          gia: "1,237,000 VND",
-          ThuongGia: 16,
-          PhoThongDacBiet: 0,
-          PhoThong: 162,
-        },
-        {
-          hangBay: "VNA",
-          soHieu: "VN1347",
-          loaiMayBay: "321",
-          gioBay: "15:50",
-          diemBay: "CXR",
-          gioDen: "17:00",
-          diemDen: "SGN",
-          gia: "3,199,000 VND",
-          ThuongGia: 16,
-          PhoThongDacBiet: 0,
-          PhoThong: 162,
-        },
-      ],
-      returnFlights: [
-        {
-          hangBay: "VietJet",
-          soHieu: "VJ604",
-          loaiMayBay: "321",
-          gioBay: "07:45",
-          diemBay: "SGN",
-          gioDen: "08:55",
-          diemDen: "CXR",
-          gia: "90,000 VND",
-          ThuongGia: 16,
-          PhoThongDacBiet: 0,
-          PhoThong: 162,
-        },
-        {
-          hangBay: "BamBoo",
-          soHieu: "QH1312",
-          loaiMayBay: "321",
-          gioBay: "09:35",
-          diemBay: "SGN",
-          gioDen: "10:40",
-          diemDen: "CXR",
-          gia: "299,000 VND",
-          ThuongGia: 16,
-          PhoThongDacBiet: 0,
-          PhoThong: 162,
-        },
-        {
-          hangBay: "VNA",
-          soHieu: "VN1340",
-          loaiMayBay: "321",
-          gioBay: "06:50",
-          diemBay: "SGN",
-          gioDen: "08:00",
-          diemDen: "CXR",
-          gia: "489,000 VND",
-          ThuongGia: 16,
-          PhoThongDacBiet: 0,
-          PhoThong: 162,
-        },
-        {
-          hangBay: "Pacific Airlines",
-          soHieu: "VN6150",
-          loaiMayBay: "321",
-          gioBay: "18:05",
-          diemBay: "SGN",
-          gioDen: "19:15",
-          diemDen: "CXR",
-          gia: "489,000 VND",
-          ThuongGia: 16,
-          PhoThongDacBiet: 0,
-          PhoThong: 162,
-        },
-        {
-          hangBay: "VNA",
-          soHieu: "VN1346",
-          loaiMayBay: "321",
-          gioBay: "14:05",
-          diemBay: "SGN",
-          gioDen: "15:10",
-          diemDen: "CXR",
-          gia: "789,000 VND",
-          ThuongGia: 16,
-          PhoThongDacBiet: 0,
-          PhoThong: 162,
-        },
-        {
-          hangBay: "VNA",
-          soHieu: "VN1344",
-          loaiMayBay: "321",
-          gioBay: "12:05",
-          diemBay: "SGN",
-          gioDen: "13:10",
-          diemDen: "CXR",
-          gia: "1,049,000 VND",
-          ThuongGia: 16,
-          PhoThongDacBiet: 0,
-          PhoThong: 162,
-        },
-      ],
-    },
-  };
 
   const [searchParams] = useSearchParams();
 
-  const [isLoadingFlight, setIsLoadingFlight] = useState(false);
-  const [isFlights, setFlights] = useState(flight.flightsData);
+  const [isFlights, setFlights] = useState({
+    departureFlights: [],
+    returnFlights: [],
+  });
 
   const callAPIFlightRef = useRef();
 
-  const callAPIFlight = useCallback(
-    async ({
-      departureIATA,
-      arrivalIATA,
-      departureDate,
-      returnDate,
-      passengers,
-    }) => {
-      try {
-        setIsLoadingFlight(true);
-        // let urlOneWayTicket = `https://www.etrip4u.com/tim-ve-may-bay/${departureIATA}-${arrivalIATA}-${departureDate}-${passengers[0] + "" + passengers[1] + "" + passengers[2]}`;
-        // let urlRoundTripTicket = `https://www.etrip4u.com/tim-ve-may-bay/${departureIATA}-${arrivalIATA}-${departureDate}-${returnDate}-${passengers[0] + "" + passengers[1] + "" + passengers[2]}`;
-        // const createAxios = axios.create();
-        // createAxios.defaults.timeout = 60000;
-        // const response = await createAxios.post(
-        //   "https://travrel-server.vercel.app/api/realflight",
-        //   {
-        //     flightUrl: bayMotChieu ? urlOneWayTicket : urlRoundTripTicket,
-        //   }
-        // );
-        // if (response.status === 200) {
-        //   setFlights(response.data.flightsData);
-        // }
-      } catch (error) {
-        notify("Error", "Hệ thống gặp lỗi khi tìm chuyến bay");
-      } finally {
-        setIsLoadingFlight(false);
+  const APIFlight = useCallback(async () => {
+    try {
+      setPassengerChooseDeparture(false);
+      setLoading(true);
+      const createAxios = axios.create();
+      createAxios.defaults.timeout = 60000;
+      const response = await createAxios.get(`/flights/search?${searchParams}`);
+      if (response.status === 200) {
+        setFlights(response.data.flights);
+        notify("Success", response.data.message);
       }
-    },
-    [bayMotChieu]
-  );
+    } catch (error) {
+      if (error.response?.status === 404) {
+        notify("Warn", error.response?.data.message);
+        return;
+      }
+      notify(
+        "Error",
+        error.response?.data.message || "Lỗi khi tìm chuyến bay "
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [searchParams]);
 
-  callAPIFlightRef.current = callAPIFlight;
+  callAPIFlightRef.current = APIFlight;
 
   useEffect(() => {
     const departure = searchParams.get("departure");
@@ -298,10 +117,7 @@ function XemDanhSachChuyenBay() {
     setAirportFrom(departure);
     setAirportTo(arrival);
     setEditQuantityPassenger(passengers.split(",").map(Number));
-    setDeparture_Return_Date([
-      convertStringToOjectDate(departureDate),
-      convertStringToOjectDate(returnDate ?? departureDate),
-    ]);
+
     setBayMotChieu(oneWayTicket === "true");
 
     callAPIFlightRef.current({
@@ -343,8 +159,8 @@ function XemDanhSachChuyenBay() {
   const [roundtripTicket, setRoundtripTicket] = useState([]);
   const handleFilterOneWayTicket = useCallback(
     ({ kindFilter }) => {
-      const departureFlights = [...isFlights.departureFlights];
-      const returnFlights = [...isFlights.returnFlights];
+      const departureFlights = [...isFlights?.departureFlights];
+      const returnFlights = [...isFlights?.returnFlights];
 
       switch (kindFilter) {
         case "ReducePrice":
@@ -399,7 +215,6 @@ function XemDanhSachChuyenBay() {
     },
     [isFlights, handleReplacePriceAirport]
   );
-
   useEffect(() => {
     handleFilterOneWayTicket({ kindFilter: "All" });
   }, [handleFilterOneWayTicket]);
@@ -469,7 +284,7 @@ function XemDanhSachChuyenBay() {
 
     if (typeAirport === "departure" && passengerChooseDeparture) {
       const element = document.getElementById(
-        `${selectedDepartureAirport[0].soHieu}`
+        `${selectedDepartureAirport[0]._id}`
       );
       if (element) {
         element.scrollIntoView({ behavior: "smooth" });
@@ -501,6 +316,7 @@ function XemDanhSachChuyenBay() {
 
   return (
     <>
+      {stateFlightShowCalendar && <FlightShowCalendar />}
       {isShowInterfaceLogin && <InterFaceLogin />}
       {openAdjustQuantity && (
         <AdjustQuantity
@@ -511,28 +327,30 @@ function XemDanhSachChuyenBay() {
           setStateButtonSelectDepartureAirport={
             setStateButtonSelectDepartureAirport
           }
+          countDepartureFlights={isFlights.departureFlights.length}
+          countReturnFlights={isFlights.returnFlights.length}
         />
       )}
       <Header />
       <ToastContainer />
       <div
         onClick={() => setShowOptionSetting_LoginSuccess(false)}
-        className={`bg-slate-100 relative w-full h-full ${isLoadingFlight ? "animate-pulse select-none pointer-events-none" : ""}`}
+        className={`bg-slate-100 relative w-full h-full ${isLoading ? "animate-pulse select-none pointer-events-none" : ""}`}
       >
         {isShowOptionSetting_LoginSuccess && <LoginSuccess />}
 
         <div className="flex justify-around w-full h-full py-4">
           <div className="sticky z-0 top-[87px] h-[500px] flex flex-col items-center w-[32%] overflow-y-scroll px-3">
             <div className="w-full">
-              <div className="flex gap-x-5 mb-5">
+              <div className="flex mb-5 justify-between w-full h-fit flex-wrap gap-y-3">
                 <button
-                  className={`transition-colors duration-0 font-semibold text-lg cursor-pointer p-2 rounded-lg line-clamp-2 text-white ${parseInt(filterTakeoffTime[0].split(":")) !== 0 || parseInt(filterTakeoffTime[1].split(":")) !== 24 || parseInt(filterLandingTime[0].split(":")) !== 0 || parseInt(filterLandingTime[1].split(":")) !== 24 || filterPrice !== Number(500000).toLocaleString("vi-VN") ? "bg-[#0194f3] duration-500" : "bg-neutral-500 duration-500"}`}
+                  className={`h-fit w-[38%] transition-colors line-clamp-1 duration-0 font-semibold text-lg cursor-pointer p-2 rounded-lg text-white ${parseInt(filterTakeoffTime[0].split(":")) !== 0 || parseInt(filterTakeoffTime[1].split(":")) !== 24 || parseInt(filterLandingTime[0].split(":")) !== 0 || parseInt(filterLandingTime[1].split(":")) !== 24 || filterPrice !== Number(500000).toLocaleString("vi-VN") ? "bg-[#0194f3] duration-500" : "bg-neutral-500 duration-500"}`}
                   onClick={handleDefaultFilter}
                 >
                   Đặt lại lựa chọn
                 </button>
                 <button
-                  className="text-[#0194f3] font-semibold text-lg cursor-pointer bg-white p-2 rounded-lg line-clamp-2"
+                  className="text-[#0194f3] w-[57%] h-fit font-semibold text-lg cursor-pointer bg-white p-2 rounded-lg line-clamp-1 "
                   onClick={() => {
                     const element = document.getElementById("one-way-ticket");
                     if (element) {
@@ -544,7 +362,7 @@ function XemDanhSachChuyenBay() {
                 </button>
                 {!bayMotChieu && (
                   <button
-                    className="text-[#0194f3] font-semibold text-lg cursor-pointer bg-white p-2 rounded-lg line-clamp-2"
+                    className="w-[57%] float-right h-fit text-[#0194f3] font-semibold text-lg cursor-pointer bg-white p-2 rounded-lg line-clamp-2"
                     onClick={() => {
                       const element =
                         document.getElementById("round-trip-ticket");
@@ -579,33 +397,9 @@ function XemDanhSachChuyenBay() {
                 maxRange={24}
               />
 
-              {/* <div className="flex flex-col items-start mb-5">
-                <span className="text-lg font-semibold">Hãng máy bay</span>
-                <div className="flex gap-3">
-                  <input type="checkbox" id="airlineAll" />
-                  <label htmlFor="airlineAll">Tất cả</label>
-                </div>
-                <div className="flex gap-3">
-                  <input type="checkbox" id="airlineBamboo" />
-                  <label htmlFor="airlineBamboo">BamBoo Airways</label>
-                </div>
-                <div className="flex gap-3">
-                  <input type="checkbox" id="airlineVN" />
-                  <label htmlFor="airlineVN">Vietnam Airlines</label>
-                </div>
-                <div className="flex gap-3">
-                  <input type="checkbox" id="VietjetAir" />
-                  <label htmlFor="VietjetAir">VietjetAir</label>
-                </div>
-                <div className="flex gap-3">
-                  <input type="checkbox" id="PacificAirlines" />
-                  <label htmlFor="PacificAirlines">Pacific Airlines</label>
-                </div>
-              </div> */}
-
               <ComponentFilterRange
                 topic="Giá"
-                topic_value={`${filterPrice} đến 7.599.000/Hành khách`}
+                topic_value={`${filterPrice} đến 7.599.000 VND/Hành khách`}
                 value={Number(filterPrice.replace(/\./g, ""))}
                 handleChangeRange={(e) => {
                   const formatPrice = Number(e.target.value).toLocaleString(
@@ -712,7 +506,11 @@ function XemDanhSachChuyenBay() {
                   svgStroke="stroke-white size-6"
                   div2_1="w-[13%]"
                   div2="w-fit"
-                  handleSearchRealFlight={handleSearchRealFlight}
+                  handleSearchFlight={handleSearchFlight}
+                  styleLocationShowListAirline={{
+                    left: "left-[396px]",
+                    top: "top-[63px]",
+                  }}
                 />
               </div>
             </div>
@@ -786,16 +584,16 @@ function XemDanhSachChuyenBay() {
               </button>
             </div>
 
-            {isLoadingFlight ? (
+            {isLoading ? (
               <span className="text-lg font-semibold text-[#0194f3] p-5">
                 Đang tìm kiếm chuyến bay...
               </span>
             ) : (
               <ShowFlight
-                departureFlights={isFlights.departureFlights}
+                departureFlights={isFlights?.departureFlights}
                 oneWayTicket={oneWayTicket}
                 roundtripTicket={roundtripTicket}
-                returnFlights={isFlights.returnFlights}
+                returnFlights={isFlights?.returnFlights}
                 AirportFrom={AirportFrom}
                 AirportTo={AirportTo}
                 filterPrice={filterPrice}
@@ -851,11 +649,9 @@ function ShowFlight({
   const calculateDuration = (start, end) => {
     const startDate = parse(start, "HH:mm", new Date());
     const endDate = parse(end, "HH:mm", new Date());
-
     const diffInMinutes = differenceInMinutes(endDate, startDate);
     const hours = Math.floor(diffInMinutes / 60);
     const minutes = diffInMinutes % 60;
-
     return `${hours} giờ ${minutes} phút`;
   };
 
@@ -874,96 +670,43 @@ function ShowFlight({
     [expandedIndex]
   );
 
-  const [loadingGetOrderPeding, setLoadingGetOrderPeding] = useState(false);
-
-  // const funcGetOrderPeding_ = async () => {
-
-  //   try {
-  //     setLoadingGetOrderPeding(true);
-  //     const req = await authorizedAxiosInstance.post(
-  //       "https://travrel-server.vercel.app/order/get_pending",
-  //       {
-  //         orderID: storage.split(" ")[1],
-  //         flightID: storage.split(" ")[2],
-  //       }
-  //     );
-  //     if (req.status === 200) {
-  //       if (req.data.trangThai === "Đã hủy") {
-  //         notify("Warn", `Đơn hàng ${orderID} đã bị hủy, vui lòng thử lại.`);
-  //         localStorage.removeItem("payment");
-  //         return;
-  //       }
-
-  //       const timeEnd = convertDateToVNDate(req.data.end);
-
-  //       const data = {
-  //         timeEndPayOrder: timeEnd,
-  //         objectOrder: {
-  //           priceOrder: req.data.price,
-  //           dataTickets: req.data.tickets,
-  //           dataFlight: req.data.flight,
-  //           idDH: req.data.orderID,
-  //         },
-  //       };
-  //       naviReload("/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan", {
-  //         state: {
-  //           data: data,
-  //         },
-  //       });
-  //     }
-  //   } catch (error) {
-  //     if (error.response.status === 404) {
-  //       if (error.response.data.message === "Account") {
-  //         notify("Error", `Tài khoản không tồn tại`);
-  //         return;
-  //       }
-  //       if (error.response.data.message === "Order") {
-  //         notify("Warn", `Đơn hàng ${orderID} đã bị xóa`);
-  //         return;
-  //       }
-  //       if (error.response.data.message === "Tickets") {
-  //         notify("Warn", `Không có vé nào trong đơn hàng ${orderID}`);
-  //         return;
-  //       }
-  //       if (error.response.data.message === "Flight") {
-  //         notify("Warn", `Không có chuyến bay nào thuộc đơn hàng ${orderID}`);
-  //         return;
-  //       }
-  //     } else {
-  //       notify("Error", "Lỗi hệ thống");
-  //       return;
-  //     }
-  //   } finally {
-  //     setLoadingGetOrderPeding(false);
-  //   }
-  // };
-
-  if (loadingGetOrderPeding) {
-    return <Loading />;
-  }
   return (
     <div className="flex flex-col h-fit w-full mt-[2%]">
       {Array.from({ length: bayMotChieu ? 1 : 2 }).map((_, index) => {
-        return oneWayTicket.length === 0 ||
-          (roundtripTicket.length === 0 && !bayMotChieu) ? (
+        return index === 0 && oneWayTicket.length === 0 ? (
           <span
             id="one-way-ticket"
-            className="p-5 text-lg font-semibold border-b border-[#444] w-[80%] m-auto text-rose-500 text-center border-dashed"
+            className="p-5 text-lg font-semibold w-[80%] m-auto text-rose-500 text-center border-dashed"
           >
-            Không còn chuyến bay `${index === 0 ? " một chiều " : " khứ hồi "}`
-            nào trong ngày
+            Không còn chuyến bay một chiều nào trong ngày{" "}
+            {convertDateToVNDate(Departure_Return_Date[0]).split(" ")[1]}
           </span>
         ) : (
           <>
             {index === 1 && !bayMotChieu && (
-              <div
-                className="flex items-center justify-center mb-3 w-[80%] m-auto"
-                id="round-trip-ticket"
-              >
-                <div className="border-t border-gray-400 flex-grow border-dashed"></div>
-                <span className="mx-4 text-[#444] uppercase">khứ hồi</span>
-                <div className="border-t border-gray-400 flex-grow border-dashed"></div>
-              </div>
+              <>
+                <div
+                  className="flex items-center justify-center mb-3 w-[80%] m-auto"
+                  id="round-trip-ticket"
+                >
+                  <div className="border-t border-gray-400 flex-grow border-dashed"></div>
+                  <span className="mx-4 text-[#444] uppercase">khứ hồi</span>
+                  <div className="border-t border-gray-400 flex-grow border-dashed"></div>
+                </div>
+                {roundtripTicket.length === 0 && (
+                  <span
+                    id="one-way-ticket"
+                    className="p-5 text-lg font-semibold w-[80%] m-auto text-rose-500 text-center border-dashed"
+                  >
+                    Không có chuyến bay khứ nào nào trong ngày{" "}
+                    {
+                      convertDateToVNDate(Departure_Return_Date[1]).split(
+                        " "
+                      )[1]
+                    }
+                  </span>
+                )}
+              </>
             )}
             {(index === 0
               ? oneWayTicket
@@ -973,7 +716,7 @@ function ShowFlight({
             )
               .filter((item) => {
                 const itemPrice = parseInt(
-                  item.gia.replace(" VND", "").replace(/,/g, ""),
+                  item.gia.replace(" VND", "").replace(/\./g, ""),
                   10
                 );
                 const formatFilterPrice = filterPrice.replace(/\./g, "");
@@ -1008,15 +751,17 @@ function ShowFlight({
                     >
                       <ItemFlight
                         hangBay={flight.hangBay}
-                        soHieu={flight.soHieu}
-                        loaiMayBay={flight.loaiMayBay}
+                        loaiChuyenBay={flight.loaiChuyenBay}
                         gioBay={flight.gioBay}
                         diemBay={flight.diemBay}
+                        ngayBay={flight.ngayBay}
                         gioDen={flight.gioDen}
                         diemDen={flight.diemDen}
+                        ngayDen={flight.ngayDen}
                         gia={flight.gia}
-                        ThuongGia={flight.ThuongGia}
-                        PhoThong={flight.PhoThong}
+                        ThuongGia={flight.soGheThuongGia}
+                        PhoThong={flight.soGhePhoThong}
+                        trangThaiChuyenBay={flight.trangThaiChuyenBay}
                         //
                         thoigianBay={calculateDuration(
                           flight.gioBay,
@@ -1029,10 +774,9 @@ function ShowFlight({
                       (!stateButtonSelectDepartureAirport &&
                       selectedDepartureAirport &&
                       passengerChooseDeparture &&
-                      selectedDepartureAirport[0]?.soHieu === flight.soHieu ? (
+                      selectedDepartureAirport[0]?._id === flight._id ? (
                         <button
-                          id={flight.soHieu}
-                          key={flight.gioBay + "" + flight.gioDen}
+                          id={flight._id}
                           ref={(el) => (itemRefs.current[indexF] = el)}
                           className="bg-[#0194F3] right-3 absolute bottom-6 text-white w-fit h-fit px-[8px] py-[4px] md:px-[20px] md:py-[7px] mt-[30px] rounded-lg"
                           onMouseEnter={() =>
@@ -1053,10 +797,8 @@ function ShowFlight({
                       ) : stateButtonSelectDepartureAirport &&
                         selectedDepartureAirport &&
                         passengerChooseDeparture &&
-                        selectedDepartureAirport[0]?.soHieu ===
-                          flight.soHieu ? (
+                        selectedDepartureAirport[0]?._id === flight._id ? (
                         <button
-                          key={flight.gioBay + "" + flight.gioDen}
                           ref={(el) => (itemRefs.current[indexF] = el)}
                           className="bg-red-600 right-3 absolute bottom-6 text-white w-fit h-fit px-[8px] py-[4px] md:px-[20px] md:py-[7px] mt-[30px] rounded-lg"
                           onMouseLeave={() =>
@@ -1073,7 +815,6 @@ function ShowFlight({
                         </button>
                       ) : (
                         <button
-                          key={flight.gioBay + "" + flight.gioDen}
                           ref={(el) => (itemRefs.current[indexF] = el)}
                           className={`${passengerChooseDeparture ? "opacity-50" : ""} bg-[#0194F3] right-3 absolute bottom-6 text-white w-fit h-fit px-[8px] py-[4px] md:px-[20px] md:py-[7px] mt-[30px] rounded-lg`}
                           onClick={() => {
@@ -1091,7 +832,6 @@ function ShowFlight({
 
                     {index === 1 && !bayMotChieu && (
                       <button
-                        key={flight.gioBay + "" + flight.gioDen}
                         ref={(el) => (itemRefs.current[indexF] = el)}
                         className={`${!passengerChooseDeparture ? "bg-slate-600" : "bg-[#0194F3]"} right-3 absolute bottom-6 text-white w-fit h-fit px-[8px] py-[4px] md:px-[20px] md:py-[7px] mt-[30px] rounded-lg`}
                         onClick={() =>
@@ -1134,7 +874,7 @@ function Function_Loc_Flight(
   let isDate_Tre_to_Som_Fight = [];
 
   if (!isLoadingFlight) {
-    isFlights_Before_5DateDi = isFlights.filter((flight) => {
+    isFlights_Before_5DateDi = isFlights?.filter((flight) => {
       const flightDate = new Date(flight.dateDi);
       const khoang_cach_2_ngay = flightDate.getTime() - new Date().getTime();
       const date = Math.ceil(khoang_cach_2_ngay / (1000 * 60 * 60 * 24));

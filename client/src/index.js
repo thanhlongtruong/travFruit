@@ -8,6 +8,7 @@ import { OrderProvider } from "./Context/ContextGlobal";
 import { SocketProvider } from "./Context/SocketContext";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
+
 root.render(
   <React.StrictMode>
     <BrowserRouter>

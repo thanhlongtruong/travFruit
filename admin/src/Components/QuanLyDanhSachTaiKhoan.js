@@ -26,7 +26,7 @@ const QuanLyDanhSachTaiKhoan = () => {
 <<<<<<< HEAD:admin_/src/Components/QuanLyDanhSachTaiKhoan.js
         `https://adminverold.vercel.app/api/getUser`
 =======
-        `https://travrel-server.vercel.app/api/getUser`
+        `http://localhost:4001/api/getUser`
 >>>>>>> mainv2:admin/src/Components/QuanLyDanhSachTaiKhoan.js
       );
       if (!response.ok) {
@@ -53,7 +53,7 @@ const QuanLyDanhSachTaiKhoan = () => {
 <<<<<<< HEAD:admin_/src/Components/QuanLyDanhSachTaiKhoan.js
         `https://adminverold.vercel.app/api/update_user/${account._id}`,
 =======
-        `https://travrel-server.vercel.app/api/update_user/${account._id}`,
+        `http://localhost:4001/api/update_user/${account._id}`,
 >>>>>>> mainv2:admin/src/Components/QuanLyDanhSachTaiKhoan.js
         {
           method: "PATCH", // Phương thức HTTP
@@ -84,7 +84,7 @@ const QuanLyDanhSachTaiKhoan = () => {
 <<<<<<< HEAD:admin_/src/Components/QuanLyDanhSachTaiKhoan.js
           `https://adminverold.vercel.app/api/get_user/find_id_user/${stateAccount}`
 =======
-          `https://travrel-server.vercel.app/api/get_user/find_id_user/${stateAccount}`
+          `http://localhost:4001/api/get_user/find_id_user/${stateAccount}`
 >>>>>>> mainv2:admin/src/Components/QuanLyDanhSachTaiKhoan.js
         );
         if (!response.ok) {

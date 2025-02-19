@@ -29,6 +29,9 @@ const ItemFlight = (isFlight) => {
               <div className="w-[20px] md:w-[70px] h-fit border-[1px] border-[#687172]"></div>
               <div className="w-[12px] md:w-[24px] h-[12px] md:h-[24px] border-2 border-[#687172] bg-[#687172] rounded-full"></div>
             </div>
+            <p className="text-sm font-semibold text-[#687176]">
+              {isFlight.loaiChuyenBay}
+            </p>
           </div>
           <div className="flex flex-col items-center gap-y-1">
             <span className="text-sm font-semibold text-[#687176]">
@@ -84,11 +87,13 @@ const ItemFlight = (isFlight) => {
       {hideDetailItemFlight && (
         <ItemDetailFlight
           hangBay={isFlight.hangBay}
-          soHieu={isFlight.soHieu}
-          loaiMayBay={isFlight.loaiMayBay}
+          loaiChuyenBay={isFlight.loaiChuyenBay}
           ThuongGia={isFlight.ThuongGia}
           PhoThong={isFlight.PhoThong}
           thoigianBay={isFlight.thoigianBay}
+          ngayBay={isFlight.ngayBay}
+          ngayDen={isFlight.ngayDen}
+          trangThaiChuyenBay={isFlight.trangThaiChuyenBay}
         />
       )}
     </>

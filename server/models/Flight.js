@@ -1,51 +1,59 @@
 const mongoose = require("mongoose");
+const moment = require("moment");
 
-const FlightSchema = mongoose.Schema({
-  loaiChuyenBay: {
-    type: String,
-    required: true,
+const FlightSchema = mongoose.Schema(
+  {
+    loaiChuyenBay: {
+      type: String,
+      required: true,
+    },
+    diemBay: {
+      type: String,
+      required: true,
+    },
+    diemDen: {
+      type: String,
+      required: true,
+    },
+    gioBay: {
+      type: String,
+      required: true,
+    },
+    ngayBay: {
+      type: String,
+      required: true,
+    },
+    gioDen: {
+      type: String,
+      required: true,
+    },
+    ngayDen: {
+      type: String,
+      required: true,
+    },
+    hangBay: {
+      type: String,
+      required: true,
+    },
+    soGhePhoThong: {
+      type: Number,
+      required: true,
+    },
+    soGheThuongGia: {
+      type: Number,
+      required: true,
+    },
+    gia: {
+      type: String,
+      required: true,
+    },
+    trangThaiChuyenBay: {
+      type: String,
+      required: true,
+    },
+    expiredAt: { type: Date },
   },
-  diemBay: {
-    type: Number,
-    required: true,
-  },
-  diemDen: {
-    type: String,
-    required: true,
-  },
-  gioBay: {
-    type: String,
-    default: "Đang chờ thanh toán",
-  },
-  ngayBay: {
-    type: String,
-    default: "Đang chờ thanh toán",
-  },
-  hangBay: {
-    type: String,
-    default: "Đang chờ thanh toán",
-  },
-  soGhePhoThong: {
-    type: String,
-    default: "Đang chờ thanh toán",
-  },
-  soGheThuongGia: {
-    type: String,
-    default: "Đang chờ thanh toán",
-  },
-  gia: {
-    type: String,
-    default: "Đang chờ thanh toán",
-  },
-  trangThaiChuyenBay: {
-    type: String,
-    default: "Đang chờ thanh toán",
-  },
-  createdAt: { type: Date, default: Date.now },
-  expiredAt: { type: Date },
-});
+  { timestamps: true }
+);
 
-// TTL (Time to Life) index tự động xóa đơn hàng sau 1 giờ
-DonHangSchema.index({ expiredAt: 1 }, { expireAfterSeconds: 0 });
-
-module.exports = mongoose.model("Flight", DonHangSchema);
+module.exports = mongoose.model("Flight", FlightSchema);

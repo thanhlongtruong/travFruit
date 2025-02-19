@@ -15,7 +15,7 @@ const DonHangSchema = mongoose.Schema({
   },
   trangThai: {
     type: String,
-    default: "Đang chờ thanh toán",
+    default: "Chưa thanh toán",
   },
   createdAt: { type: Date, default: Date.now },
   expiredAt: { type: Date },

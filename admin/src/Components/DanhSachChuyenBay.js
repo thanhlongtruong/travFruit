@@ -46,7 +46,7 @@ const DanhSachChuyenBay = () => {
 <<<<<<< HEAD:admin_/src/Components/DanhSachChuyenBay.js
           "https://adminverold.vercel.app/api/get/all_flights"
 =======
-          "https://travrel-server.vercel.app/api/get/all_flights"
+          "http://localhost:4001/api/get/all_flights"
 >>>>>>> mainv2:admin/src/Components/DanhSachChuyenBay.js
         );
 
@@ -72,7 +72,7 @@ const DanhSachChuyenBay = () => {
 <<<<<<< HEAD:admin_/src/Components/DanhSachChuyenBay.js
           `https://adminverold.vercel.app/api/get/flight/${stateChuyenBay}`
 =======
-          `https://travrel-server.vercel.app/api/get/flight/${stateChuyenBay}`
+          `http://localhost:4001/api/get/flight/${stateChuyenBay}`
 >>>>>>> mainv2:admin/src/Components/DanhSachChuyenBay.js
         );
         if (!response.ok) {

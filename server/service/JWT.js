@@ -1,10 +1,9 @@
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 
-const generateToken = async (payloadToken, key, exp) => {
+const signToken = async (payload, key, exp) => {
   try {
-    return jwt.sign(payloadToken, key, {
-      algorithm: "HS256", //default
+    return jwt.sign(payload, key, {
       expiresIn: exp,
     });
   } catch (error) {
@@ -23,7 +22,6 @@ const verifyToken = async ({ token, secretSignature }) => {
 
   // console.log("Token received:", token);
 
-  
   // JWT.verify(token, process.env.JWT_SECRET, (err, payload) => {
   //   if (err) {
   //     console.log("JWT verification error:", err);
@@ -39,4 +37,4 @@ const verifyToken = async ({ token, secretSignature }) => {
   }
 };
 
-module.exports = { generateToken, verifyToken };
+module.exports = { signToken, verifyToken };

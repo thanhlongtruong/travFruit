@@ -1,37 +1,31 @@
-import React, { memo, useEffect, useState } from "react";
+import React, { memo, useContext, useEffect, useState } from "react";
 import Header from "./Header";
 import InfoTicket from "./Plane/InfoTicket";
 import Loading from "./Loading";
 import { useLocation } from "react-router-dom";
-import axios from "axios";
+import axios from "../Components/Utils/authAxios.js";
 import notify from "./Noti/notify";
 import { ToastContainer } from "react-toastify";
+import { CONTEXT } from "../Context/ContextGlobal.js";
 
 function TrangThanhToan() {
+  const { isLoading, setLoading } = useContext(CONTEXT);
   const location = useLocation();
   const data = location.state;
-
   const [notiMinues, setNotiMinues] = useState(true);
-<<<<<<< HEAD
-  const { urlAPI, checkPaymentStatus, userObj } = useContext(CONTEXT);
-//
-  if (!userObj) {
-    window.location.href = `/`;
-  }
 
-  const getObjectTime_local = localStorage.getItem("objectCreateOrder");
-  const getObjectTime_data = JSON.parse(getObjectTime_local);
-
-=======
   const payment = localStorage.getItem("payment");
->>>>>>> mainv2
+
   useEffect(() => {
-    if (!data || !payment) {
+    if (
+      !data ||
+      !payment ||
+      payment.split(" ")[2]?.replace(/"/g, "") === "Pending"
+    ) {
       window.location.href = `/`;
     }
-  });
+  }, []);
 
-  const [isLoading, stateLoading] = useState(false);
   const [isCheckPickPay, setCheckPickPay] = useState(false);
 
   function formatNumber(num) {
@@ -45,25 +39,34 @@ function TrangThanhToan() {
   };
 
   const handleReqPayMoMo = async () => {
-    stateLoading(true);
+    setLoading(true);
     const payload = {
       amount: formatNumber(data.data.objectOrder.priceOrder.split(" ")[0]),
       orderId: data.data.objectOrder.idDH,
     };
 
     try {
-      const response = await axios.post(
-        `https://travrel-server.vercel.app/payment-momo`,
-        payload
-      );
+      const response = await axios.post(`/payment-momo`, payload);
       if (response.status === 200) {
-        window.location.href = response.data.payUrl;
+        const respont_payment = await axios.post("/payment/update/payurl", {
+          orderId: data.data.objectOrder.idDH,
+          payUrl: response.data.payUrl,
+        });
+        if (respont_payment.status === 200) {
+          localStorage.setItem(
+            "payment",
+            JSON.stringify(
+              `${data.data.objectOrder.idDH} ${data.data.objectOrder.expiredAt} Pending`
+            )
+          );
+          window.location.href = response.data.payUrl;
+        }
       }
     } catch (error) {
       notify("Error", "Có lỗi khi thanh toán, vui lòng thử lại");
       return;
     } finally {
-      stateLoading(false);
+      setLoading(false);
     }
   };
 
@@ -92,41 +95,14 @@ function TrangThanhToan() {
                   <h1 className="text-xl font-bold ">
                     Bạn muốn thanh toán thế nào ?
                   </h1>
-                  <img
-                    className="h-[23px]"
-                    src="https://ik.imagekit.io/tvlk/image/imageResource/2023/12/12/1702364449716-d0093df3166e4ba84c56ad9dd75afcda.webp?tr=h-23,q-75"
-                    alt=""
-                  />
                 </div>
 
-                <div
-                  className={`flex items-center cursor-pointer gap-x-3 p-4 ${isCheckPickPay ? "text-black" : "text-[#b8b2b2]"}`}
+                <button
+                  className={`w-full text-lg text-center font-semibold cursor-pointer p-4 ${isCheckPickPay ? "text-gray-700" : "text-[#b8b2b2]"}`}
                   onClick={handleCheckPickPay}
                 >
-                  {isCheckPickPay ? (
-                    <input
-                      id="Thanh toán bằng PressPay"
-                      type="radio"
-                      disabled={false}
-                      className="size-5"
-                    />
-                  ) : (
-                    <input
-                      id="Thanh toán bằng PressPay"
-                      type="radio"
-                      disabled
-                      className="size-5"
-                    />
-                  )}
-
-                  <label
-                    htmlFor="Thanh toán bằng PressPay"
-                    className="text-lg font-semibold"
-                    onClick={handleCheckPickPay}
-                  >
-                    Thanh toán bằng MoMo
-                  </label>
-                </div>
+                  Thanh toán bằng MoMo
+                </button>
               </div>
 
               <div className="flex-col p-4 mt-8 bg-white rounded-xl">
@@ -140,26 +116,15 @@ function TrangThanhToan() {
                 </div>
 
                 {/* //! thanh toán */}
-                {isCheckPickPay && (
-                  <div
-                    className={`flex  p-3 ${isCheckPickPay ? "bg-orange-500 hover:bg-orange-400" : "bg-[#b8b2b2]"} select-none rounded-md mt-4 items-center justify-center cursor-pointer`}
-                    onClick={handleReqPayMoMo}
-                  >
-                    <h1 className={`font-bold text-white text-xl`}>
-                      Thanh toán bằng MoMo
-                    </h1>
-                  </div>
-                )}
 
-                {!isCheckPickPay && (
-                  <div
-                    className={`flex  p-3 ${isCheckPickPay ? "bg-orange-500 hover:bg-orange-400" : "bg-[#b8b2b2]"} select-none rounded-md mt-4 items-center justify-center cursor-not-allowed`}
-                  >
-                    <h1 className={`font-bold text-white text-xl`}>
-                      Thanh toán bằng MoMo
-                    </h1>
-                  </div>
-                )}
+                <div
+                  className={`flex  p-3 ${isCheckPickPay ? "bg-orange-500 hover:bg-orange-400 cursor-pointer" : "bg-[#b8b2b2] select-none  cursor-not-allowed"}  rounded-md mt-4 items-center justify-center `}
+                  onClick={isCheckPickPay ? handleReqPayMoMo : undefined}
+                >
+                  <h1 className={`font-bold text-white text-xl`}>
+                    Thanh toán bằng MoMo
+                  </h1>
+                </div>
               </div>
             </div>
 
@@ -170,8 +135,77 @@ function TrangThanhToan() {
                 (_, i) => (
                   <InfoTicket
                     key={i}
-                    airport={data.data.objectOrder.dataTickets[i]}
-                    // ticket={data.data.objectOrder.dataTickets[i]}
+                    airport={{
+                      loaiChuyenBay:
+                        data.data.airportDeparture._id ===
+                        data.data.objectOrder.dataTickets[i].maChuyenBay
+                          ? data.data.airportDeparture.loaiChuyenBay
+                          : data.data.airportReturn?._id ===
+                              data.data.objectOrder.dataTickets[i].maChuyenBay
+                            ? data.data.airportReturn.loaiChuyenBay
+                            : "",
+                      diemBay:
+                        data.data.airportDeparture._id ===
+                        data.data.objectOrder.dataTickets[i].maChuyenBay
+                          ? data.data.airportDeparture.diemBay
+                          : data.data.airportReturn?._id ===
+                              data.data.objectOrder.dataTickets[i].maChuyenBay
+                            ? data.data.airportReturn.diemBay
+                            : "",
+                      diemDen:
+                        data.data.airportDeparture._id ===
+                        data.data.objectOrder.dataTickets[i].maChuyenBay
+                          ? data.data.airportDeparture.diemDen
+                          : data.data.airportReturn?._id ===
+                              data.data.objectOrder.dataTickets[i].maChuyenBay
+                            ? data.data.airportReturn.diemDen
+                            : "",
+                      gioBay:
+                        data.data.airportDeparture._id ===
+                        data.data.objectOrder.dataTickets[i].maChuyenBay
+                          ? data.data.airportDeparture.gioBay
+                          : data.data.airportReturn?._id ===
+                              data.data.objectOrder.dataTickets[i].maChuyenBay
+                            ? data.data.airportReturn.gioBay
+                            : "",
+                      gioDen:
+                        data.data.airportDeparture._id ===
+                        data.data.objectOrder.dataTickets[i].maChuyenBay
+                          ? data.data.airportDeparture.gioDen
+                          : data.data.airportReturn?._id ===
+                              data.data.objectOrder.dataTickets[i].maChuyenBay
+                            ? data.data.airportReturn.gioDen
+                            : "",
+                      ngayBay:
+                        data.data.airportDeparture._id ===
+                        data.data.objectOrder.dataTickets[i].maChuyenBay
+                          ? data.data.airportDeparture.ngayBay
+                          : data.data.airportReturn?._id ===
+                              data.data.objectOrder.dataTickets[i].maChuyenBay
+                            ? data.data.airportReturn.ngayBay
+                            : "",
+                      ngayDen:
+                        data.data.airportDeparture._id ===
+                        data.data.objectOrder.dataTickets[i].maChuyenBay
+                          ? data.data.airportDeparture.ngayDen
+                          : data.data.airportReturn?._id ===
+                              data.data.objectOrder.dataTickets[i].maChuyenBay
+                            ? data.data.airportReturn.ngayDen
+                            : "",
+                      hangBay:
+                        data.data.airportDeparture._id ===
+                        data.data.objectOrder.dataTickets[i].maChuyenBay
+                          ? data.data.airportDeparture.hangBay
+                          : data.data.airportReturn?._id ===
+                              data.data.objectOrder.dataTickets[i].maChuyenBay
+                            ? data.data.airportReturn.hangBay
+                            : "",
+                      loaiTuoi: data.data.objectOrder.dataTickets[i].loaiTuoi,
+                      hangVe: data.data.objectOrder.dataTickets[i].hangVe,
+                      giaVe: data.data.objectOrder.dataTickets[i].giaVe,
+                      Ten: data.data.objectOrder.dataTickets[i].Ten,
+                      ngaySinh: data.data.objectOrder.dataTickets[i].ngaySinh,
+                    }}
                   />
                 )
               )}
