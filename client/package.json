@@ -44,7 +44,8 @@
     "start": "set PORT=3001 && react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "eslint": "eslint . --ext .js,.jsx"
   },
   "eslintConfig": {
     "extends": [
@@ -66,6 +67,8 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-optional-chaining-assign": "^7.25.9",
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "eslint": "^8.57.1",
     "gh-pages": "^6.1.1",
     "prettier": "^3.3.2",
     "prettier-plugin-tailwindcss": "^0.6.5",
