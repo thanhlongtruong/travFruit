@@ -10,7 +10,12 @@ function CatchErrorAPI({ error }) {
       <p>response: {error?.response?.config?.url}</p>
       <div>
         <p>message: {error?.response?.data?.message}</p>
-        <p>error: {error?.response?.data?.error?.message || "Không có error"}</p>
+        <p>
+          error:{" "}
+          {error?.response?.data?.error?.message ||
+            error?.response?.data?.error ||
+            "Không có error"}
+        </p>
       </div>
     </div>
   );

@@ -2,8 +2,6 @@ import axios from "../axiosInstance.js";
 
 export const getAll = async () => {
   const res = await axios.get("/user/get_all");
-  console.log(res);
-
   return res;
 };
 export const Login = async (data) => {
@@ -11,6 +9,9 @@ export const Login = async (data) => {
     numberPhone: data.phoneLogin,
     password: data.passwordLogin,
   });
+};
+export const Logout = async () => {
+  return await axios.delete(`/user/logout`);
 };
 export const Get = async () => {
   return await axios.get("/user/get");

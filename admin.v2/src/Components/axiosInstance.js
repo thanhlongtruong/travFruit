@@ -9,6 +9,7 @@ const instance = axios.create({
 });
 
 const EXCLUDED_ENDPOINTS = ["/user/login"];
+const ENDPOINT_LOGOUT = "/user/logout";
 
 instance.interceptors.request.use(
   function (config) {
