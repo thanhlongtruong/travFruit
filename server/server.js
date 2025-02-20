@@ -30,6 +30,10 @@ CORS sẽ cho phép nhận cookie từ request*/
 const allowedOrigins = [
   "https://travfruit.netlify.app/",
   "https://travfruit.netlify.app",
+  "https://travfruit.vercel.app/",
+  "https://travfruit.vercel.app",
+  "https://travfruitadmin.vercel.app/",
+  "https://travfruitadmin.vercel.app",
   "https://travfruitadmin.netlify.app/",
   "https://travfruitadmin.netlify.app",
   "http://localhost:3001/",
