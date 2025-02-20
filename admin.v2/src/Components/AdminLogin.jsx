@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
+import { Get, Login } from "./API/Account";
+import { useMutation } from "@tanstack/react-query";
+import { bouncy } from "ldrs";
+import CatchErrorAPI from "./CatchErrorAPI";
 
 function AdminLogin() {
-const naviLogin = useNavigate();
+  bouncy.register();
+  const naviLogin = useNavigate();
 
   const {
     register,
@@ -21,29 +26,59 @@ const naviLogin = useNavigate();
     }
   };
 
-  // func login
-  const handleLogin = (data) => {
-    const validValues = "1234567890";
-    if (validValues !== data.passwordLogin) {
-      setError("passwordLogin", {
-        type: "manual",
-        message: "Mật khẩu không đúng",
-      });
-    } else {
+  const mutationLogin = useMutation({
+    mutationFn: Login, // Truyền function, không gọi trực tiếp
+    onSuccess: (response) => {
+      const { accessToken } = response.data;
+      localStorage.setItem("accessToken", accessToken);
+      mutationGet.mutate();
+    },
+    onError: (error) => {
+      if (error.response) {
+        if (error.response.status === 404) {
+          setError("phoneLogin", {
+            message: "Số điện thoại này chưa đăng kí",
+          });
+        }
+        if (error.response.status === 403) {
+          setError("phoneLogin", {
+            message: "Số điện thoại này đã bị khóa",
+          });
+        }
+        if (error.response.status === 400) {
+          setError("passwordLogin", {
+            message: "Sai mật khẩu",
+          });
+        }
+      } else {
+        setError("InternalServerError", {
+          message: "ServerError",
+        });
+      }
+    },
+  });
+
+  const mutationGet = useMutation({
+    mutationFn: Get,
+    onSuccess: (response) => {
       naviLogin("/home");
-    }
+    },
+    onError: (error) => {
+      console.error("Lỗi lấy thông tin user:", error);
+    },
+  });
+
+  const handleLogin = (data) => {
+    mutationLogin.mutate(data);
   };
 
   return (
-    <div
-      className={`fixed items-center h-full overflow-hidden z-50 flex justify-center w-full bg-white`}
-    >
-      <div className="w-full h-full cursor-pointer"></div>
+    <div className="relative px-[50px] py-5 w-full h-screen bg-[url('https://ik.imagekit.io/tvlk/image/imageResource/2023/09/27/1695776209619-17a750c3f514f7a8cccde2d0976c902a.png')] bg-center bg-no-repeat bg-cover overflow-hidden">
       <div
-        className={`absolute z-40 h-fit w-[450px] m-auto
-         rounded-lg bg-[#444] p-4`}
+        className={`absolute z-40 h-full w-[450px] right-4
+         rounded-lg bg-transparent p-4`}
       >
-        <div className="flex items-center w-full text-2xl font-medium mb-7 div-flex-adjust-justify-between h-14 text-slate-700">
+        <div className="flex items-center w-full text-2xl font-medium mb-20 div-flex-adjust-justify-between h-14 text-slate-700">
           <div className={"Typewriter"}>
             <p>Đăng nhập</p>
           </div>
@@ -68,13 +103,6 @@ const naviLogin = useNavigate();
                     value: 10,
                     message: "Phải đủ 10 số",
                   },
-                  validate: (value) => {
-                    const validValues = "0000000000";
-                    return (
-                      validValues.includes(value.toLowerCase()) ||
-                      "Số điện thoại không đúng"
-                    );
-                  },
                 })}
               />
               <span className={`spanTag`}>
@@ -89,6 +117,7 @@ const naviLogin = useNavigate();
                 }`}
                 type="password"
                 required
+                autoFocus
                 {...register("passwordLogin", {
                   onChange: () => setIsInputting(true),
                   required: "Your password",
@@ -109,11 +138,19 @@ const naviLogin = useNavigate();
             </div>
           </>
 
-          <div className="boxLogRes">
+          <div className="boxLogRes mb-4">
             <button className={`styleLogin`} type="submit">
-              <p className="flex justify-center uppercase">Đăng nhập</p>
+              <p className="flex justify-center uppercase">
+                {mutationLogin.isPending || mutationGet.isPending ? (
+                  <l-bouncy size="30" speed="1.75" color="white" />
+                ) : (
+                  "Đăng nhập"
+                )}
+              </p>
             </button>
           </div>
+
+          {mutationGet.isError && <CatchErrorAPI error={mutationGet.error} />}
         </form>
       </div>
     </div>
