@@ -318,10 +318,15 @@ router.post("/login", async (req, res) => {
     };
 
     const accessToken = await signToken(payload, process.env.JWT_SECRET, "1d");
+    const refreshToken = await signToken(
+      payload,
+      process.env.REFRESH_TOKEN,
+      "7d"
+    );
 
     res.status(200).json({
-      payload,
       accessToken,
+      refreshToken,
     });
   } catch (error) {
     return res.status(500).json({

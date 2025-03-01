@@ -6,6 +6,8 @@ const { route } = require("./Account.js");
 const { authorization } = require("../middleware/authorization");
 const { mongoose } = require("mongoose");
 const _ = require("lodash");
+const Payment = require("../models/Payment.js");
+const Ticket = require("../models/Ticket.js");
 
 const AirportVN = [
   {
@@ -303,11 +305,11 @@ router.get("/create/three-months", async (req, res) => {
           "DD-MM-YYYY"
         );
 
-       const returnArrivalDay = returnArrivalTime.isBefore(
-         formattedReturnArrivalDate
-       )
-         ? returnArrivalTime.add(1, "days").format("DD-MM-YYYY")
-         : returnArrivalDate;
+        const returnArrivalDay = returnArrivalTime.isBefore(
+          formattedReturnArrivalDate
+        )
+          ? returnArrivalTime.add(1, "days").format("DD-MM-YYYY")
+          : returnArrivalDate;
 
         const returnFlight = {
           loaiChuyenBay: "Chuyến bay khứ hồi",
@@ -418,46 +420,16 @@ router.get("/get_all", authorization, async (req, res) => {
   }
 });
 
-router.get("/search", async (req, res) => {
+router.get("/search", authorization, async (req, res) => {
   try {
-    const {
-      departure,
-      arrival,
-      departureDate,
-      oneWayTicket,
-      returnDate,
-      passengers,
-      id,
-    } = req.query;
+    const accessTokenDecoded = req.jwtDecoded;
+    const _id = accessTokenDecoded._id;
+
+    const { departure, arrival, departureDate, oneWayTicket, returnDate, id } =
+      req.query;
 
     const decodedDeparture = decodeURIComponent(departure).split(" (")[0];
     const decodedArrival = decodeURIComponent(arrival).split(" (")[0];
-
-    let departureFlights = [];
-    let returnFlights = [];
-    if (oneWayTicket === "true") {
-      departureFlights = await Flight.find({
-        diemBay: decodedDeparture,
-        diemDen: decodedArrival,
-        ngayBay: departureDate,
-        loaiChuyenBay: "Chuyến bay đi",
-      });
-    }
-    if (oneWayTicket === "false") {
-      departureFlights = await Flight.find({
-        diemBay: decodedDeparture,
-        diemDen: decodedArrival,
-        ngayBay: departureDate,
-        loaiChuyenBay: "Chuyến bay đi",
-      });
-
-      returnFlights = await Flight.find({
-        diemBay: decodedArrival,
-        diemDen: decodedDeparture,
-        ngayBay: returnDate,
-        loaiChuyenBay: "Chuyến bay khứ hồi",
-      });
-    }
 
     if (id) {
       const flight = await Flight.aggregate([
@@ -474,26 +446,210 @@ router.get("/search", async (req, res) => {
       return res.status(200).json({ flight });
     }
 
-    const flights = {
-      departureFlights,
-      returnFlights,
-    };
+    const flightQueries = [
+      Flight.find({
+        diemBay: decodedDeparture,
+        diemDen: decodedArrival,
+        ngayBay: departureDate,
+        loaiChuyenBay: "Chuyến bay đi",
+      }),
+    ];
 
-    if (departureFlights.length <= 0 && returnFlights.length <= 0) {
-      return res
-        .status(404)
-        .json({ message: "Không tìm thấy chuyến bay nào", flights });
+    if (oneWayTicket === "false") {
+      flightQueries.push(
+        Flight.find({
+          diemBay: decodedArrival,
+          diemDen: decodedDeparture,
+          ngayBay: returnDate,
+          loaiChuyenBay: "Chuyến bay khứ hồi",
+        })
+      );
     }
 
-    res.status(200).json({
+    let [departureFlights, returnFlights = []] = await Promise.all(
+      flightQueries
+    );
+
+    if (!departureFlights.length && !returnFlights.length) {
+      return res.status(404).json({
+        message: "Không tìm thấy chuyến bay nào",
+        flights: { departureFlights, returnFlights },
+      });
+    }
+
+    const departureFlights_id = departureFlights.map((flight) =>
+      flight._id.toString()
+    );
+
+    const findPayments = await Payment.find({
+      cbId: { $in: departureFlights_id },
+    });
+
+    const returnFlights_id =
+      findPayments.length > 0
+        ? findPayments.map((payment) => payment.cbIdRe)
+        : [];
+
+    const findPaymentsRe = await Payment.find({
+      cbIdRe: { $in: returnFlights_id },
+    });
+
+    const findTickets = await Ticket.find({
+      maChuyenBay: { $in: findPayments.map((payment) => payment.cbId) },
+      maDon: { $in: findPayments.map((payment) => payment.orderId) },
+    });
+
+    const findTicketsRe =
+      findPaymentsRe.length > 0
+        ? await Ticket.find({
+            maChuyenBay: { $in: findPayments.map((payment) => payment.cbIdRe) },
+            maDon: { $in: findPaymentsRe.map((payment) => payment.orderId) },
+          })
+        : [];
+
+    const countTicketDepar = findPayments.map((payment) => {
+      return findTickets.filter(
+        (ticket) =>
+          ticket.hangVe === "Vé phổ thông" &&
+          ticket.maChuyenBay === payment.cbId
+      ).length;
+    });
+
+    const countTicketDeparBus = findPayments.map((payment) => {
+      return findTickets.filter(
+        (ticket) =>
+          ticket.hangVe === "Vé thương gia" &&
+          ticket.maChuyenBay === payment.cbId
+      ).length;
+    });
+
+    const countTicketRe =
+      findPaymentsRe.length > 0
+        ? findPaymentsRe.map((payment) => {
+            return findTicketsRe.filter(
+              (ticket) =>
+                ticket.hangVe === "Vé phổ thông" &&
+                ticket.maChuyenBay === payment.cbIdRe
+            ).length;
+          })
+        : [];
+
+    const countTicketReBus =
+      findPaymentsRe.length > 0
+        ? findPaymentsRe.map((payment) => {
+            return findTicketsRe.filter(
+              (ticket) =>
+                ticket.hangVe === "Vé thương gia" &&
+                ticket.maChuyenBay === payment.cbIdRe
+            ).length;
+          })
+        : [];
+
+    const paymentExpiredDepar = findPayments.filter(
+      (payment) =>
+        new Date(payment.createdAt.getTime() + 15 * 60 * 1000) < new Date()
+    );
+    const paymentExpiredRe =
+      findPaymentsRe.length > 0
+        ? findPaymentsRe.filter(
+            (payment) =>
+              new Date(payment.createdAt.getTime() + 15 * 60 * 1000) <
+              new Date()
+          )
+        : [];
+
+    const paymentExpired_concat = paymentExpiredDepar.concat(paymentExpiredRe);
+
+    if (paymentExpired_concat.length > 0) {
+      await Promise.all([
+        Ticket.deleteMany({
+          maDon: {
+            $in: paymentExpired_concat.map((payment) => payment.orderId),
+          },
+        }),
+        Payment.deleteMany({
+          orderId: {
+            $in: paymentExpired_concat.map((payment) => payment.orderId),
+          },
+        }),
+        Flight.bulkWrite(
+          paymentExpiredDepar.map((p, i) => ({
+            updateOne: {
+              filter: { _id: new mongoose.Types.ObjectId(p.cbId) },
+              update: {
+                $inc: {
+                  soGhePhoThong: countTicketDepar[i] || 0,
+                  soGheThuongGia: countTicketDeparBus[i] || 0,
+                },
+              },
+            },
+          }))
+        ),
+        Flight.bulkWrite(
+          paymentExpiredRe.map((p, i) => ({
+            updateOne: {
+              filter: { _id: new mongoose.Types.ObjectId(p.cbIdRe) },
+              update: {
+                $inc: {
+                  soGhePhoThong: countTicketRe[i] || 0,
+                  soGheThuongGia: countTicketReBus[i] || 0,
+                },
+              },
+            },
+          }))
+        ),
+      ]);
+
+      departureFlights = await Flight.find({
+        diemBay: decodedDeparture,
+        diemDen: decodedArrival,
+        ngayBay: departureDate,
+        loaiChuyenBay: "Chuyến bay đi",
+      });
+
+      returnFlights =
+        oneWayTicket === "false"
+          ? await Flight.find({
+              diemBay: decodedArrival,
+              diemDen: decodedDeparture,
+              ngayBay: returnDate,
+              loaiChuyenBay: "Chuyến bay khứ hồi",
+            })
+          : [];
+    }
+
+    let payment = null;
+
+    const checkPayment_user = await Payment.find({
+      userId: _id,
+    });
+
+    let checkPayment_userStillValid = checkPayment_user.filter(
+      (payment) =>
+        new Date(payment.createdAt.getTime() + 15 * 60 * 1000) > new Date()
+    );
+
+    let checkPayment_userExpired = checkPayment_user.filter(
+      (payment) =>
+        new Date(payment.createdAt.getTime() + 15 * 60 * 1000) < new Date()
+    );
+
+    if (checkPayment_userStillValid.length > 0) {
+      payment = `${
+        checkPayment_user[0].orderId
+      } ${checkPayment_user[0].createdAt.toISOString()}`;
+    } else if (checkPayment_userExpired.length > 0) {
+      payment = null;
+    }
+    return res.status(200).json({
       message: `Tìm thấy ${departureFlights.length} chuyến bay đi ${
         oneWayTicket === "false"
           ? `và ${returnFlights.length} chuyến bay khứ hồi`
           : ""
       }`,
-      flights,
+      payment,
+      flights: { departureFlights, returnFlights },
     });
-    return;
   } catch (error) {
     return res.status(500).json({
       message: "Lỗi khi tìm chuyến bay",
