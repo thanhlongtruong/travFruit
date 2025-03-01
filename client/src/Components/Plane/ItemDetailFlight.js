@@ -19,7 +19,6 @@ const ItemDetailFlight = (props) => {
           <li>Số vé thường còn lại: {props.PhoThong}</li>
           <li>Số vé thương gia còn lại: {props.ThuongGia}</li>
           <li>Ngày đến: {props.ngayDen}</li>
-          <li className="text-green-500">Trạng thái chuyến bay: {props.trangThaiChuyenBay}</li>
         </ul>
       </div>
     </button>

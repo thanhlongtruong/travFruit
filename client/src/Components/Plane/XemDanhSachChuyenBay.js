@@ -6,7 +6,6 @@ import {
   useContext,
   useCallback,
   memo,
-  useMemo,
 } from "react";
 import Box from "@mui/material/Box";
 import Slider from "@mui/material/Slider";
@@ -17,125 +16,101 @@ import { CONTEXT } from "../../Context/ContextGlobal.js";
 import Header from "../Header.js";
 import ItemFlight from "./ItemFlight.js";
 import { LoginSuccess } from "../Setting/StateLoginSucces.js";
-import InterFaceLogin from "../Home/InterFaceLogin.js";
-import { differenceInMinutes, format, parse } from "date-fns";
-import { vi } from "date-fns/locale";
-import notify from "../Noti/notify.js";
-import { ToastContainer } from "react-toastify";
-import axios from "../Utils/authAxios.js";
-import { useLocation, useSearchParams } from "react-router-dom";
-import { SearchTicketFlight } from "../Home/Home.js";
-import FlightShowCalendar from "../FlightShowCalendar.js";
+import { differenceInMinutes, parse } from "date-fns";
+import { useLocation } from "react-router-dom";
+import { useSearchFlights } from "../../API/Flight.js";
+import ComponentSearchFlight from "./SearchFlight.js";
+import { bouncy } from "ldrs";
 
 function XemDanhSachChuyenBay() {
   const {
     openAdjustQuantity,
     setOpenAdjustQuantity,
     setHideDetailItemFlight,
-    isShowInterfaceLogin,
     isShowOptionSetting_LoginSuccess,
     setShowOptionSetting_LoginSuccess,
     handleShowAirports,
-    showAirports,
-    choosePassenger,
-    setChoosePassenger,
-    handleInputAirport,
     AirportFrom,
     AirportTo,
-    AirportsVN,
-    invalid_AirportFrom_AirportTo,
-    handleChooseAirport,
-    handleSwapPlaceAirport,
-    handleEditQuantityPassenger,
     editQuantityPassenger,
     bayMotChieu,
     Departure_Return_Date,
-    handlePickDeparture_Return_Date,
-    handleCheckAllInformationBeforeSearch,
-    convertDateToVNDate,
-    handleInvalid_AirportFrom_AirportTo,
     setBayMotChieu,
     setAirportFrom,
     setAirportTo,
     setEditQuantityPassenger,
     setDeparture_Return_Date,
-    convertStringToOjectDate,
-    handleSearchFlight,
     handleReplacePriceAirport,
-    naviReload,
-    stateFlightShowCalendar,
-    isLoading,
-    setLoading,
+    showNotification,
   } = useContext(CONTEXT);
-
-  const [searchParams] = useSearchParams();
+  bouncy.register();
+  const location = useLocation();
 
   const [isFlights, setFlights] = useState({
     departureFlights: [],
     returnFlights: [],
   });
 
-  const callAPIFlightRef = useRef();
-
-  const APIFlight = useCallback(async () => {
-    try {
-      setPassengerChooseDeparture(false);
-      setLoading(true);
-      const createAxios = axios.create();
-      createAxios.defaults.timeout = 60000;
-      const response = await createAxios.get(`/flights/search?${searchParams}`);
-      if (response.status === 200) {
-        setFlights(response.data.flights);
-        notify("Success", response.data.message);
-      }
-    } catch (error) {
-      if (error.response?.status === 404) {
-        notify("Warn", error.response?.data.message);
-        return;
-      }
-      notify(
-        "Error",
-        error.response?.data.message || "Lỗi khi tìm chuyến bay "
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [searchParams]);
-
-  callAPIFlightRef.current = APIFlight;
+  const searchParams = new URLSearchParams(location.search);
 
   useEffect(() => {
     const departure = searchParams.get("departure");
     const arrival = searchParams.get("arrival");
-    const departureIATA = searchParams.get("departureIATA");
-    const arrivalIATA = searchParams.get("arrivalIATA");
     const departureDate = searchParams.get("departureDate");
-    const oneWayTicket = searchParams.get("oneWayTicket");
+    const oneWayTicket_ = searchParams.get("oneWayTicket");
     const returnDate = searchParams.get("returnDate");
     const passengers = searchParams.get("passengers");
-
     setAirportFrom(departure);
     setAirportTo(arrival);
     setEditQuantityPassenger(passengers.split(",").map(Number));
 
-    setBayMotChieu(oneWayTicket === "true");
+    const [day, month, year] = departureDate.split("-").map(Number);
+    const dateDeparFormat = new Date(year, month - 1, day);
 
-    callAPIFlightRef.current({
-      departureIATA,
-      arrivalIATA,
-      departureDate,
-      returnDate,
-      passengers: passengers.split(",").map(Number),
-    });
-  }, [
-    setDeparture_Return_Date,
-    searchParams,
-    setAirportFrom,
-    setAirportTo,
-    setEditQuantityPassenger,
-    convertStringToOjectDate,
-    setBayMotChieu,
-  ]);
+    let dateReturn = new Date(
+      dateDeparFormat.getTime() + 2 * 24 * 60 * 60 * 1000
+    );
+
+    if (oneWayTicket_ === "true") {
+      dateReturn = new Date(
+        dateDeparFormat.getTime() + 2 * 24 * 60 * 60 * 1000
+      );
+    } else {
+      const [day, month, year] = returnDate.split("-").map(Number);
+      dateReturn = new Date(year, month - 1, day);
+    }
+
+    setDeparture_Return_Date([dateDeparFormat, dateReturn]);
+
+    setBayMotChieu(oneWayTicket_ === "true");
+  }, []);
+
+  const { data, isLoading, error } = useSearchFlights({
+    searchParams: searchParams.toString(),
+  });
+  useEffect(() => {
+    console.log(data);
+
+    if (data) {
+      setFlights(data);
+    } else {
+      setFlights({
+        departureFlights: [],
+        returnFlights: [],
+      });
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (error) {
+      showNotification(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          "Lỗi khi tìm chuyến bay",
+        "Warn"
+      );
+    }
+  }, [error]);
 
   const handleDefaultFilter = () => {
     setFilterPrice(Number(500000).toLocaleString("vi-VN"));
@@ -272,13 +247,20 @@ function XemDanhSachChuyenBay() {
   const [selectedReturnAirport, setSelectedReturnAirport] = useState(null);
 
   const hanldeOpenAdjustQuantity_SelectedAirport = (airport, typeAirport) => {
+    const [day, month, year] = airport?.ngayBay.split("-").map(Number);
+    const ngayBay = new Date(year, month - 1, day);
+
+    if (ngayBay <= new Date()) {
+      showNotification("Ngày bay phải lớn hơn hiện tại", "Warn");
+      return;
+    }
     const payment = localStorage.getItem("payment");
     if (payment) {
-      notify(
-        "Warn",
-        "Bạn vui lòng thanh toán đơn hàng trong lịch sử đặt trước khi chọn chuyến bay khác, mã đơn hàng chưa thanh toán: " +
-          payment.split(" ")[0]
+      showNotification(
+        "Bạn có đơn hàng chưa thanh toán, vui lòng xem tại Chi tiết đơn hàng.",
+        "Warn"
       );
+
       return;
     }
 
@@ -316,8 +298,6 @@ function XemDanhSachChuyenBay() {
 
   return (
     <>
-      {stateFlightShowCalendar && <FlightShowCalendar />}
-      {isShowInterfaceLogin && <InterFaceLogin />}
       {openAdjustQuantity && (
         <AdjustQuantity
           objDeparture={selectedDepartureAirport}
@@ -332,10 +312,9 @@ function XemDanhSachChuyenBay() {
         />
       )}
       <Header />
-      <ToastContainer />
       <div
         onClick={() => setShowOptionSetting_LoginSuccess(false)}
-        className={`bg-slate-100 relative w-full h-full ${isLoading ? "animate-pulse select-none pointer-events-none" : ""}`}
+        className={`bg-slate-100 relative w-full h-full`}
       >
         {isShowOptionSetting_LoginSuccess && <LoginSuccess />}
 
@@ -500,17 +479,17 @@ function XemDanhSachChuyenBay() {
               </svg>
 
               <div className="absolute z-10 w-full h-fit rounded-3xl top-3">
-                <SearchTicketFlight
+                <ComponentSearchFlight
                   div1="mb-7 px-3"
                   span="text-[15px] text-white"
                   svgStroke="stroke-white size-6"
                   div2_1="w-[13%]"
                   div2="w-fit"
-                  handleSearchFlight={handleSearchFlight}
                   styleLocationShowListAirline={{
                     left: "left-[396px]",
                     top: "top-[63px]",
                   }}
+                  topChoosePassenger="top-[63px]"
                 />
               </div>
             </div>
@@ -585,9 +564,9 @@ function XemDanhSachChuyenBay() {
             </div>
 
             {isLoading ? (
-              <span className="text-lg font-semibold text-[#0194f3] p-5">
-                Đang tìm kiếm chuyến bay...
-              </span>
+              <div className="p-20 ">
+                <l-bouncy size="40" speed="1.75" color="black" />
+              </div>
             ) : (
               <ShowFlight
                 departureFlights={isFlights?.departureFlights}
@@ -639,12 +618,7 @@ function ShowFlight({
   setStateButtonSelectDepartureAirport,
   setHideDetailItemFlight,
 }) {
-  const {
-    handleChooseOpenHangVe,
-    naviReload,
-    convertDateToVNDate,
-    bayMotChieu,
-  } = useContext(CONTEXT);
+  const { convertDateToVNDate, bayMotChieu } = useContext(CONTEXT);
 
   const calculateDuration = (start, end) => {
     const startDate = parse(start, "HH:mm", new Date());
@@ -675,6 +649,7 @@ function ShowFlight({
       {Array.from({ length: bayMotChieu ? 1 : 2 }).map((_, index) => {
         return index === 0 && oneWayTicket.length === 0 ? (
           <span
+            key={index}
             id="one-way-ticket"
             className="p-5 text-lg font-semibold w-[80%] m-auto text-rose-500 text-center border-dashed"
           >
@@ -686,6 +661,7 @@ function ShowFlight({
             {index === 1 && !bayMotChieu && (
               <>
                 <div
+                  key={index}
                   className="flex items-center justify-center mb-3 w-[80%] m-auto"
                   id="round-trip-ticket"
                 >

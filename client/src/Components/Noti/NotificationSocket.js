@@ -1,5 +1,8 @@
-import { useEffect, useContext, useState } from "react";
+import { useEffect, useContext, useState, useRef } from "react";
 import { SocketContext } from "../../Context/SocketContext";
+import { TriangleAlert, CircleCheckBig } from "lucide-react";
+import { CONTEXT } from "../../Context/ContextGlobal";
+
 function NotificationSocket() {
   const { operatingStatus } = useContext(SocketContext);
 
@@ -22,42 +25,122 @@ function NotificationSocket() {
   );
 }
 export function Notification() {
-  const { socket } = useContext(SocketContext);
+  const { notification, setNotification } = useContext(CONTEXT);
+  const DURATION = 3000; // 3 giây
 
-  const [showNotification, setShowNotification] = useState(false);
+  const [progress, setProgress] = useState(100);
+  const [isPaused, setIsPaused] = useState(false);
+  const startTimeRef = useRef(Date.now());
+  const elapsedTimeRef = useRef(0);
+  const timeoutRef = useRef(null);
+  const progressIntervalRef = useRef(null);
+
+  const clearTimers = () => {
+    clearTimeout(timeoutRef.current);
+    clearInterval(progressIntervalRef.current);
+  };
+
+  const startTimers = (remainingTime) => {
+    clearTimers();
+
+    progressIntervalRef.current = setInterval(() => {
+      const elapsed =
+        Date.now() - startTimeRef.current + elapsedTimeRef.current;
+      const newProgress = Math.max(0, ((DURATION - elapsed) / DURATION) * 100);
+      setProgress(newProgress);
+
+      if (newProgress <= 0) {
+        clearTimers();
+        setNotification(null); // Ẩn thông báo
+      }
+    }, 16);
+
+    timeoutRef.current = setTimeout(() => {
+      clearTimers();
+      setNotification(null);
+    }, remainingTime);
+  };
 
   useEffect(() => {
-    if (socket) {
-      socket.on("responseData", (message) => {
-        setShowNotification(true);
-
-        setTimeout(() => {
-          setShowNotification(false);
-        }, 3000);
-      });
+    if (notification) {
+      // Reset thời gian nếu có thông báo mới
+      elapsedTimeRef.current = 0;
+      startTimeRef.current = Date.now();
+      setProgress(100);
+      setIsPaused(false);
+      startTimers(DURATION);
     }
 
-    return () => {
-      if (socket) {
-        socket.off("responseData");
-      }
-    };
-  }, [socket]);
+    return () => clearTimers();
+  }, [notification]);
+
+  const handleMouseEnter = () => {
+    if (!isPaused) {
+      setIsPaused(true);
+      elapsedTimeRef.current += Date.now() - startTimeRef.current;
+      clearTimers();
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (isPaused) {
+      setIsPaused(false);
+      startTimeRef.current = Date.now();
+      startTimers(DURATION - elapsedTimeRef.current);
+    }
+  };
+
+  if (!notification) return null;
+
+  const { message, type } = notification;
 
   return (
     <div
-      className={`${showNotification ? "h-20 w-80 z-50 opacity-100" : "z-0 h-0 w-0 opacity-0"} border-cyan-500 border duration-700 transition-all fixed items-start  overflow-hidden  flex justify-center  bg-white right-[50px] top-24 rounded-md`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className={`h-20 w-80 overflow-hidden fixed top-24 right-[50px] z-[999] duration-700 transition-all cursor-pointer flex items-start bg-white shadow-lg border rounded-md ${
+        type === "Warn"
+          ? "border-yellow-400"
+          : type === "Success"
+            ? "border-green-400"
+            : "border-red-400"
+      }`}
     >
-      <div className="flex flex-col w-full p-1">
-        <h1 className="font-semibold text-base tracking-wider">
-          Bạn có thông báo mới.
-        </h1>
-        <div className="flex gap-x-3 flex-col">
-          <h5>Chức năng</h5>
-          <p className="line-clamp-1 ml-3">Nội dung</p>
-        </div>
+      <div className="flex items-center w-full p-1">
+        {type === "Warn" ? (
+          <TriangleAlert className="stroke-yellow-400 size-6 flex-shrink-0" />
+        ) : type === "Success" ? (
+          <CircleCheckBig className="stroke-green-400 size-6 flex-shrink-0" />
+        ) : (
+          ""
+        )}
+        <p
+          className={`ml-3 font-normal font-mono ${
+            type === "Warn"
+              ? "text-yellow-400"
+              : type === "Success"
+                ? "text-green-400"
+                : "text-red-400"
+          }`}
+        >
+          {message}
+        </p>
+      </div>
+
+      <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-200">
+        <div
+          className={`h-full ${
+            type === "Warn"
+              ? "bg-yellow-400"
+              : type === "Success"
+                ? "bg-green-400"
+                : "bg-red-400"
+          }`}
+          style={{ width: `${progress}%` }}
+        />
       </div>
     </div>
   );
 }
+
 export default NotificationSocket;

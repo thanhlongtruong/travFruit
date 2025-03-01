@@ -4,11 +4,12 @@ import Header from "../Header";
 import { Link, useLocation } from "react-router-dom";
 import InfoTicket from "./InfoTicket";
 import { CONTEXT } from "../../Context/ContextGlobal";
-import notify from "../Noti/notify";
-import { ToastContainer } from "react-toastify";
-import axios from "../Utils/authAxios.js";
+import { useMutation } from "@tanstack/react-query";
+import { Create } from "../../API/DonHang.js";
+import { bouncy } from "ldrs";
 
 function DatChoCuaToi() {
+  bouncy.register();
   const dataTicketLocation = useLocation();
 
   const payment = localStorage.getItem("payment");
@@ -23,15 +24,13 @@ function DatChoCuaToi() {
     quantityTicketsReturn,
     airportDeparture,
     airportReturn,
-    
   } = dataTicketLocation.state;
 
   const {
     convertDateToVNDate,
     naviReload,
     handleReplacePriceAirport,
-    setLoading,
-    isLoading,
+    showNotification,
   } = useContext(CONTEXT);
 
   const {
@@ -88,89 +87,76 @@ function DatChoCuaToi() {
     name: "itemsB",
   });
 
-  const funcCreateOrder_Ticket_updateFlight = async (data) => {
-    try {
-      setLoading(true);
-      const array = Object.values(data);
+  const mutationCreateOrder = useMutation({
+    mutationFn: Create,
+    onSuccess: (response) => {
+      const timeEnd = convertDateToVNDate(response.data.expiredAt);
+      const data = {
+        timeEndPayOrder: timeEnd,
+        objectOrder: response.data,
+        airportDeparture: airportDeparture,
+        airportReturn: oneWayFlight ? {} : airportReturn,
+      };
 
-      const payload = {
-        airportDeparture: array[0],
-        airportReturn: array[1],
-        totalQuantityTickets:
-          quantityTicketsDeparture.quantityTicketsOfAdult[0] +
-          quantityTicketsDeparture.quantityTicketsOfAdult[1] +
-          quantityTicketsDeparture.quantityTicketsOfChild[0] +
-          quantityTicketsDeparture.quantityTicketsOfChild[1] +
-          (quantityTicketsDeparture.quantityTicketsOfBaby || 0) +
-          (airportReturn
-            ? quantityTicketsReturn.quantityTicketsOfAdult[0] +
-              quantityTicketsReturn.quantityTicketsOfAdult[1] +
-              quantityTicketsReturn.quantityTicketsOfChild[0] +
-              quantityTicketsReturn.quantityTicketsOfChild[1] +
-              (quantityTicketsReturn.quantityTicketsOfBaby || 0)
-            : 0),
-        totalPriceTickets:
-          new Intl.NumberFormat("vi-VN").format(
-            data.items.reduce((acc, item) => {
+      localStorage.setItem(
+        "payment",
+        JSON.stringify(`${response.data.idDH} ${response.data.expiredAt}`)
+      );
+      naviReload("/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan", {
+        state: {
+          data: data,
+        },
+      });
+    },
+  });
+
+  const submitFormInfo = async (data) => {
+    const array = Object.values(data);
+    const payload = {
+      airportDeparture: array[0],
+      airportReturn: array[1],
+      totalQuantityTickets:
+        quantityTicketsDeparture.quantityTicketsOfAdult[0] +
+        quantityTicketsDeparture.quantityTicketsOfAdult[1] +
+        quantityTicketsDeparture.quantityTicketsOfChild[0] +
+        quantityTicketsDeparture.quantityTicketsOfChild[1] +
+        (quantityTicketsDeparture.quantityTicketsOfBaby || 0) +
+        (airportReturn
+          ? quantityTicketsReturn.quantityTicketsOfAdult[0] +
+            quantityTicketsReturn.quantityTicketsOfAdult[1] +
+            quantityTicketsReturn.quantityTicketsOfChild[0] +
+            quantityTicketsReturn.quantityTicketsOfChild[1] +
+            (quantityTicketsReturn.quantityTicketsOfBaby || 0)
+          : 0),
+      totalPriceTickets:
+        new Intl.NumberFormat("vi-VN").format(
+          data.items.reduce((acc, item) => {
+            const giaVeSo = handleReplacePriceAirport(item.giaVe);
+
+            return acc + giaVeSo;
+          }, 0) +
+            (data.itemsB || []).reduce((acc, item) => {
               const giaVeSo = handleReplacePriceAirport(item.giaVe);
 
               return acc + giaVeSo;
-            }, 0) +
-              (data.itemsB || []).reduce((acc, item) => {
-                const giaVeSo = handleReplacePriceAirport(item.giaVe);
-
-                return acc + giaVeSo;
-              }, 0)
-          ) + " VND",
-        soGhePhoThongDeparture:
-          quantityTicketsDeparture.quantityTicketsOfAdult[0] +
-          quantityTicketsDeparture.quantityTicketsOfChild[0],
-        soGheThuongGiaDeparture:
-          quantityTicketsDeparture.quantityTicketsOfAdult[1] +
-          quantityTicketsDeparture.quantityTicketsOfChild[1],
-        soGhePhoThongReturn: airportReturn
-          ? quantityTicketsReturn.quantityTicketsOfAdult[0] +
-            quantityTicketsReturn.quantityTicketsOfAdult[0]
-          : 0,
-        soGheThuongGiaReturn: airportReturn
-          ? quantityTicketsReturn.quantityTicketsOfAdult[1] +
-            quantityTicketsReturn.quantityTicketsOfAdult[1]
-          : 0,
-      };
-
-      const res = await axios.post("/order/create", payload);
-
-      if (res.status === 200) {
-        const timeEnd = convertDateToVNDate(res.data.expiredAt);
-        const data = {
-          timeEndPayOrder: timeEnd,
-          objectOrder: res.data,
-          airportDeparture: airportDeparture,
-          airportReturn: oneWayFlight ? {} : airportReturn,
-        };
-
-        localStorage.setItem(
-          "payment",
-          JSON.stringify(`${res.data.idDH} ${res.data.expiredAt}`)
-        );
-        naviReload("/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan", {
-          state: {
-            data: data,
-          },
-        });
-      }
-    } catch (error) {
-      if (error.response) {
-        if (error.response.status === 400) {
-          notify("Warn", error.response.data.message);
-        }
-      } else {
-        notify("Error", "Có lỗi xảy ra, vui lòng thử lại");
-      }
-      return;
-    } finally {
-      setLoading(false);
-    }
+            }, 0)
+        ) + " VND",
+      soGhePhoThongDeparture:
+        quantityTicketsDeparture.quantityTicketsOfAdult[0] +
+        quantityTicketsDeparture.quantityTicketsOfChild[0],
+      soGheThuongGiaDeparture:
+        quantityTicketsDeparture.quantityTicketsOfAdult[1] +
+        quantityTicketsDeparture.quantityTicketsOfChild[1],
+      soGhePhoThongReturn: airportReturn
+        ? quantityTicketsReturn.quantityTicketsOfAdult[0] +
+          quantityTicketsReturn.quantityTicketsOfChild[0]
+        : 0,
+      soGheThuongGiaReturn: airportReturn
+        ? quantityTicketsReturn.quantityTicketsOfAdult[1] +
+          quantityTicketsReturn.quantityTicketsOfChild[1]
+        : 0,
+    };
+    await mutationCreateOrder.mutate(payload);
   };
 
   const [hideAirportsDeparture, setHideAirportsDeparture] = useState(false);
@@ -183,9 +169,19 @@ function DatChoCuaToi() {
     });
   };
 
+  useEffect(() => {
+    if (mutationCreateOrder.isError) {
+      showNotification(
+        mutationCreateOrder.error?.response?.data?.error?.message ||
+          mutationCreateOrder?.error?.response?.data?.message ||
+          "Lỗi khi tạo đơn hàng",
+        "Warn"
+      );
+    }
+  }, [mutationCreateOrder.isError]);
+
   return (
     <>
-      <ToastContainer />
       <Header />
       <div className="w-[90%] h-fit m-auto">
         <div className="w-full">
@@ -283,10 +279,7 @@ function DatChoCuaToi() {
             </div>
           </div>
 
-          <form
-            onSubmit={handleSubmit(funcCreateOrder_Ticket_updateFlight)}
-            className=""
-          >
+          <form onSubmit={handleSubmit(submitFormInfo)} className="">
             {!oneWayFlight && (
               <button
                 type="button"
@@ -441,14 +434,11 @@ function DatChoCuaToi() {
             )}
 
             <button
-              type={isLoading ? "button" : "submit"}
+              type={mutationCreateOrder.isPending ? "button" : "submit"}
               className="flex p-3 bg-[#0194F3] text-white mt-3 float-right font-semibold rounded-lg gap-x-3 items-center justify-center"
             >
-              {isLoading ? (
-                <svg
-                  className="w-5 h-5 mr-3 border-r-2 border-white rounded-full animate-spin"
-                  viewBox="0 0 24 24"
-                ></svg>
+              {mutationCreateOrder.isPending ? (
+                <l-bouncy size="30" speed="1.75" color="white" />
               ) : (
                 <>
                   Thanh toán

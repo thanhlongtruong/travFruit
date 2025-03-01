@@ -3,7 +3,8 @@ import axios from "../Utils/authAxios.js";
 import { MessageCircleMore, Send, ChevronUp, ChevronDown } from "lucide-react";
 
 const UserManual = (props) => {
-  const options = ["Tài khoản", "Chuyến bay", "Đơn hàng"];
+  // const options = ["Tài khoản", "Chuyến bay", "Đơn hàng"];
+  const options = ["Chuyến bay"];
 
   const messageFlights = [
     "Tìm chuyến bay ngày mai",
@@ -70,7 +71,7 @@ const UserManual = (props) => {
             <p>{options[i]}</p>
             {!showMessage[i] ? <ChevronDown /> : <ChevronUp />}
           </div>
-          {showMessage[i] && i === 1 && (
+          {showMessage[i] && i === 0 && (
             <div>
               <ul className="">
                 {messageFlights.map((option, index) => (

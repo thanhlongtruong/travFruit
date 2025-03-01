@@ -15,12 +15,12 @@ function Setting() {
     <>
       <ToastContainer />
       <Header />
-      <div className="w-full p-5 h-fit bg-slate-100">
-        <div className="w-[80%] h-fit flex gap-x-3 m-auto justify-between">
+      <div className="w-full p-5 h-full bg-slate-100">
+        <div className="w-[80%] h-full flex gap-x-3 m-auto justify-between">
           <div className="w-0 h-0 lg:w-[30%] lg:h-fit overflow-hidden rounded-lg border bg-white border-[#0194F3] shadow-2xl shadow-blue-500/50">
             <OptionSetting />
           </div>
-          <div className="w-full lg:w-[65%] h-fit overflow-auto rounded-lg border bg-white shadow-2xl shadow-blue-500/50 border-[#0194F3]">
+          <div className="w-full lg:w-[65%] h-full overflow-auto rounded-lg border bg-white shadow-2xl shadow-blue-500/50 border-[#0194F3]">
             {isInfoAccount ? (
               <InterFaceLogin registerTrue={true} />
             ) : (

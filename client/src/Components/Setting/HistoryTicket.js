@@ -2,18 +2,22 @@ import { CONTEXT } from "../../Context/ContextGlobal";
 import { useEffect, useContext, useState, useCallback, memo } from "react";
 import InfoTicket from "../Plane/InfoTicket.js";
 import ReactLoading from "react-loading";
-import Loading from "../Loading.js";
-import { ToastContainer } from "react-toastify";
-import notify from "../Noti/notify.js";
 import "react-toastify/dist/ReactToastify.css";
 import ReactPaginate from "react-paginate";
 import axios from "../Utils/authAxios.js";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Pay, UpdatepdateStatus } from "../../API/DonHang.js";
+import { useReservations } from "../../API/Account.js";
+import { bouncy } from "ldrs";
 
 function History() {
-  const { isLoading, setLoading } = useContext(CONTEXT);
+  const queryClient = useQueryClient();
+  bouncy.register();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const { showNotification } = useContext(CONTEXT);
 
   const [dataReservation, setDataReservation] = useState([]);
 
@@ -34,6 +38,7 @@ function History() {
     false,
     true,
   ]);
+  const [optionTypes, setOptionTypes] = useState(4);
 
   // thay doi trang thai cua option hien don hang
   const stateOptionShow = (indexes) => {
@@ -76,42 +81,6 @@ function History() {
   //   }
   // };
 
-  const getReservation = async (page, type) => {
-    try {
-      setLoading(true);
-      const res = await axios.get(
-        `/user/reservation?page=${page}&type=${type}`
-      );
-
-      if (res.status === 200) {
-        const { orders, totalPage } = res.data;
-
-        setDataReservation(orders);
-
-        setTotalPage(totalPage);
-      }
-    } catch (err) {
-      notify(
-        "Warn",
-        err?.response?.data?.message || "Xảy ra lỗi khi xem lịch sử đơn hàng"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const handlePage = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const page = urlParams.get("page") || 1;
-      const type = urlParams.get("type") || "All";
-      setCurrentPage(Number(page) - 1);
-      getReservation(page, type);
-    };
-
-    handlePage();
-  }, []);
-
   const updateUrl = (page, type) => {
     const params = new URLSearchParams(location.search);
     params.set("page", page);
@@ -123,35 +92,91 @@ function History() {
     });
   };
 
-  const handleChooseOptionShow = async (index) => {
-    const types = ["Đã hủy", "Đã thanh toán", "Chưa thanh toán", "All"];
+  const types = ["Đã hủy", "Đã thanh toán", "Chưa thanh toán", "All"];
+
+  const { data, isLoading, error } = useReservations(
+    currentPage + 1,
+    types[optionTypes - 1]
+  );
+
+  useEffect(() => {
+    if (data?.data) {
+      setDataReservation(data.data.orders);
+      setTotalPage(data.data.totalPage);
+    }
+  }, [data]);
+
+  const handleChooseOptionShow = (index) => {
     const page = 1;
-
-    await getReservation(page, types[index]);
-
-    updateUrl(page, types[index]);
-    stateOptionShow([index + 1]);
     setCurrentPage(0);
+    updateUrl(page, types[index]);
+    setOptionTypes(index + 1);
+    stateOptionShow([index + 1]);
   };
 
-  const handlePageClick = async (event) => {
-    const types = ["Đã hủy", "Đã thanh toán", "Chưa thanh toán", "All"];
-    const firstTrueIndex = optionShow.findIndex(
-      (value, index) => value === true && index !== 0
-    );
-
+  const handlePageClick = (event) => {
     const selectedPage = event.selected + 1;
     setCurrentPage(event.selected);
-    updateUrl(selectedPage, types[firstTrueIndex - 1]);
-    await getReservation(selectedPage, types[firstTrueIndex - 1]);
+    updateUrl(selectedPage, types[optionTypes - 1]);
   };
+
+  useEffect(() => {
+    const handlePage = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const page = urlParams.get("page") || 1;
+      const type = urlParams.get("type") || "All";
+      setCurrentPage(Number(page) - 1);
+      updateUrl(page, type);
+      setOptionTypes([types.indexOf(type) + 1]);
+      stateOptionShow([types.indexOf(type) + 1]);
+    };
+
+    handlePage();
+  }, []);
+
+  const mutationUpdatepdateStatus = useMutation({
+    mutationFn: UpdatepdateStatus,
+    onSuccess: () => {
+      queryClient.invalidateQueries("reservations");
+    },
+  });
+
+  useEffect(() => {
+    if (mutationUpdatepdateStatus.isError) {
+      showNotification(
+        mutationUpdatepdateStatus.error?.response?.data?.error?.message ||
+          mutationUpdatepdateStatus?.error?.response?.data?.message ||
+          "Lỗi hủy đơn hàng",
+        "Warn"
+      );
+    } else if (mutationPay.isError) {
+      showNotification(
+        mutationPay.error?.response?.data?.error?.message ||
+          mutationPay?.error?.response?.data?.message ||
+          "Lỗi thanh toán",
+        "Warn"
+      );
+    } else if (mutationUpdatepdateStatus.isSuccess) {
+      showNotification(
+        mutationUpdatepdateStatus?.data?.data?.message ||
+          "Hủy vé khứ hồi thành công",
+        "Success"
+      );
+    }
+  }, [mutationUpdatepdateStatus.isError, mutationUpdatepdateStatus.isSuccess]);
+
+  const mutationPay = useMutation({
+    mutationFn: Pay,
+  });
 
   return (
     <>
-      <ToastContainer />
-
       {isLoading ? (
-        <Loading />
+        <div className="relative flex items-center w-full h-[407px] my-5 text-xl font-semibold select-none overflow-hidden">
+          <div className="w-full h-full justify-center items-center flex">
+            <l-bouncy size="45" speed="1.75" color="black" />
+          </div>
+        </div>
       ) : (
         <>
           <div className="relative flex items-center w-full h-[42px] my-5 text-xl font-semibold select-none overflow-hidden">
@@ -258,9 +283,9 @@ function History() {
             {dataReservation?.length > 0 ? (
               <HistoryDon
                 dataReservation={dataReservation}
-                isLoading={isLoading}
-                setLoading={setLoading}
                 isSearch={isSearch}
+                mutationUpdatepdateStatus={mutationUpdatepdateStatus}
+                mutationPay={mutationPay}
               />
             ) : (
               <div className="flex items-center select-none gap-11">
@@ -321,31 +346,65 @@ function OptionShowHistoryOrder({
   );
 }
 
-function HistoryDon({ isLoading, dataReservation, setLoading, isSearch }) {
+function HistoryDon({
+  mutationUpdatepdateStatus,
+  dataReservation,
+  isSearch,
+  mutationPay,
+}) {
   const { convertDateToVNDate, handleReplacePriceAirport, naviReload } =
     useContext(CONTEXT);
 
-  const payment = JSON.parse(localStorage.getItem("payment"));
+  const huyOrder = async (order) => {
+    const flightsDeparture = order.tickets.filter(
+      (ticket) => ticket?.flights?.loaiChuyenBay === "Chuyến bay đi"
+    );
+    const flightsReturn = order.tickets.filter(
+      (ticket) => ticket?.flights?.loaiChuyenBay === "Chuyến bay khứ hồi"
+    );
 
-  const huyOrder = async (_id) => {
-    setLoading(true);
+    const countTicketNormal = flightsDeparture.filter(
+      (ticket) => ticket.hangVe === "Vé phổ thông"
+    ).length;
+    const countTicketBusiness = flightsDeparture.filter(
+      (ticket) => ticket.hangVe === "Vé thương gia"
+    ).length;
+    const countTicketNormalReturn = flightsReturn.filter(
+      (ticket) =>
+        ticket.hangVe === "Vé phổ thông" &&
+        ticket.trangThaiVe === "Chưa thanh toán"
+    ).length;
+    const countTicketBusinessReturn = flightsReturn.filter(
+      (ticket) =>
+        ticket.hangVe === "Vé thương gia" &&
+        ticket.trangThaiVe === "Chưa thanh toán"
+    ).length;
 
-    try {
-      const response = await axios.post(`/order/update_status`, {
-        status: 201,
-        orderID: _id,
-      });
-      if (response.status === 200) {
-        if (payment && payment.split(" ")[0].replace(/"/g, "") === _id) {
-          localStorage.removeItem("payment");
-        }
-        window.location.reload();
-      }
-    } catch (error) {
-      notify("Error", "Hủy đơn hàng không thành công, vui lòng thử lại sau");
-    } finally {
-      setLoading(false);
-    }
+    const price =
+      new Intl.NumberFormat("vi-VN").format(
+        order.tickets.reduce((acc, item) => {
+          const giaVeSo = handleReplacePriceAirport(item.giaVe);
+
+          return acc + giaVeSo;
+        }, 0)
+      ) + " VND";
+
+    mutationUpdatepdateStatus.mutate({
+      status: "201",
+      orderID: order._id,
+      flight: {
+        idDeparture: flightsDeparture[0].flights._id,
+        idReturn: flightsReturn[0]?.flights._id,
+
+        countTicketNormal: countTicketNormal,
+        countTicketBusiness: countTicketBusiness,
+
+        countTicketNormalReturn: countTicketNormalReturn,
+        countTicketBusinessReturn: countTicketBusinessReturn,
+
+        price: price,
+      },
+    });
   };
 
   const thanhToan = async (order) => {
@@ -356,75 +415,67 @@ function HistoryDon({ isLoading, dataReservation, setLoading, isSearch }) {
       (ticket) => ticket.flights?.loaiChuyenBay === "Chuyến bay khứ hồi"
     );
 
-    try {
-      setLoading(true);
-      const response = await axios.post(`/payment/pending`, {
-        orderId: order._id,
-      });
-      if (response.status === 200) {
-        if (response.data.payment?.payUrl === "NO payURL") {
-          const data = {
-            timeEndPayOrder: convertDateToVNDate(order.expiredAt),
-            objectOrder: {
-              idDH: order._id,
-              priceOrder: order.tongGia,
-              createAt: order.createdAt,
-              expiredAt: order.expiredAt,
-              dataTickets: order.tickets,
-            },
-            airportDeparture: airportDeparture[0].flights,
-            airportReturn:
-              airportReturn.length > 0 ? airportReturn[0].flights : {},
-          };
-          naviReload("/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan", {
-            state: {
-              data: data,
-            },
-          });
-        } else {
-          window.location.href = response.data.payment.payUrl;
-        }
+    const data = {
+      timeEndPayOrder: convertDateToVNDate(order.expiredAt),
+      objectOrder: {
+        idDH: order._id,
+        priceOrder: order.tongGia,
+        createAt: order.createdAt,
+        expiredAt: order.expiredAt,
+        dataTickets: order.tickets,
+      },
+      airportDeparture: airportDeparture[0].flights,
+      airportReturn: airportReturn.length > 0 ? airportReturn[0].flights : {},
+    };
+
+    const response = await mutationPay.mutateAsync({ orderId: order._id });
+    if (response.status === 200) {
+      if (response.data.payment?.payUrl === "NO payURL") {
+        naviReload("/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan", {
+          state: {
+            data: data,
+          },
+        });
+      } else {
+        window.location.href = response.data.payment.payUrl;
       }
-    } catch (error) {
-    } finally {
-      setLoading(false);
     }
   };
 
   const huyVeKhuHoi = async (order) => {
-    setLoading(true);
     const tickets = order.tickets.filter(
-      (ticket) => ticket.loaiChuyenBay === "Chuyến bay đi"
+      (ticket) => ticket?.flights?.loaiChuyenBay === "Chuyến bay đi"
     );
 
+    const ticketsReturn = order.tickets.filter(
+      (ticket) => ticket?.flights?.loaiChuyenBay === "Chuyến bay khứ hồi"
+    );
     const priceNew =
       new Intl.NumberFormat("vi-VN").format(
         tickets.reduce((acc, item) => {
-          const giaVeSo = handleReplacePriceAirport(
-            item.giaVe.replace(/\./g, ",")
-          );
+          const giaVeSo = handleReplacePriceAirport(item.giaVe);
 
           return acc + giaVeSo;
         }, 0)
       ) + " VND";
 
-    try {
-      const response = await axios.post(`/order/ccc`, {
-        orderID: order._id,
+    const countTicketNormal = ticketsReturn.filter(
+      (ticket) => ticket.hangVe === "Vé phổ thông"
+    ).length;
+    const countTicketBusiness = ticketsReturn.filter(
+      (ticket) => ticket.hangVe === "Vé thương gia"
+    ).length;
+
+    mutationUpdatepdateStatus.mutate({
+      status: "202",
+      orderID: order._id,
+      flight: {
+        id: ticketsReturn[0]?.flights?._id,
         priceNew: priceNew,
-      });
-      if (response.status === 200) {
-        await notify("Success", "Hủy vé khứ hồi thành công");
-        window.location.reload();
-      }
-      if (response.status === 404) {
-        notify("Warn", response.data.message);
-      }
-    } catch (error) {
-      notify("Error", "Hủy đơn hàng không thành công, vui lòng thử lại sau");
-    } finally {
-      setLoading(false);
-    }
+        countTicketNormal: countTicketNormal,
+        countTicketBusiness: countTicketBusiness,
+      },
+    });
   };
 
   const [historyVe, setHistoryVe] = useState(null);
@@ -456,7 +507,8 @@ function HistoryDon({ isLoading, dataReservation, setLoading, isSearch }) {
                 <p className="line-clamp-1">
                   Loại chuyến bay:
                   {order.tickets.some(
-                    (ticket) => ticket.loaiChuyenBay === "Chuyến bay khứ hồi"
+                    (ticket) =>
+                      ticket?.flights?.loaiChuyenBay === "Chuyến bay khứ hồi"
                   )
                     ? " Chuyến bay một chiều và khứ hồi"
                     : " Chuyến bay một chiều"}
@@ -475,11 +527,13 @@ function HistoryDon({ isLoading, dataReservation, setLoading, isSearch }) {
                   )}
                   {order.trangThai ===
                     "Chưa thanh toán chuyến đi (Đã hủy vé khứ hồi)" && (
-                    <span className="text-[#0bc175]">{order.trangThai}</span>
+                    <span className="text-[#ffd000]">{order.trangThai}</span>
                   )}
                 </p>
                 <p className="line-clamp-1">
-                  {order.trangThai === "Chưa thanh toán" && (
+                  {(order.trangThai === "Chưa thanh toán" ||
+                    order.trangThai ===
+                      "Chưa thanh toán chuyến đi (Đã hủy vé khứ hồi)") && (
                     <span className="text-red-500">
                       • {convertDateToVNDate(order.expiredAt)} đơn hàng sẽ bị
                       xóa nếu không thanh toán
@@ -500,20 +554,28 @@ function HistoryDon({ isLoading, dataReservation, setLoading, isSearch }) {
             <div className="absolute z-10 flex top-2 right-2 gap-x-3">
               <button
                 className={`font-semibold line-clamp-1 rounded-md text-[14px] p-2 self-center text-white transition ease-in-out active:bg-slate-200 ${order.trangThai === "Đã hủy" || order.trangThai === "Đã thanh toán" ? "bg-slate-500 cursor-not-allowed" : "cursor-pointer bg-red-500"}`}
-                onClick={() => huyOrder(dataReservation[index]._id)}
+                onClick={() => huyOrder(dataReservation[index])}
               >
-                Hủy đơn
+                {mutationUpdatepdateStatus.isPending ? (
+                  <l-bouncy size="30" speed="1.75" color="white" />
+                ) : (
+                  "Hủy đơn"
+                )}
               </button>
               {order.tickets.some(
                 (ticket) =>
-                  ticket.loaiChuyenBay === "Chuyến bay khứ hồi" &&
+                  ticket.flights.loaiChuyenBay === "Chuyến bay khứ hồi" &&
                   ticket.trangThaiVe !== "Đã hủy"
               ) && (
                 <button
                   className={`font-semibold line-clamp-1 rounded-md text-[14px] p-2 self-center text-white transition ease-in-out active:bg-slate-200 ${order.trangThai === "Đã hủy" || order.trangThai === "Đã thanh toán" ? "bg-slate-500 cursor-not-allowed" : "cursor-pointer bg-red-500"}`}
                   onClick={() => huyVeKhuHoi(dataReservation[index])}
                 >
-                  Hủy vé khứ hồi
+                  {mutationUpdatepdateStatus.isPending ? (
+                    <l-bouncy size="30" speed="1.75" color="white" />
+                  ) : (
+                    "Hủy vé khứ hồi"
+                  )}
                 </button>
               )}
 
@@ -521,14 +583,8 @@ function HistoryDon({ isLoading, dataReservation, setLoading, isSearch }) {
                 className={`transition-all duration-500 font-semibold line-clamp-1 rounded-md text-[14px] p-2 self-center text-white ease-in-out active:bg-slate-200 bg-[#109AF4]`}
                 onClick={() => thanhToan(dataReservation[index])}
               >
-                {isLoading ? (
-                  <ReactLoading
-                    className="w-2 h-2 size-2"
-                    type="bubbles"
-                    color="#ffff"
-                    height={20}
-                    width={20}
-                  />
+                {mutationPay.isPending ? (
+                  <l-bouncy size="30" speed="1.75" color="white" />
                 ) : (
                   "Thanh toán"
                 )}
