@@ -63,9 +63,6 @@ function AdminLogin() {
     onSuccess: (response) => {
       naviLogin("/home");
     },
-    onError: (error) => {
-      console.error("Lỗi lấy thông tin user:", error);
-    },
   });
 
   const handleLogin = (data) => {

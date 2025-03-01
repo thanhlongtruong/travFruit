@@ -27,6 +27,7 @@ function AdminChuyenBay() {
   } = useQuery({
     queryKey: ["flights"],
     queryFn: GetAll,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {

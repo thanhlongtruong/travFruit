@@ -24,7 +24,7 @@ export const Update = async (data) => {
     hangBay: data.hangBay,
     loaiChuyenBay: data.loaiChuyenBay,
     gia: data.gia,
-    soGhePhoThong: data.soGhePhoThong,
-    soGheThuongGia: data.soGheThuongGia,
+    soGhePhoThong: parseInt(data.soGhePhoThong, 10),
+    soGheThuongGia: parseInt(data.soGheThuongGia, 10),
   });
 };

@@ -1,7 +1,6 @@
 import PropTypes from "prop-types";
 
 function CatchErrorAPI({ error }) {
-  console.log(error);
 
   return (
     <div className="bg-zinc-800 p-3 text-red-600">
@@ -14,6 +13,7 @@ function CatchErrorAPI({ error }) {
           error:{" "}
           {error?.response?.data?.error?.message ||
             error?.response?.data?.error ||
+            error?.response?.data?.errors ||
             "Không có error"}
         </p>
       </div>

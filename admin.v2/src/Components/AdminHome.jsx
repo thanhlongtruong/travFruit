@@ -27,8 +27,14 @@ export default function AdminHome({ type }) {
           <Link to="/home/chuyenbay" className="p-4 hover:opacity-80">
             Chuyến bay
           </Link>
+          <Link to="/home/chualam" className="p-4 hover:opacity-80">
+            Payment
+          </Link>
 
-          <Link to="/QuanLyDonHang" className="p-4 hover:opacity-80">
+          <Link
+            to="https://travfruit.vercel.app/"
+            className="p-4 hover:opacity-80"
+          >
             Go to client
           </Link>
           <Link
