@@ -43,7 +43,7 @@ function ComponentHome() {
           const reqChangeStatusOrder = await axios.post(
             `/order/update_status`,
             {
-              status: 200,
+              status: "200",
               orderID: orderId,
             }
           );
