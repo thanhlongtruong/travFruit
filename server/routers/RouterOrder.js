@@ -297,6 +297,7 @@ router.post("/update_status", async (req, res) => {
       updateFlightReturn;
 
     if (status === "200") {
+      
       orderUpdate = await DonHang.findByIdAndUpdate(orderID, {
         trangThai: "Đã thanh toán",
         expiredAt: null,
@@ -313,7 +314,7 @@ router.post("/update_status", async (req, res) => {
 
         await Ticket.bulkWrite(bulkOps);
       }
-      delPayment = await Payment.findByIdAndDelete({
+      delPayment = await Payment.deleteOne({
         orderId: orderUpdate?._id,
       });
 
