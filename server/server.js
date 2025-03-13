@@ -40,6 +40,8 @@ const allowedOrigins = [
   "http://localhost:3001",
   "http://localhost:5173/",
   "http://localhost:5173",
+  "https://travfruitv3.vercel.app/",
+  "https://travfruitv3.vercel.app",
 ];
 
 app.use(
