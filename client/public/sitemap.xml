@@ -6,7 +6,7 @@
     <priority>1.0</priority>
   </url>
 
-  <url>
+  <!-- <url>
     <loc>https://travfruitv3.vercel.app/XemDanhSachChuyenBay</loc>
     <lastmod>2025-03-12</lastmod>
   <priority>0.8</priority>
@@ -34,5 +34,5 @@
   <loc>https://travfruitv3.vercel.app/Setting/HistoryTicket</loc>
   <lastmod>2025-03-12</lastmod>
   <priority>0.8</priority>
-</url>
+</url> -->
 </urlset>
