@@ -17,7 +17,7 @@ router.post("/payment-momo", async (req, res) => {
 
   var orderInfo = "pay with MoMo";
   // var redirectUrl = "https://vercel-travrelhome.vercel.app";
-  var redirectUrl = "https://travfruit.vercel.app/";
+  var redirectUrl = "https://travfruitv3.vercel.app/";
   var ipnUrl = "http://localhost:4001/callback";
   var requestType = "payWithMethod";
 
