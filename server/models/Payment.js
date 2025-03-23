@@ -21,6 +21,9 @@ const PaymentSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  typePay: {
+    type: String,
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

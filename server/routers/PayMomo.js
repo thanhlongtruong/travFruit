@@ -9,20 +9,15 @@ var accessKey = "F8BBA842ECF85";
 var secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
 var partnerCode = "MOMO";
 const router = express.Router();
-//
+
 router.post("/payment-momo", async (req, res) => {
-  //https://developers.momo.vn/#/docs/en/aiov2/?id=payment-method
-  //parameters
   const { amount, orderId } = req.body;
 
   var orderInfo = "pay with MoMo";
-  // var redirectUrl = "https://vercel-travrelhome.vercel.app";
-  var redirectUrl = "https://travfruitv3.vercel.app/";
-  var ipnUrl = "http://localhost:4001/callback";
+  var redirectUrl = process.env.BASE_URL;
+  var ipnUrl = "https://travfruitv3-server.vercel.app/callback";
   var requestType = "payWithMethod";
-
   var extraData = "";
-  var orderGroupId = "";
   var autoCapture = true;
   var lang = "vi";
 
@@ -47,18 +42,16 @@ router.post("/payment-momo", async (req, res) => {
     orderId +
     "&requestType=" +
     requestType;
-  //puts raw signature
 
-  //signature
   var signature = crypto
     .createHmac("sha256", secretKey)
     .update(rawSignature)
     .digest("hex");
 
-  var expire = Math.floor(Date.now() / 1000) + 300;
+  var expire = Math.floor(Date.now() / 1000) + 900; // 15 phút hết hạn
 
-  //json object send to MoMo endpoint
   const requestBody = JSON.stringify({
+    autoCapture: autoCapture,
     partnerCode: partnerCode,
     requestId: orderId,
     amount: amount,
@@ -66,14 +59,13 @@ router.post("/payment-momo", async (req, res) => {
     orderInfo: orderInfo,
     redirectUrl: redirectUrl,
     ipnUrl: ipnUrl,
-    lang: lang,
     requestType: requestType,
-    autoCapture: autoCapture,
     extraData: extraData,
-    orderGroupId: orderGroupId,
+    lang: lang,
     signature: signature,
+    expireTime: expire,
   });
-  //Create the axios
+
   const options = {
     method: "POST",
     url: "https://test-payment.momo.vn/v2/gateway/api/create",
@@ -87,11 +79,15 @@ router.post("/payment-momo", async (req, res) => {
   try {
     const result = await axios(options);
     if (!result.data) {
-      return res.status(400).json({ message: "Error when call MoMo" });
+      return res.status(400).json({ message: "Lỗi khi thanh toán với MoMo" });
     }
+
     return res.status(200).json(result.data);
-  } catch (err) {
-    return res.status(500).json({ message: "Error when call MoMo", err });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Lỗi khi thanh toán với MoMo",
+      error: error.response?.data || error.message,
+    });
   }
 });
 
@@ -101,6 +97,16 @@ router.post("/callback", async (req, res) => {
 
 router.get("/transaction-status/:orderId", async (req, res) => {
   const { orderId } = req.params;
+
+  const payment = await Payment.findOne({ orderId: orderId });
+  const currentTime = new Date();
+  const expiresAt = new Date(payment?.createdAt?.getTime() + 15 * 60 * 1000);
+
+  if (currentTime > expiresAt) {
+    return res.status(400).json({
+      message: "Thời gian thanh toán đã hết",
+    });
+  }
 
   const rawSignature = `accessKey=${accessKey}&orderId=${orderId}&partnerCode=${partnerCode}&requestId=${orderId}`;
 
@@ -132,17 +138,25 @@ router.get("/transaction-status/:orderId", async (req, res) => {
 
 router.post("/payment/update/payurl", async (req, res) => {
   try {
-    const { orderId, payUrl } = req.body;
+    const { orderId, payUrl, typePay } = req.body;
 
     const payment = await Payment.findOne({ orderId: orderId });
+    if (!payment) {
+      return res.status(404).json({ message: "Giao dịch không tồn tại" });
+    }
 
     const updatePayment = await Payment.findOneAndUpdate(
       { orderId: payment.orderId },
-      { payUrl }
+      { payUrl, typePay },
+      { new: true }
     );
 
     if (updatePayment) {
-      return res.status(200).json({ message: "Cập nhật payUrl thành công!" });
+      return res.status(200).json({
+        message: "Cập nhật payUrl thành công!",
+        payUrl: updatePayment.payUrl,
+        createdAt: updatePayment.createdAt,
+      });
     } else {
       return res
         .status(404)

@@ -297,9 +297,18 @@ router.post("/update_status", async (req, res) => {
       updateFlightReturn;
 
     if (status === "200") {
-      
+      const checkValid = await DonHang.findById(orderID);
+      if (!checkValid) {
+        return res.status(404).json({ message: "Đơn hàng không tồn tại" });
+      }
+      else if (checkValid.trangThai === "Đã thanh toán") {
+        return res.status(200).json({ message: "Đơn hàng đã thanh toán trước đó" });
+      }else if (checkValid.trangThai === "Đã hủy") {
+        return res.status(200).json({ message: "Đơn hàng đã hủy trước đó" });
+      }
       orderUpdate = await DonHang.findByIdAndUpdate(orderID, {
         trangThai: "Đã thanh toán",
+        phuongThuc: req.body?.type || "",
         expiredAt: null,
       });
       ticketsUpdate = await Ticket.find({ maDon: orderUpdate?._id });
@@ -319,7 +328,7 @@ router.post("/update_status", async (req, res) => {
       });
 
       return res.status(200).json({
-        message: "Cập nhật trạng thái đơn hàng thành công",
+        message: "Thanh toán đơn hàng thành công",
       });
     } else if (status === "201") {
       orderUpdate = await DonHang.findByIdAndUpdate(orderID, {

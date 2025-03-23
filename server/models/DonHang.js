@@ -17,6 +17,9 @@ const DonHangSchema = mongoose.Schema({
     type: String,
     default: "Chưa thanh toán",
   },
+  phuongThuc: {
+    type: String,
+  },
   createdAt: { type: Date, default: Date.now },
   expiredAt: { type: Date },
 });
