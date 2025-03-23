@@ -1,6 +1,6 @@
 import { useEffect, useContext, useState, useRef } from "react";
 import { SocketContext } from "../../Context/SocketContext";
-import { TriangleAlert, CircleCheckBig } from "lucide-react";
+import { TriangleAlert, CircleCheckBig, CloudAlert } from "lucide-react";
 import { CONTEXT } from "../../Context/ContextGlobal";
 
 function NotificationSocket() {
@@ -93,12 +93,11 @@ export function Notification() {
   if (!notification) return null;
 
   const { message, type } = notification;
-
   return (
     <div
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`h-20 w-80 overflow-hidden fixed top-24 right-[50px] z-[999] duration-700 transition-all cursor-pointer flex items-start bg-white shadow-lg border rounded-md ${
+      className={`h-20 w-80 overflow-hidden fixed top-24 right-[50px] z-[999] duration-700 transition-all cursor-pointer flex items-center bg-white shadow-lg border rounded-md ${
         type === "Warn"
           ? "border-yellow-400"
           : type === "Success"
@@ -112,7 +111,7 @@ export function Notification() {
         ) : type === "Success" ? (
           <CircleCheckBig className="stroke-green-400 size-6 flex-shrink-0" />
         ) : (
-          ""
+          <CloudAlert className="stroke-red-400 size-6 flex-shrink-0" />
         )}
         <p
           className={`ml-3 font-normal font-mono ${

@@ -1,24 +1,35 @@
-import React, { memo, useContext, useEffect, useState } from "react";
+import React, { memo, useEffect, useState } from "react";
 import Header from "./Header";
 import InfoTicket from "./Plane/InfoTicket";
-import Loading from "./Loading";
 import { useLocation } from "react-router-dom";
-import axios from "../Components/Utils/authAxios.js";
-import notify from "./Noti/notify";
-import { ToastContainer } from "react-toastify";
+import { useMutation } from "@tanstack/react-query";
+import { MoMo, UpdatePayUrl, Paypal } from "../API/Payment.js";
+import { bouncy } from "ldrs";
+import { useContext } from "react";
 import { CONTEXT } from "../Context/ContextGlobal.js";
+import CountdownTimer from "../Components/Utils/CountdownTimer.js";
+import { Helmet } from "react-helmet-async";
 
 function TrangThanhToan() {
-  const { isLoading, setLoading } = useContext(CONTEXT);
+  bouncy.register();
+
   const location = useLocation();
-  const data = location.state;
+  const data = location.state || {};
   const [notiMinues, setNotiMinues] = useState(true);
 
+  const {
+    showNotification,
+    convertVNDtoUSD,
+    isExpired,
+    QR_VietQR,
+    setQR_VietQR,
+  } = useContext(CONTEXT);
   const payment = localStorage.getItem("payment");
 
   useEffect(() => {
     if (
       !data ||
+      Object.keys(data).length === 0 ||
       !payment ||
       payment.split(" ")[2]?.replace(/"/g, "") === "Pending"
     ) {
@@ -26,7 +37,14 @@ function TrangThanhToan() {
     }
   }, []);
 
-  const [isCheckPickPay, setCheckPickPay] = useState(false);
+  useEffect(() => {
+    if (isExpired) {
+      window.location.href = `/`;
+    }
+  }, [isExpired]);
+
+  const pay = ["MoMo", "Paypal", "VietQR"];
+  const [isCheckPickPay, setCheckPickPay] = useState([false, false, false]);
 
   function formatNumber(num) {
     const parts = num.toString().split(".");
@@ -34,55 +52,139 @@ function TrangThanhToan() {
     return parts.join("");
   }
 
-  const handleCheckPickPay = () => {
-    setCheckPickPay(!isCheckPickPay);
-  };
+  const mutationMoMo = useMutation({
+    mutationFn: MoMo,
+    onError: (error) => {
+      showNotification(
+        error?.response?.data?.message || "Lỗi khi thanh toán với MoMo",
+        "Warn"
+      );
+    },
+  });
+
+  const mutationPaypal = useMutation({
+    mutationFn: Paypal,
+    onError: (error) => {
+      showNotification(
+        error?.response?.data?.message || "Lỗi khi thanh toán với paypal",
+        "Warn"
+      );
+    },
+  });
+
+  const mutationUpdatePayUrl = useMutation({
+    mutationFn: UpdatePayUrl,
+    onError: (error) => {
+      showNotification(
+        error?.response?.data?.message || "Lỗi khi thanh toán",
+        "Warn"
+      );
+    },
+  });
 
   const handleReqPayMoMo = async () => {
-    setLoading(true);
     const payload = {
       amount: formatNumber(data.data.objectOrder.priceOrder.split(" ")[0]),
       orderId: data.data.objectOrder.idDH,
     };
+    const response = await mutationMoMo.mutateAsync(payload);
+    if (response.status === 200) {
+      const res = await mutationUpdatePayUrl.mutateAsync({
+        orderId: data.data.objectOrder.idDH,
+        payUrl: response.data.payUrl,
+        typePay: "MoMo",
+      });
 
-    try {
-      const response = await axios.post(`/payment-momo`, payload);
-      if (response.status === 200) {
-        const respont_payment = await axios.post("/payment/update/payurl", {
-          orderId: data.data.objectOrder.idDH,
-          payUrl: response.data.payUrl,
-        });
-        if (respont_payment.status === 200) {
-          localStorage.setItem(
-            "payment",
-            JSON.stringify(
-              `${data.data.objectOrder.idDH} ${data.data.objectOrder.expiredAt} Pending`
-            )
-          );
-          window.location.href = response.data.payUrl;
-        }
+      if (res.status === 200) {
+        localStorage.setItem(
+          "payment",
+          JSON.stringify(
+            `${data.data.objectOrder.idDH} ${data.data.objectOrder.expiredAt} Pending`
+          )
+        );
+        window.open(res.data.payUrl, "_blank");
+        window.location.href = `/Setting/HistoryTicket`;
       }
-    } catch (error) {
-      notify("Error", "Có lỗi khi thanh toán, vui lòng thử lại");
-      return;
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const handleReqPaypal = async () => {
+    const payload = {
+      amount: convertVNDtoUSD(data.data.objectOrder.priceOrder),
+      orderId: data.data.objectOrder.idDH,
+    };
+    const response = await mutationPaypal.mutateAsync(payload);
+    if (response.status === 200) {
+      const res = await mutationUpdatePayUrl.mutateAsync({
+        orderId: data.data.objectOrder.idDH,
+        payUrl: response.data.url,
+        typePay: "Paypal",
+      });
+      if (res.status === 200) {
+        localStorage.setItem(
+          "payment",
+          JSON.stringify(
+            `${data.data.objectOrder.idDH} ${data.data.objectOrder.expiredAt} Pending`
+          )
+        );
+
+        window.location.href = res.data.payUrl;
+      }
+    }
+  };
+
+  const handleReqPayVietQR = async () => {
+    const BANK_ID = "970415";
+    const ACCOUNT_NO = "100883974104";
+    const TEMPLATE = "compact2";
+    const AMOUNT = formatNumber(data.data.objectOrder.priceOrder.split(" ")[0]);
+    const DESCRIPTION = `${data.data?.timeEndPayOrder} ${data.data?.objectOrder?.idDH}`;
+    const ACCOUNT_NAME = "TRUONG THANH LONG";
+
+    const QR = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-${TEMPLATE}.png?amount=${AMOUNT}&addInfo=${DESCRIPTION}&accountName=${ACCOUNT_NAME}`;
+    const res = await mutationUpdatePayUrl.mutateAsync({
+      orderId: data.data?.objectOrder?.idDH,
+      payUrl: QR,
+      typePay: "VietQR",
+    });
+    if (res.status === 200) {
+      localStorage.setItem(
+        "payment",
+        JSON.stringify(
+          `${data.data.objectOrder.idDH} ${data.data.objectOrder.expiredAt} Pending`
+        )
+      );
+      setQR_VietQR(QR);
     }
   };
 
   return (
     <>
-      <ToastContainer />
+      <Helmet>
+        <meta name="robots" content="noindex" />
+      </Helmet>
       <Header />
-      <div className="w-full h-full bg-slate-50">
+      <div className="w-full h-full bg-slate-50 relative">
         {notiMinues && (
           <NotiMinutes
             setNotiMinues={setNotiMinues}
-            time={data.data.timeEndPayOrder}
+            time={data?.data?.timeEndPayOrder}
           />
         )}
-
-        {isLoading && <Loading />}
+        {QR_VietQR && (
+          <div
+            className="w-full h-full bg-white/50 backdrop-brightness-75 fixed z-[100]"
+            onClick={() => setQR_VietQR(null)}
+          >
+            <div className="w-96 h-96 absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <img src={QR_VietQR} alt="QR-VietQR" />
+              <CountdownTimer
+                targetTime={data.data.objectOrder.expiredAt}
+                orderId={data.data?.objectOrder?.idDH}
+              />
+            </div>
+          </div>
+        )}
         <div className="pt-[50px] pb-[50px] bg-slate-50 h-full flex justify-center">
           <div className="flex w-[70%] max-w-screen-xl gap-7 h-full">
             <div className="lg:w-[70%]">
@@ -97,41 +199,79 @@ function TrangThanhToan() {
                   </h1>
                 </div>
 
-                <button
-                  className={`w-full text-lg text-center font-semibold cursor-pointer p-4 ${isCheckPickPay ? "text-gray-700" : "text-[#b8b2b2]"}`}
-                  onClick={handleCheckPickPay}
-                >
-                  Thanh toán bằng MoMo
-                </button>
+                {Array.from({ length: pay.length }, (_, i) => (
+                  <button
+                    key={i}
+                    className={`w-full text-lg text-center font-semibold cursor-pointer p-4 ${isCheckPickPay[i] ? "text-gray-700" : "text-[#b8b2b2]"}`}
+                    onClick={() =>
+                      setCheckPickPay((prev) => prev.map((_, j) => j === i))
+                    }
+                  >
+                    Thanh toán bằng {pay[i]}
+                  </button>
+                ))}
               </div>
 
-              <div className="flex-col p-4 mt-8 bg-white rounded-xl">
-                <div className="flex">
-                  <h1 className="text-xl font-medium">
-                    Tổng số tiền cần thanh toán
-                  </h1>
-                  <h1 className="ml-auto text-xl font-semibold text-blue-600">
-                    {data.data.objectOrder.priceOrder}
-                  </h1>
-                </div>
+              {(isCheckPickPay[0] ||
+                isCheckPickPay[1] ||
+                isCheckPickPay[2]) && (
+                <div className="flex-col p-4 mt-8 bg-white rounded-xl">
+                  <div className="flex">
+                    <h1 className="text-xl font-medium">
+                      Tổng số tiền cần thanh toán
+                    </h1>
+                    <h1 className="ml-auto text-xl font-semibold text-blue-600">
+                      {isCheckPickPay[1]
+                        ? convertVNDtoUSD(data.data.objectOrder.priceOrder) +
+                          " USD"
+                        : data.data.objectOrder.priceOrder}
+                    </h1>
+                  </div>
 
-                {/* //! thanh toán */}
+                  {/* //! thanh toán */}
 
-                <div
-                  className={`flex  p-3 ${isCheckPickPay ? "bg-orange-500 hover:bg-orange-400 cursor-pointer" : "bg-[#b8b2b2] select-none  cursor-not-allowed"}  rounded-md mt-4 items-center justify-center `}
-                  onClick={isCheckPickPay ? handleReqPayMoMo : undefined}
-                >
-                  <h1 className={`font-bold text-white text-xl`}>
-                    Thanh toán bằng MoMo
-                  </h1>
+                  <div
+                    className={`flex  p-3 ${isCheckPickPay[0] || isCheckPickPay[1] || isCheckPickPay[2] ? "bg-orange-500 hover:bg-orange-400 cursor-pointer" : "bg-[#b8b2b2] select-none  cursor-not-allowed"}  rounded-md mt-4 items-center justify-center `}
+                    onClick={
+                      isCheckPickPay[0]
+                        ? handleReqPayMoMo
+                        : isCheckPickPay[1]
+                          ? handleReqPaypal
+                          : isCheckPickPay[2]
+                            ? handleReqPayVietQR
+                            : undefined
+                    }
+                  >
+                    {mutationMoMo.isError ||
+                    mutationPaypal.isError ||
+                    mutationUpdatePayUrl.isError ? (
+                      <h1 className="text-white font-bold text-xl">
+                        Có lỗi khi thanh toán, vui lòng thử lại
+                      </h1>
+                    ) : mutationMoMo.isPending ||
+                      mutationPaypal.isPending ||
+                      mutationUpdatePayUrl.isPending ? (
+                      <l-bouncy size="35" speed="1.75" color="white" />
+                    ) : (
+                      <h1 className={`font-bold text-white text-xl`}>
+                        {isCheckPickPay[0]
+                          ? `Thanh toán bằng ${pay[0]}`
+                          : isCheckPickPay[1]
+                            ? `Thanh toán bằng ${pay[1]}`
+                            : isCheckPickPay[2]
+                              ? `Thanh toán bằng ${pay[2]}`
+                              : ""}
+                      </h1>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* //! ticket */}
             <div className="flex flex-col">
               {Array.from(
-                { length: data.data.objectOrder.dataTickets.length },
+                { length: data?.data?.objectOrder?.dataTickets?.length },
                 (_, i) => (
                   <InfoTicket
                     key={i}

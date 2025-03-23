@@ -5,14 +5,31 @@ import Setting from "./Components/Setting/Setting.js";
 import XemDanhSachChuyenBay from "./Components/Plane/XemDanhSachChuyenBay.js";
 import TrangThanhToan from "./Components/TrangThanhToan.js";
 import { Notification } from "./Components/Noti/NotificationSocket.js";
+import { Navigate } from "react-router-dom";
+import About from "./Components/About.js";
+import { Helmet } from "react-helmet-async";
+import { useLocation } from "react-router-dom";
 
 function App() {
+  const location = useLocation();
+
+  const isPublicRoute =
+    location.pathname === "/" || location.pathname.includes("/about");
+
   return (
     <>
+      {isPublicRoute && (
+        <Helmet>
+          <link
+            rel="canonical"
+            href={`https://travfruitv3.vercel.app${location.pathname === "/" ? "" : location.pathname}`}
+          />
+        </Helmet>
+      )}
       <Notification />
       <Routes>
         <Route path="/" element={<Home />} />
-
+        <Route path="/about" element={<About />} />
         <Route
           path="/XemDanhSachChuyenBay"
           element={<XemDanhSachChuyenBay />}
@@ -27,6 +44,7 @@ function App() {
           path="/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan"
           element={<TrangThanhToan />}
         />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

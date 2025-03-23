@@ -5,7 +5,6 @@ import axios from "../Utils/authAxios.js";
 import { Get, Login, Register } from "../../API/Account.js";
 import { useMutation } from "@tanstack/react-query";
 import { bouncy } from "ldrs";
-import { ToastContainer, toast } from "react-toastify";
 import notify from "../Noti/notify.js";
 
 function InterFaceLogin({ registerTrue = false }) {
@@ -39,8 +38,7 @@ function InterFaceLogin({ registerTrue = false }) {
     !registerTrue ? false : true,
     registerTrue ? true : false,
   ]);
-  const [loadingLogin, setloadingLogin] = useState(false);
-  const [loadingRegister, setloadingRegister] = useState(false);
+
   const [loadingUpdate, setloadingUpdate] = useState(false);
   const [showChoosePassword, setShowChoosePassword] = useState(false);
 

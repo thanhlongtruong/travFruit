@@ -1,15 +1,14 @@
 import { CONTEXT } from "../../Context/ContextGlobal";
 import { useEffect, useContext, useState, useCallback, memo } from "react";
 import InfoTicket from "../Plane/InfoTicket.js";
-import ReactLoading from "react-loading";
 import "react-toastify/dist/ReactToastify.css";
 import ReactPaginate from "react-paginate";
-import axios from "../Utils/authAxios.js";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Pay, UpdatepdateStatus } from "../../API/DonHang.js";
 import { useReservations } from "../../API/Account.js";
 import { bouncy } from "ldrs";
+import { UpdatePayUrl } from "../../API/Payment.js";
 
 function History() {
   const queryClient = useQueryClient();
@@ -139,34 +138,38 @@ function History() {
     onSuccess: () => {
       queryClient.invalidateQueries("reservations");
     },
-  });
-
-  useEffect(() => {
-    if (mutationUpdatepdateStatus.isError) {
+    onError: (error) => {
       showNotification(
-        mutationUpdatepdateStatus.error?.response?.data?.error?.message ||
-          mutationUpdatepdateStatus?.error?.response?.data?.message ||
+        error?.response?.data?.error?.message ||
+          error?.response?.data?.message ||
           "Lỗi hủy đơn hàng",
         "Warn"
       );
-    } else if (mutationPay.isError) {
-      showNotification(
-        mutationPay.error?.response?.data?.error?.message ||
-          mutationPay?.error?.response?.data?.message ||
-          "Lỗi thanh toán",
-        "Warn"
-      );
-    } else if (mutationUpdatepdateStatus.isSuccess) {
-      showNotification(
-        mutationUpdatepdateStatus?.data?.data?.message ||
-          "Hủy vé khứ hồi thành công",
-        "Success"
-      );
-    }
-  }, [mutationUpdatepdateStatus.isError, mutationUpdatepdateStatus.isSuccess]);
+    },
+  });
 
   const mutationPay = useMutation({
     mutationFn: Pay,
+    onError: (error) => {
+      showNotification(
+        error?.response?.data?.error?.message ||
+          error?.response?.data?.message ||
+          "Lỗi thanh toán",
+        "Warn"
+      );
+    },
+  });
+
+  const mutationUpdatePayUrl = useMutation({
+    mutationFn: UpdatePayUrl,
+    onError: (error) => {
+      showNotification(
+        error?.response?.data?.error?.message ||
+          error?.response?.data?.message ||
+          "Lỗi khi hủy khứ hồi",
+        "Warn"
+      );
+    },
   });
 
   return (
@@ -286,6 +289,7 @@ function History() {
                 isSearch={isSearch}
                 mutationUpdatepdateStatus={mutationUpdatepdateStatus}
                 mutationPay={mutationPay}
+                mutationUpdatePayUrl={mutationUpdatePayUrl}
               />
             ) : (
               <div className="flex items-center select-none gap-11">
@@ -351,9 +355,18 @@ function HistoryDon({
   dataReservation,
   isSearch,
   mutationPay,
+  mutationUpdatePayUrl,
 }) {
-  const { convertDateToVNDate, handleReplacePriceAirport, naviReload } =
-    useContext(CONTEXT);
+  const {
+    convertDateToVNDate,
+    handleReplacePriceAirport,
+    naviReload,
+    convertVNDtoUSD,
+    setQR_VietQR,
+    setTimeExpired_VietQR,
+    showNotification,
+    setOrderId_VietQR,
+  } = useContext(CONTEXT);
 
   const huyOrder = async (order) => {
     const flightsDeparture = order.tickets.filter(
@@ -408,6 +421,11 @@ function HistoryDon({
   };
 
   const thanhToan = async (order) => {
+    const currentTime = new Date();
+    if (currentTime >= new Date(order.expiredAt)) {
+      showNotification("Thời gian thanh toán đã hết", "Warn");
+      return;
+    }
     const airportDeparture = order.tickets.filter(
       (ticket) => ticket.flights?.loaiChuyenBay === "Chuyến bay đi"
     );
@@ -436,6 +454,10 @@ function HistoryDon({
             data: data,
           },
         });
+      } else if (response.data.payment?.typePay === "VietQR") {
+        setOrderId_VietQR(order._id);
+        setQR_VietQR(response.data.payment.payUrl);
+        setTimeExpired_VietQR(order.expiredAt);
       } else {
         window.location.href = response.data.payment.payUrl;
       }
@@ -466,7 +488,7 @@ function HistoryDon({
       (ticket) => ticket.hangVe === "Vé thương gia"
     ).length;
 
-    mutationUpdatepdateStatus.mutate({
+    const res = await mutationUpdatepdateStatus.mutateAsync({
       status: "202",
       orderID: order._id,
       flight: {
@@ -476,6 +498,16 @@ function HistoryDon({
         countTicketBusiness: countTicketBusiness,
       },
     });
+    if (res.status === 200) {
+      mutationUpdatePayUrl.mutate({
+        orderId: order._id,
+        payUrl: "NO payURL",
+      });
+      localStorage.setItem(
+        "payment",
+        JSON.stringify(`${order?._id} ${order?.expiredAt}`)
+      );
+    }
   };
 
   const [historyVe, setHistoryVe] = useState(null);
@@ -513,7 +545,11 @@ function HistoryDon({
                     ? " Chuyến bay một chiều và khứ hồi"
                     : " Chuyến bay một chiều"}
                 </p>
-                <p className="line-clamp-1">Tổng giá: {order.tongGia}</p>
+                <p className="line-clamp-1">
+                  Tổng giá: {order.tongGia}{" "}
+                  {order?.phuongThuc === "Paypal" &&
+                    `~ ${convertVNDtoUSD(order.tongGia)} USD`}
+                </p>
                 <p className="line-clamp-1">
                   Trạng thái:{" "}
                   {order.trangThai === "Đã thanh toán" && (
@@ -540,6 +576,12 @@ function HistoryDon({
                     </span>
                   )}
                 </p>
+                {order.trangThai === "Đã thanh toán" && order?.phuongThuc && (
+                  <p className="line-clamp-1">
+                    Phương thức thanh toán:{" "}
+                    <span className="text-[#0bc175]">{order?.phuongThuc}</span>
+                  </p>
+                )}
               </div>
             </div>
 

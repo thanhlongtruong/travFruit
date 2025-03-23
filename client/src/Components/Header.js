@@ -6,8 +6,6 @@ function Header() {
   const {
     setShowInterfaceLogin,
     handleShowOptionSetting_LoginSuccess,
-    stateFlightShowCalendar,
-    setStateFlightShowCalendar,
     setShowChatbot,
     isShowChatbot,
   } = useContext(CONTEXT);
@@ -54,7 +52,15 @@ function Header() {
       {!url.includes("/XemDanhSachChuyenbBay/DatChoCuaToi") &&
       !url.includes("/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan") ? (
         <ul className="text-base font-semibold uppercase transition-all div-flex-adjust-justify-between w-fit gap-x-10 duration-0 text-[#444444]">
-          {existUser && (
+          <li>
+            <Link
+              to="/about"
+              className="relative flex items-center justify-center p-2 cursor-pointer"
+            >
+              Thông tin về TravFruit
+            </Link>
+          </li>
+          {existUser && !url.includes("/about") && (
             <>
               <li
                 className="relative flex items-center justify-center p-2 cursor-pointer"
@@ -63,14 +69,14 @@ function Header() {
                 Trợ lý
               </li>
 
-              <li
+              {/* <li
                 className="relative flex items-center justify-center p-2 cursor-pointer"
                 onClick={() =>
                   setStateFlightShowCalendar(!stateFlightShowCalendar)
                 }
               >
                 Xem lịch chuyến bay
-              </li>
+              </li> */}
             </>
           )}
 
@@ -102,7 +108,7 @@ function Header() {
               </li>
             </>
           )}
-          {existUser && (
+          {existUser && !url.includes("/about") && (
             <button
               className="rounded-md bg-[#0194f3] p-2 text-white"
               onClick={handleShowOptionSetting_LoginSuccess}

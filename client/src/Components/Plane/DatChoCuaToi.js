@@ -7,6 +7,7 @@ import { CONTEXT } from "../../Context/ContextGlobal";
 import { useMutation } from "@tanstack/react-query";
 import { Create } from "../../API/DonHang.js";
 import { bouncy } from "ldrs";
+import { Helmet } from "react-helmet-async";
 
 function DatChoCuaToi() {
   bouncy.register();
@@ -182,6 +183,9 @@ function DatChoCuaToi() {
 
   return (
     <>
+      <Helmet>
+        <meta name="robots" content="noindex" />
+      </Helmet>
       <Header />
       <div className="w-[90%] h-fit m-auto">
         <div className="w-full">

@@ -1,18 +1,20 @@
 import Footer from "../Footer.js";
 import { useContext, useEffect, memo } from "react";
+import { Helmet } from "react-helmet-async";
 import Header from "../Header.js";
 import InterFaceLogin from "./InterFaceLogin.js";
 import { CONTEXT } from "../../Context/ContextGlobal.js";
 import { LoginSuccess } from "../Setting/StateLoginSucces.js";
-import { ToastContainer } from "react-toastify";
-import axios from "../Utils/authAxios.js";
-import notify from "../Noti/notify.js";
-import Loading from "../Loading.js";
 import FlightShowCalendar from "../FlightShowCalendar.js";
 import FuncChatbot from "../Chatbot/FuncChatbot.js";
 import ComponentSearchFlight from "../Plane/SearchFlight.js";
+import { TransactionMoMo, TransactionPaypal } from "../../API/Payment.js";
+import { useMutation } from "@tanstack/react-query";
+import { UpdatepdateStatus } from "../../API/DonHang.js";
+import { bouncy } from "ldrs";
 
 function ComponentHome() {
+  bouncy.register();
   const {
     isShowInterfaceLogin,
     isShowOptionSetting_LoginSuccess,
@@ -20,9 +22,8 @@ function ComponentHome() {
     handleShowAirports,
     bayMotChieu,
     stateFlightShowCalendar,
-    isLoading,
-    setLoading,
     isShowChatbot,
+    showNotification,
   } = useContext(CONTEXT);
 
   const handleOffOption = () => {
@@ -31,71 +32,111 @@ function ComponentHome() {
     }
   };
 
-  const handleTransactionStatus = async (orderId) => {
-    try {
-      setLoading(true);
-      const reqTransaction = await axios.get(`/transaction-status/${orderId}`);
-      if (reqTransaction.status === 200) {
-        if (
-          reqTransaction.data.message === "Thành công." ||
-          reqTransaction.data.resultCode === 0
-        ) {
-          const reqChangeStatusOrder = await axios.post(
-            `/order/update_status`,
-            {
-              status: "200",
-              orderID: orderId,
-            }
+  const mutationUpdateStatus = useMutation({
+    mutationFn: UpdatepdateStatus,
+    onSuccess: (data) => {
+      localStorage.removeItem("payment");
+      showNotification(data.data.message, "Success");
+      // Xóa tất cả các query parameters
+      const url = window.location.origin + window.location.pathname;
+      // Thay đổi URL mà không tải lại trang
+      window.history.replaceState(null, "", url);
+    },
+    onError: (error) => {
+      showNotification(
+        error?.response?.data?.message || "Lỗi khi thanh toán với paypal",
+        "Warn"
+      );
+    },
+  });
+
+  const mutationTransactionMoMo = useMutation({
+    mutationFn: TransactionMoMo,
+    onSuccess: (data) => {
+      if (data.status === 200) {
+        if (data.data.message === "Thành công." || data.data.resultCode === 0) {
+          mutationUpdateStatus.mutate({
+            status: "200",
+            orderID: data.data.orderId,
+            type: data.data.partnerCode,
+          });
+        } else if (data.data.resultCode === 1002) {
+          showNotification(
+            `Mã đơn hàng ${data.data.orderId} không tồn tại`,
+            "Warn"
           );
-          if (reqChangeStatusOrder.status === 200) {
-            localStorage.removeItem("payment");
-            notify("Success", `Đơn hàng ${orderId} thanh toán thành công`);
-            // Xóa tất cả các query parameters
-            const url = window.location.origin + window.location.pathname;
-            // Thay đổi URL mà không tải lại trang
-            window.history.replaceState(null, "", url);
-            return;
-          } else if (reqChangeStatusOrder.status === 404) {
-            notify("Error", `Mã đơn hàng ${orderId} không tồn tại`);
-            localStorage.removeItem("payment");
-            return;
-          } else {
-            notify("Error", `Có lỗi cập nhập trạng thái đơn hàng ${orderId}`);
-            return;
-          }
-        } else if (reqTransaction.data.resultCode === 1002) {
-          notify(`Error", message: ${reqTransaction.data.message}`);
+        } else if (data.data.resultCode === 1005) {
+          showNotification(data.data.message, "Warn");
         }
       }
-    } catch (error) {
-      notify(`Error", "Có lỗi cập nhập trạng thái đơn hàng ${orderId}`);
-      return;
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    onError: (error) => {
+      showNotification(
+        error?.response?.data?.message || "Lỗi khi thanh toán với MoMo",
+        "Warn"
+      );
+    },
+  });
+
+  const mutationTransactionPaypal = useMutation({
+    mutationFn: TransactionPaypal,
+    onSuccess: (data) => {
+      if (
+        data.status === 200 &&
+        data.data.captureDetails.status === "COMPLETED"
+      ) {
+        mutationUpdateStatus.mutate({
+          status: "200",
+          orderID: data.data.orderId,
+          type: "Paypal",
+        });
+      }
+    },
+    onError: (error) => {
+      showNotification(
+        error?.response?.data?.message || "Lỗi khi thanh toán với paypal",
+        "Warn"
+      );
+    },
+  });
 
   useEffect(() => {
-    // Lấy query parameters từ URL hiện tại
-    const urlParams = new URLSearchParams(window.location.search);
+    const handleURLParams = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get("orderId");
+      const message = urlParams.get("message");
+      const token = urlParams.get("token");
+      const type = urlParams.get("type");
 
-    // Lấy giá trị của orderId
-    const orderId = urlParams.get("orderId");
-    const message = urlParams.get("message");
+      if (
+        orderId &&
+        message &&
+        mutationTransactionMoMo.isIdle &&
+        mutationUpdateStatus.isIdle
+      ) {
+        mutationTransactionMoMo.mutate({ orderId });
+      } else if (
+        orderId &&
+        token &&
+        mutationTransactionPaypal.isIdle &&
+        mutationUpdateStatus.isIdle
+      ) {
+        mutationTransactionPaypal.mutate({ orderId, token, type });
+      }
+    };
 
-    if (orderId && message) {
-      handleTransactionStatus(orderId);
-    }
-  }, []);
-
-  if (isLoading) {
-    return <Loading />;
-  }
+    handleURLParams();
+  }, [
+    mutationTransactionPaypal,
+    mutationUpdateStatus,
+    mutationTransactionMoMo,
+  ]);
 
   return (
     <>
-      <ToastContainer />
-
+      <Helmet>
+        <link rel="canonical" href="https://travfruitv3.vercel.app/" />
+      </Helmet>
       {isShowInterfaceLogin && <InterFaceLogin />}
       {stateFlightShowCalendar && <FlightShowCalendar />}
 
@@ -104,6 +145,14 @@ function ComponentHome() {
         {isShowChatbot && <FuncChatbot />}
         {isShowOptionSetting_LoginSuccess && <LoginSuccess />}
         <div className="relative px-[50px] py-5 w-full h-screen bg-[url('https://ik.imagekit.io/tvlk/image/imageResource/2023/09/27/1695776209619-17a750c3f514f7a8cccde2d0976c902a.png?tr=q-75')] bg-center bg-no-repeat bg-cover">
+          {mutationTransactionPaypal.isPending && (
+            <div className="w-screen h-screen fixed z-[500]">
+              <div className="fixed z-[500] transform -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
+                <l-bouncy size="40" speed="1.75" color="white" />
+              </div>
+            </div>
+          )}
+
           <div
             className="border-2 border-[#0194f3] min-h-[400px] rounded-md bg-[#4444] z-0 w-full"
             onClick={() => handleShowAirports([0, 1, 2], [false, false, false])}
@@ -136,6 +185,7 @@ function ComponentHome() {
           </div>
         </div>
       </div>
+
       <Footer />
     </>
   );

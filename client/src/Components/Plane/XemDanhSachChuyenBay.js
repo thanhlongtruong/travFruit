@@ -21,6 +21,7 @@ import { useLocation } from "react-router-dom";
 import { useSearchFlights } from "../../API/Flight.js";
 import ComponentSearchFlight from "./SearchFlight.js";
 import { bouncy } from "ldrs";
+import { Helmet } from "react-helmet-async";
 
 function XemDanhSachChuyenBay() {
   const {
@@ -298,6 +299,9 @@ function XemDanhSachChuyenBay() {
 
   return (
     <>
+      <Helmet>
+        <meta name="robots" content="noindex" />
+      </Helmet>
       {openAdjustQuantity && (
         <AdjustQuantity
           objDeparture={selectedDepartureAirport}
