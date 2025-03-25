@@ -105,7 +105,8 @@ router.post("/update", authorization, checkBody("update"), async (req, res) => {
         gender,
         birthday,
         password: passNewHash || oldUser.password,
-      }
+      },
+      { new: true }
     );
 
     if (!newUser) {

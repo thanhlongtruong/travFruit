@@ -65,7 +65,7 @@ app.use(express.json());
 app.use(RouterScrape);
 app.use(RouterPayment);
 app.use("/paypal", RouterPaypal);
-app.use("/vietqr",authorization, RouterVietQR);
+app.use("/vietqr", authorization, RouterVietQR);
 app.use("/flights", RouterFlight);
 app.use("/bot/flights", RouterBotHandleFlight);
 app.use("/user", RouterAccount);
