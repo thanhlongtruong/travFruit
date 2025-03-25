@@ -1,5 +1,5 @@
 import axios from "../Components/Utils/authAxios.js";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 export const Login = async (data) => {
   return await axios.post("/user/login", {
@@ -22,6 +22,11 @@ export const Register = async (data) => {
     password: data.password,
   });
 };
+
+export const Update = async (payload) => {
+  return await axios.post("/user/update", payload);
+};
+
 const GetReservaton = async ({ queryKey }) => {
   const [_key, { page, type }] = queryKey;
   return await axios.get(`/user/reservation?page=${page}&type=${type}`);

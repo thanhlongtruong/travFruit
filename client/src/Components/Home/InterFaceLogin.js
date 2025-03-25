@@ -1,15 +1,15 @@
 import { memo, useContext, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { CONTEXT } from "../../Context/ContextGlobal";
-import axios from "../Utils/authAxios.js";
-import { Get, Login, Register } from "../../API/Account.js";
-import { useMutation } from "@tanstack/react-query";
+import { Get, Login, Register, Update } from "../../API/Account.js";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { bouncy } from "ldrs";
-import notify from "../Noti/notify.js";
 
 function InterFaceLogin({ registerTrue = false }) {
+  const queryClient = useQueryClient();
+
   bouncy.register();
-  const { setShowInterfaceLogin } = useContext(CONTEXT);
+  const { setShowInterfaceLogin, showNotification } = useContext(CONTEXT);
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -39,7 +39,6 @@ function InterFaceLogin({ registerTrue = false }) {
     registerTrue ? true : false,
   ]);
 
-  const [loadingUpdate, setloadingUpdate] = useState(false);
   const [showChoosePassword, setShowChoosePassword] = useState(false);
 
   const refLogin = useRef(null);
@@ -117,9 +116,11 @@ function InterFaceLogin({ registerTrue = false }) {
 
   const mutationGet = useMutation({
     mutationFn: Get,
+    mutationKey: ["user"],
     onSuccess: (response) => {
       localStorage.setItem("user", JSON.stringify(response.data));
       setShowInterfaceLogin(false);
+      showNotification("Đăng nhập thành công", "Success");
     },
   });
 
@@ -127,6 +128,7 @@ function InterFaceLogin({ registerTrue = false }) {
     mutationFn: Register,
     onSuccess: (response) => {
       setShowInterfaceLogin(false);
+      showNotification("Đăng kí thành công", "Success");
     },
     onError: (error) => {
       if (error.response) {
@@ -157,41 +159,28 @@ function InterFaceLogin({ registerTrue = false }) {
     const response = await mutationLogin.mutateAsync(data);
     if (response.status === 200) {
       await mutationGet.mutate();
-      notify("Success", "Đăng nhập thành công");
     } else {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-      notify("Warn", "Đăng nhập không thành công.");
     }
   };
 
   const submitRegister = async (data) => {
     const response = await mutationRegister.mutateAsync(data);
     if (response.status === 200) {
-      notify("Success", "Đăng kí thành công");
     }
   };
 
-  const funcUpdate = async (data) => {
-    setloadingUpdate(true);
-    const req = {
-      numberPhone: data.phone,
-      fullName: data.fullName,
-      gender: data.gender,
-      birthday: data.birthday,
-      password: showChoosePassword && data.password,
-      newPassword: showChoosePassword && data.newPassword,
-    };
-    try {
-      const res = await axios.post("/user/update", req);
-      if (res.status === 200) {
-        // notify("Success", "Cập nhật thành công");
-        // notify(
-        //   "Warn",
-        //   "Vui lòng đăng nhập lại để update thông tin mới nhất cho bạn"
-        // );
+  const mutationUpdate = useMutation({
+    mutationFn: Update,
+    onSuccess: (response) => {
+      if (response?.data?.data) {
+        localStorage.setItem("user", JSON.stringify(response.data.data));
+        queryClient.invalidateQueries("user");
       }
-    } catch (error) {
+      showNotification("Cập nhật thông tin thành công", "Success");
+    },
+    onError: (error) => {
       if (error.response) {
         if (error.response.status === 404) {
           setErrorUpdate("InternalServerError", {
@@ -220,9 +209,18 @@ function InterFaceLogin({ registerTrue = false }) {
           message: "ServerError",
         });
       }
-    } finally {
-      setloadingUpdate(false);
-    }
+    },
+  });
+  const funcUpdate = async (data) => {
+    const payload = {
+      numberPhone: data.phone,
+      fullName: data.fullName,
+      gender: data.gender,
+      birthday: data.birthday,
+      password: showChoosePassword && data.password,
+      newPassword: showChoosePassword && data.newPassword,
+    };
+    await mutationUpdate.mutateAsync(payload);
   };
 
   return (
@@ -351,8 +349,8 @@ function InterFaceLogin({ registerTrue = false }) {
                               message: "Ít nhất 2 kí tự",
                             },
                             maxLength: {
-                              value: 70,
-                              message: "Nhiều nhất 70 kí tự",
+                              value: 50,
+                              message: "Nhiều nhất 50 kí tự",
                             },
                             pattern: {
                               value: /^[a-zA-ZÀ-ỹà-ỹ\s]+$/,
@@ -465,9 +463,8 @@ function InterFaceLogin({ registerTrue = false }) {
                                   today.getDate() >= birthDate.getDate());
 
                               return (
-                                age > 1 ||
-                                (age === 1 && isBirthdayPassed) ||
-                                "Phải hơn 1 tuổi"
+                                (age >= 12 && age <= 80 && isBirthdayPassed) ||
+                                "12 đến 80 tuổi"
                               );
                             },
                           },
@@ -572,12 +569,9 @@ function InterFaceLogin({ registerTrue = false }) {
                     type="submit"
                     ref={refUpdate}
                   >
-                    {loadingUpdate ? (
+                    {mutationUpdate.isPending ? (
                       <>
-                        <svg
-                          className="w-5 h-5 mr-3 border-r-2 border-white rounded-full animate-spin"
-                          viewBox="0 0 24 24"
-                        ></svg>
+                        <l-bouncy size="35" speed="1.75" color="white" />
                       </>
                     ) : (
                       <p className="uppercase">

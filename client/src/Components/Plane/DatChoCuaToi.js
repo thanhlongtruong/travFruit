@@ -604,8 +604,8 @@ function ThongTinHanhKhach({
                 message: "Ít nhất 2 kí tự",
               },
               maxLength: {
-                value: 70,
-                message: "Nhiều nhất 70 kí tự",
+                value: 50,
+                message: "Nhiều nhất 50 kí tự",
               },
               pattern: {
                 value: /^[a-zA-ZÀ-ỹà-ỹ\s]+$/,
@@ -641,9 +641,8 @@ function ThongTinHanhKhach({
                     "người lớn"
                   ) {
                     return (
-                      age > 12 ||
-                      (age === 12 && isBirthdayPassed) ||
-                      "Người lớn phải trên 12 tuổi"
+                      (age >= 12 && age <= 80 && isBirthdayPassed) ||
+                      "Người lớn từ 12 đến 80 tuổi"
                     );
                   }
                   if (
@@ -651,9 +650,8 @@ function ThongTinHanhKhach({
                     "trẻ em"
                   ) {
                     return (
-                      (age <= 12 && age >= 2) ||
                       (age <= 12 && age >= 2 && isBirthdayPassed) ||
-                      "Trẻ em dưới 12 tuổi và trên 2 tuổi"
+                      "Trẻ em dưới 12 và trên 2 tuổi"
                     );
                   }
                   if (
@@ -662,7 +660,7 @@ function ThongTinHanhKhach({
                   ) {
                     return (
                       (age < 2 && isBirthdayPassed) ||
-                      "Em bé phải dưới 2 tuổi và không quá hiện tại"
+                      "Em bé dưới 2 tuổi và không quá hiện tại"
                     );
                   }
 

@@ -145,7 +145,8 @@ function ComponentHome() {
         {isShowChatbot && <FuncChatbot />}
         {isShowOptionSetting_LoginSuccess && <LoginSuccess />}
         <div className="relative px-[50px] py-5 w-full h-screen bg-[url('https://ik.imagekit.io/tvlk/image/imageResource/2023/09/27/1695776209619-17a750c3f514f7a8cccde2d0976c902a.png?tr=q-75')] bg-center bg-no-repeat bg-cover">
-          {mutationTransactionPaypal.isPending && (
+          {(mutationTransactionPaypal.isPending ||
+            mutationTransactionMoMo.isPending) && (
             <div className="w-screen h-screen fixed z-[500]">
               <div className="fixed z-[500] transform -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
                 <l-bouncy size="40" speed="1.75" color="white" />
