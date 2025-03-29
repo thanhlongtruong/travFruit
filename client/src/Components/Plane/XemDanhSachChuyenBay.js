@@ -22,6 +22,7 @@ import { useSearchFlights } from "../../API/Flight.js";
 import ComponentSearchFlight from "./SearchFlight.js";
 import { bouncy } from "ldrs";
 import { Helmet } from "react-helmet-async";
+import AdjustQuantityv2 from "./AdjustQuantityv2.js";
 
 function XemDanhSachChuyenBay() {
   const {
@@ -90,8 +91,6 @@ function XemDanhSachChuyenBay() {
     searchParams: searchParams.toString(),
   });
   useEffect(() => {
-    console.log(data);
-
     if (data) {
       setFlights(data);
     } else {
@@ -314,6 +313,14 @@ function XemDanhSachChuyenBay() {
           countDepartureFlights={isFlights.departureFlights.length}
           countReturnFlights={isFlights.returnFlights.length}
         />
+        // <AdjustQuantityv2
+        //   objDeparture={selectedDepartureAirport}
+        //   setSelectedDepartureAirport={setSelectedDepartureAirport}
+        //   objReturn={passengerChooseDeparture ? selectedReturnAirport : null}
+        //   setPassengerChooseDeparture={setPassengerChooseDeparture}
+        //   countDepartureFlights={isFlights.departureFlights.length}
+        //   countReturnFlights={isFlights.returnFlights.length}
+        // />
       )}
       <Header />
       <div

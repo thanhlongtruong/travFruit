@@ -1,8 +1,3 @@
 User-agent: *
-Disallow: /XemDanhSachChuyenBay
-Disallow: /XemDanhSachChuyenbBay/DatChoCuaToi
-Disallow: /XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan
-Disallow: /Setting/InfoAccount
-Disallow: /Setting/HistoryTicket
 Allow: /
-Sitemap: https://travfruitv3.vercel.app/sitemap.xml
+Sitemap: https://travfruitv3.vercel.app/site-map.xml
