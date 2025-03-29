@@ -1,8 +1,7 @@
 export default function handler(req, res) {
-  res.setHeader("Content-Type", "text/html");
-  res.send(`
+  return `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="vi">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,5 +13,5 @@ export default function handler(req, res) {
       <a href="/">Quay lai trang chu</a>
     </body>
     </html>
-  `);
+  `;
 }

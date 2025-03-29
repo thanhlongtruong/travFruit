@@ -1,6 +1,5 @@
 export default function handler(req, res) {
-  res.setHeader("Content-Type", "text/html");
-  res.send(`
+  return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -14,5 +13,5 @@ export default function handler(req, res) {
       <a href="/about">Đi den trang About</a>
     </body>
     </html>
-  `);
+  `;
 }
