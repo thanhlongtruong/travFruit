@@ -42,7 +42,7 @@ function Header() {
     <header ref={refHeader} className={``}>
       <Link to="/" className="logo-header">
         <img
-          alt=""
+          alt="logo travfruit"
           src="/logo-header-word.svg"
           className="h-[70px] w-[200px]"
         />
