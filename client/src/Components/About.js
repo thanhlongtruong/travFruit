@@ -29,7 +29,7 @@ function About() {
       <Header />
       <div className="w-full h-full font-mono bg-zinc-900 text-white flex pt-5  justify-between">
         <div className="flex flex-col font-medium  w-[23%] rounded-lg h-fit overflow-hidden sticky top-[100px]">
-          <h1 className="p-4 border-b">Danh muc cua travfruit</h1>
+          <p className="p-4 border-b">Danh muc</p>
           {topics.map((topic) => (
             <a href={`/about#${topic.id}`} className="p-4 hover:opacity-80">
               {topic.title}

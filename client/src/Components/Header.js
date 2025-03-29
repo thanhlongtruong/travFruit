@@ -47,7 +47,7 @@ function Header() {
           className="h-[70px] w-[200px]"
         />
 
-        <h1>TRAVFRUIT</h1>
+        <h1 className="uppercase">travfruit</h1>
       </Link>
       {!url.includes("/XemDanhSachChuyenbBay/DatChoCuaToi") &&
       !url.includes("/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan") ? (
