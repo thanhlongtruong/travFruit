@@ -36,7 +36,10 @@ function About() {
             </a>
           ))}
         </div>
-        <div className="w-[75%] overflow-auto">
+        <div className="w-[75%] overflow-auto relative">
+          <h1 className="font-mono font-bold tracking-wider text-black absolute bottom-0 right-0 uppercase">
+            trang thong tin ve website travfruit
+          </h1>
           {topics.map((topic) => (
             <div key={topic.id} className="p-4">
               <p id={topic.id} className="text-xl font-bold">
