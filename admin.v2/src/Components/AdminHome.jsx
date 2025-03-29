@@ -2,9 +2,14 @@ import { Link, useNavigate } from "react-router";
 import PropTypes from "prop-types";
 import AccountUsers from "./AccountUsers";
 import AdminChuyenBay from "./AdminChuyenBay";
+import AdminPayment from "./AdminPayment";
 import { useMutation } from "@tanstack/react-query";
 import { Logout } from "./API/Account";
 import CatchErrorAPI from "./CatchErrorAPI";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
+import AdminThemChuyenBay from "./AdminThemChuyenBay";
+import AdminCreateFlight3M from "./AdminCreateFlight3M";
 export default function AdminHome({ type }) {
   const naviLogin = useNavigate();
 
@@ -15,6 +20,8 @@ export default function AdminHome({ type }) {
       naviLogin("/");
     },
   });
+
+  const [isDropdownFlight, setIsDropdownFlight] = useState(false);
   return (
     <>
       <div className="flex justify-between p-5 w-full h-screen bg-[url('https://ik.imagekit.io/tvlk/image/imageResource/2023/09/27/1695776209619-17a750c3f514f7a8cccde2d0976c902a.png')] bg-center bg-no-repeat bg-cover overflow-hidden">
@@ -24,15 +31,51 @@ export default function AdminHome({ type }) {
             Tài Khoản người dùng
           </Link>
 
-          <Link to="/home/chuyenbay" className="p-4 hover:opacity-80">
-            Chuyến bay
-          </Link>
-          <Link to="/home/chualam" className="p-4 hover:opacity-80">
+          <div>
+            <div className="flex items-center justify-between p-4">
+              <Link
+                to="/home/chuyenbay"
+                className="hover:opacity-80 whitespace-nowrap"
+              >
+                Chuyến bay
+              </Link>
+
+              {!isDropdownFlight ? (
+                <ChevronDown
+                  className="cursor-pointer w-full"
+                  onClick={() => setIsDropdownFlight(!isDropdownFlight)}
+                />
+              ) : (
+                <ChevronUp
+                  className="cursor-pointer w-full"
+                  onClick={() => setIsDropdownFlight(!isDropdownFlight)}
+                />
+              )}
+            </div>
+            {isDropdownFlight && (
+              <div className="flex flex-col gap-y-3">
+                <Link
+                  to="/home/chuyenbay/add"
+                  className="hover:opacity-80 whitespace-nowrap ml-8 text-sm"
+                >
+                  Thêm chuyến bay
+                </Link>
+                <Link
+                  to="/home/chuyenbay/create3month"
+                  className="hover:opacity-80 whitespace-nowrap ml-8 text-sm"
+                >
+                  Tạo cho 3 tháng
+                </Link>
+              </div>
+            )}
+          </div>
+
+          <Link to="/home/payment" className="p-4 hover:opacity-80">
             Payment
           </Link>
 
           <Link
-            to="https://travfruit.vercel.app/"
+            to="https://travfruitv3.vercel.app/"
             className="p-4 hover:opacity-80"
           >
             Go to client
@@ -62,6 +105,12 @@ export default function AdminHome({ type }) {
             <AccountUsers />
           ) : type === "chuyenbay" ? (
             <AdminChuyenBay />
+          ) : type === "addchuyenbay" ? (
+            <AdminThemChuyenBay />
+          ) : type === "create3month" ? (
+            <AdminCreateFlight3M />
+          ) : type === "payment" ? (
+            <AdminPayment />
           ) : (
             <AccountUsers />
           )}

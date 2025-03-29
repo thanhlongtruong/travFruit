@@ -4,7 +4,7 @@ import showNotification from "./showNotification";
 
 const instance = axios.create({
   // baseURL: "http://localhost:4001",
-  baseURL: "https://travfruit-server.vercel.app",
+  baseURL: "https://travfruitv3-server.vercel.app",
   timeout: 1000 * 60 * 5,
 });
 

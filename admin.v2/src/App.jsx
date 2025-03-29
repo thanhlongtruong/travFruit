@@ -14,6 +14,15 @@ function App() {
           path="/home/chuyenbay"
           element={<AdminHome type="chuyenbay" />}
         />
+        <Route
+          path="/home/chuyenbay/add"
+          element={<AdminHome type="addchuyenbay" />}
+        />
+        <Route
+          path="/home/chuyenbay/create3month"
+          element={<AdminHome type="create3month" />}
+        />
+        <Route path="/home/payment" element={<AdminHome type="payment" />} />
         <Route path="/" element={<AdminLogin />} />
         <Route path="*" element={<Page404 />} />
       </Routes>

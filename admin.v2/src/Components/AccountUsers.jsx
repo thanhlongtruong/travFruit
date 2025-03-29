@@ -12,11 +12,14 @@ import PropTypes from "prop-types";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Get as GetDH } from "./API/DonHang.js";
 import CatchErrorAPI from "./CatchErrorAPI.jsx";
+import ItemInputRadio from "./ItemInputRadio.jsx";
+import { convertDateToVNDate } from "./convertDateToVN.js";
 
 function AccountUsers() {
   const queryClient = useQueryClient();
   bouncy.register();
   const {
+    refetch,
     isLoading,
     error,
     data: users,
@@ -34,7 +37,7 @@ function AccountUsers() {
   }, [users]);
 
   const handleSearch = () => {
-    if (inputSearch === "") {
+    if (inputSearch.trim() === "") {
       return;
     }
     if (valueInputRadioSearch === "user") {
@@ -63,6 +66,7 @@ function AccountUsers() {
       setUser(result || []);
     },
   });
+
   const mutationGetWithIDFLight = useMutation({
     mutationFn: GetWithIDFLight,
     onSuccess: (data) => {
@@ -73,13 +77,6 @@ function AccountUsers() {
       );
       setUser(result || []);
     },
-    onError: (error) => {
-      return (
-        <div className="w-full h-full justify-center items-center flex uppercase">
-          {error}
-        </div>
-      );
-    },
   });
 
   const mutationUpdateStatus = useMutation({
@@ -87,13 +84,6 @@ function AccountUsers() {
     onSuccess: () => {
       queryClient.invalidateQueries("users");
       setShowDetailaccount(null);
-    },
-    onError: (error) => {
-      return (
-        <div className="w-full h-full justify-center items-center flex uppercase">
-          {error}
-        </div>
-      );
     },
   });
 
@@ -121,13 +111,6 @@ function AccountUsers() {
       queryClient.setQueryData(["userOrders", data.id], response.data.orders);
       setTotalPage(response.data.totalPage);
       setUserID(data.id);
-    },
-    onError: (error) => {
-      return (
-        <div className="w-full h-full justify-center items-center flex uppercase">
-          {error}
-        </div>
-      );
     },
   });
 
@@ -170,21 +153,9 @@ function AccountUsers() {
     setCurrentPage(0);
   };
 
-  const convertDateToVNDate = (dateString) => {
-    let vietnamDateTime = new Date(dateString).toLocaleString("vi-VN", {
-      timeZone: "Asia/Ho_Chi_Minh",
-      //weekday: "short",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-    return vietnamDateTime;
-  };
-
   const [isShowDetailaccount, setShowDetailaccount] = useState(null);
+  const [isShowLockAccount, setShowLockAccount] = useState(null);
+
   const handleShowDetailaccount = useCallback(
     (index) => {
       setShowDetailaccount(isShowDetailaccount === index ? null : index);
@@ -192,6 +163,12 @@ function AccountUsers() {
     },
 
     [isShowDetailaccount]
+  );
+  const handleShowLockAccount = useCallback(
+    (index) => {
+      setShowLockAccount(isShowLockAccount === index ? null : index);
+    },
+    [isShowLockAccount]
   );
 
   const [historyVe, setHistoryVe] = useState(null);
@@ -205,7 +182,7 @@ function AccountUsers() {
 
   const [valueInputRadioSearch, setValueInputRadioSearch] = useState("user");
 
-  if (isLoading) {
+  if (isLoading || mutationGetWithIDFLight.isPending) {
     return (
       <div className="w-full h-full justify-center items-center flex">
         <l-bouncy size="45" speed="1.75" color="white" />
@@ -246,8 +223,9 @@ function AccountUsers() {
               type="button"
               className="bg-blue-500 text-white font-medium rounded-md p-2 ml-3"
               onClick={() => {
-                setUser(users?.data);
                 setInputSearch("");
+                setShowDetailaccount(null);
+                refetch();
               }}
             >
               Quay lại
@@ -274,8 +252,16 @@ function AccountUsers() {
             })}
           </div>
 
-          {mutationGetDH.isError ? (
-            <CatchErrorAPI error={mutationGetDH.error} />
+          {mutationGetDH.isError ||
+          mutationGetWithIDFLight.isError ||
+          mutationUpdateStatus.isError ? (
+            <CatchErrorAPI
+              error={
+                mutationGetDH.error ||
+                mutationGetWithIDFLight.error ||
+                mutationUpdateStatus.error
+              }
+            />
           ) : (
             <div className="flex w-full">
               <table className="w-11/12 m-auto bg-transparent">
@@ -325,6 +311,7 @@ function AccountUsers() {
                                 type="button"
                                 className="cursor-pointer"
                                 onClick={() => {
+                                  handleShowLockAccount(index);
                                   account.status === "Đang hoạt động"
                                     ? mutationUpdateStatus.mutate({
                                         id: account._id,
@@ -336,9 +323,18 @@ function AccountUsers() {
                                       });
                                 }}
                               >
-                                {account.status === "Đang hoạt động"
-                                  ? "Khóa"
-                                  : "Mở"}
+                                {isShowLockAccount === index &&
+                                mutationUpdateStatus.isPending ? (
+                                  <l-bouncy
+                                    size="30"
+                                    speed="1.75"
+                                    color="white"
+                                  />
+                                ) : account.status === "Đang hoạt động" ? (
+                                  "Khóa"
+                                ) : (
+                                  "Mở"
+                                )}
                               </button>
                             </div>
                           </td>
@@ -630,40 +626,4 @@ OptionShowHistoryOrder.propTypes = {
   handleChooseOptionShow: PropTypes.func.isRequired,
 };
 
-function ItemInputRadio({
-  topic,
-  idInput,
-  nameInput,
-  valueInput,
-  htmlFor,
-  valueInputRadioSearch,
-  setValueInputRadioSearch,
-}) {
-  return (
-    <>
-      <input
-        className="cursor-pointer mr-2"
-        type="radio"
-        id={idInput}
-        name={nameInput}
-        value={valueInput}
-        checked={valueInputRadioSearch === idInput}
-        onClick={(e) => setValueInputRadioSearch(e.target.value)}
-      />
-      <label className="cursor-pointer" htmlFor={htmlFor}>
-        {topic}
-      </label>
-      <span className="mx-2">|</span>
-    </>
-  );
-}
-ItemInputRadio.propTypes = {
-  topic: PropTypes.string.isRequired,
-  idInput: PropTypes.string.isRequired,
-  nameInput: PropTypes.string.isRequired,
-  valueInput: PropTypes.string.isRequired,
-  htmlFor: PropTypes.string.isRequired,
-  valueInputRadioSearch: PropTypes.string.isRequired,
-  setValueInputRadioSearch: PropTypes.func.isRequired,
-};
 export default AccountUsers;
