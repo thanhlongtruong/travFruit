@@ -145,6 +145,9 @@ function ComponentHome() {
         {isShowChatbot && <FuncChatbot />}
         {isShowOptionSetting_LoginSuccess && <LoginSuccess />}
         <div className="relative px-[50px] py-5 w-full h-screen bg-[url('https://ik.imagekit.io/tvlk/image/imageResource/2023/09/27/1695776209619-17a750c3f514f7a8cccde2d0976c902a.png?tr=q-75')] bg-center bg-no-repeat bg-cover">
+          <h1 className="font-mono font-bold tracking-wider text-black absolute bottom-0 right-0 uppercase">
+            travfruit
+          </h1>
           {(mutationTransactionPaypal.isPending ||
             mutationTransactionMoMo.isPending) && (
             <div className="w-screen h-screen fixed z-[500]">
