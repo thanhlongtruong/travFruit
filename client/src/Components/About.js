@@ -5,19 +5,19 @@ function About() {
   const topics = [
     {
       id: 1,
-      title: "Thông tin về TravFruit 🤨",
+      title: "Thong tin ve travfruit🤨",
     },
     {
       id: 2,
-      title: "Mục đích của dự án TravFruit ? 🤕",
+      title: "Muc dich cua du an cua travfruit? 🤕",
     },
     {
       id: 3,
-      title: "Công nghệ nào được sử dụng vào TravFruit ? 😣",
+      title: "Cong nghe nao duoc su dung  vao travfruit? 😣",
     },
     {
       id: 4,
-      title: "Tìm TravFruit ? 🤔",
+      title: "Tim travfruit ? 🤔",
     },
   ];
 
@@ -29,7 +29,7 @@ function About() {
       <Header />
       <div className="w-full h-full font-mono bg-zinc-900 text-white flex pt-5  justify-between">
         <div className="flex flex-col font-medium  w-[23%] rounded-lg h-fit overflow-hidden sticky top-[100px]">
-          <p className="p-4 border-b">Danh mục</p>
+          <p className="p-4 border-b">Danh muc</p>
           {topics.map((topic) => (
             <a href={`/about#${topic.id}`} className="p-4 hover:opacity-80">
               {topic.title}
