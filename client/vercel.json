@@ -1,7 +1,7 @@
 {
   "functions": {
-    "api/home.js": { "runtime": "@vercel/node" },
-    "api/about.js": { "runtime": "@vercel/node" }
+    "api/home.js": {},
+    "api/about.js": {}
   },
   "routes": [
     { "src": "^/$", "dest": "/api/home.js" },
