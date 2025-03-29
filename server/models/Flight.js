@@ -49,7 +49,7 @@ const FlightSchema = mongoose.Schema(
     },
     trangThaiChuyenBay: {
       type: String,
-      required: true,
+      default: "Đang hoạt động",
     },
     expiredAt: { type: Date },
   },
