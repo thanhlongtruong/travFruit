@@ -44,6 +44,8 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://travfruitv3.vercel.app/",
   "https://travfruitv3.vercel.app",
+  "https://travfruitv3admin.vercel.app/",
+  "https://travfruitv3admin.vercel.app",
 ];
 
 app.use(
