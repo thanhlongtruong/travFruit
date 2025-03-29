@@ -1,14 +1,16 @@
 import { Route, Routes } from "react-router-dom";
 import DatChoCuaToi from "./Components/Plane/DatChoCuaToi.js";
-import { Home } from "./Components/Home/Home.js";
+
 import Setting from "./Components/Setting/Setting.js";
 import XemDanhSachChuyenBay from "./Components/Plane/XemDanhSachChuyenBay.js";
 import TrangThanhToan from "./Components/TrangThanhToan.js";
 import { Notification } from "./Components/Noti/NotificationSocket.js";
 import { Navigate } from "react-router-dom";
-import About from "./Components/About.js";
+
 import { Helmet } from "react-helmet-async";
 import { useLocation } from "react-router-dom";
+import { Home } from "./Components/Home/Home.jsx";
+import About from "./Components/About.jsx";
 
 function App() {
   const location = useLocation();

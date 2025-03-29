@@ -135,7 +135,8 @@ function ComponentHome() {
   return (
     <>
       <Helmet>
-        <link rel="canonical" href="https://travfruitv3.vercel.app/" />
+        <title>Trang chu cua website travfruit</title>
+        <meta name="description" content="Trang chu cua website travfruit" />
       </Helmet>
       {isShowInterfaceLogin && <InterFaceLogin />}
       {stateFlightShowCalendar && <FlightShowCalendar />}

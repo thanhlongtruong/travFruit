@@ -24,7 +24,11 @@ function About() {
   return (
     <>
       <Helmet>
-        <link rel="canonical" href="https://travfruitv3.vercel.app/about" />
+        <title>Trang thong tin ve website travfruit</title>
+        <meta
+          name="description"
+          content="Mo ta trang thong tin ve website travfruit"
+        />
       </Helmet>
       <Header />
       <div className="w-full h-full font-mono bg-zinc-900 text-white flex pt-5  justify-between">
