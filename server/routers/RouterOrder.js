@@ -21,7 +21,9 @@ router.post("/create", async (req, res) => {
     soGheThuongGiaDeparture,
     soGhePhoThongReturn,
     soGheThuongGiaReturn,
+    email,
   } = req.body;
+  console.log(email);
 
   const now = new Date();
   const fifteenMinutesLater = new Date(now.getTime() + 15 * 60 * 1000);
@@ -35,6 +37,7 @@ router.post("/create", async (req, res) => {
       userId: _id,
       soLuongVe: totalQuantityTickets,
       tongGia: totalPriceTickets,
+      email,
       expiredAt: fifteenMinutesLater,
     });
 
@@ -300,10 +303,11 @@ router.post("/update_status", async (req, res) => {
       const checkValid = await DonHang.findById(orderID);
       if (!checkValid) {
         return res.status(404).json({ message: "Đơn hàng không tồn tại" });
-      }
-      else if (checkValid.trangThai === "Đã thanh toán") {
-        return res.status(200).json({ message: "Đơn hàng đã thanh toán trước đó" });
-      }else if (checkValid.trangThai === "Đã hủy") {
+      } else if (checkValid.trangThai === "Đã thanh toán") {
+        return res
+          .status(200)
+          .json({ message: "Đơn hàng đã thanh toán trước đó" });
+      } else if (checkValid.trangThai === "Đã hủy") {
         return res.status(200).json({ message: "Đơn hàng đã hủy trước đó" });
       }
       orderUpdate = await DonHang.findByIdAndUpdate(orderID, {

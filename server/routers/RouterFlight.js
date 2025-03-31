@@ -10,9 +10,11 @@ const _ = require("lodash");
 const rateLimit = require("express-rate-limit");
 const Payment = require("../models/Payment.js");
 const Ticket = require("../models/Ticket.js");
+const { convertDateToVN } = require("../service/convertDateToVN.js");
 const checkAdmin = require("../middleware/checkAdmin.js");
 const isValidDateFormat = require("../service/checkFormatDate.js");
 const { converCurrency } = require("../service/formatNumber.js");
+
 const Create3MFlightVerification = require("../models/Create3MFlightVerification.js");
 const AirportVN = [
   {
@@ -212,7 +214,7 @@ router.post("/create", authorization, checkAdmin, async (req, res) => {
       gia,
     } = req.body;
 
-    const errors = middleCheckFlight({
+    const errors = await middleCheckFlight({
       diemBay,
       diemDen,
       ngayBay,
@@ -310,6 +312,7 @@ router.get(
   apiLimiter,
   async (req, res) => {
     const currentUrl = "https://travfruitv3admin.vercel.app";
+    // const currentUrl = "http://localhost:5173";
     const uniqueString = uuidv4();
 
     const mailOption = {
@@ -382,12 +385,16 @@ router.get(
   checkAdmin,
   apiLimiter,
   async (req, res) => {
+    //Server-Sent Events (SSE)
+    // //res.setHeader("Content-Type", "text/event-stream");
+    // res.setHeader("Cache-Control", "no-cache");
+    // res.setHeader("Connection", "keep-alive");
     try {
-      // await Flight.deleteMany({});
+      await Flight.deleteMany({});
       const { verify } = req.query;
       if (!verify) {
         return res.status(400).json({
-          message: "Không tồn tại verify",
+          message: "Verify không tồn tại",
         });
       }
       const verification = await Create3MFlightVerification.findOne();
@@ -405,6 +412,8 @@ router.get(
           message: "Verify không chính xác",
         });
       }
+      await Create3MFlightVerification.deleteMany({});
+
       const currentDate = moment().add(1, "days");
 
       const totalSeats = 170;
@@ -477,8 +486,9 @@ router.get(
             trangThaiChuyenBay: "Đang hoạt động",
           };
 
-          // const ouboundFlightEntry = new Flight(outboundFlights);
-          // await ouboundFlightEntry.save();
+          const ouboundFlightEntry = new Flight(outboundFlights);
+          await ouboundFlightEntry.save();
+
           //==========================================================
 
           const economySeats_returnFlight =
@@ -540,14 +550,15 @@ router.get(
             trangThaiChuyenBay: "Đang hoạt động",
           };
 
-          // const returnFlightEntry = new Flight(returnFlight);
-          // await returnFlightEntry.save();
+          const returnFlightEntry = new Flight(returnFlight);
+          await returnFlightEntry.save();
         }
       }
       return res.status(200).json({
         message:
           "Tạo chuyến bay đi và chuyến bay khứ hồi cho 3 tháng thành công",
       });
+      res.end();
     } catch (error) {
       return res.status(500).json({
         message: "Lỗi khi tạo chuyến bay",
@@ -892,7 +903,40 @@ router.get("/search", authorization, async (req, res) => {
   }
 });
 
-const middleCheckFlight = ({
+router.post("/get/soghe", async (req, res) => {
+  try {
+    const { idFlight } = req.body;
+
+    const tickets = await Ticket.find({
+      maChuyenBay: idFlight,
+    });
+
+    const maSoGhePhoThong = tickets
+      .filter((ticket) => ticket.hangVe === "Vé phổ thông")
+      .map((ticket) => ticket.maSoGhe);
+
+    const maSoGheThuongGia = tickets
+      .filter((ticket) => ticket.hangVe === "Vé thương gia")
+      .map((ticket) => ticket.maSoGhe);
+
+    return res.status(200).json({
+      message: "Lấy số ghế thành công",
+      maSoGhePhoThong,
+      maSoGheThuongGia,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Lỗi khi lấy số ghế",
+      error: {
+        name: error.name,
+        message: error.message || "Lỗi khi lấy số ghế",
+        stack: error.stack,
+      },
+    });
+  }
+});
+
+const middleCheckFlight = async ({
   diemBay,
   diemDen,
   ngayBay,
@@ -905,6 +949,7 @@ const middleCheckFlight = ({
   soGhePhoThong,
   soGheThuongGia,
 }) => {
+  const { newestFlight } = await GetOldestNewest();
   const regex = /^[0-9]+$/;
 
   const errors = [];
@@ -928,6 +973,11 @@ const middleCheckFlight = ({
   }
   if (!moment(ngayBay, "DD-MM-YYYY", true).isValid()) {
     errors.push("Ngày bay không hợp lệ, format: DD-MM-YYYY.");
+  }
+  if (
+    moment(ngayBay, "DD-MM-YYYY").isAfter(moment(newestFlight, "DD-MM-YYYY"))
+  ) {
+    errors.push(`Ngày bay quá ngày ${newestFlight}.`);
   }
   if (!moment(ngayDen, "DD-MM-YYYY", true).isValid()) {
     errors.push("Ngày đến không hợp lệ, format: DD-MM-YYYY.");
@@ -993,7 +1043,7 @@ router.post("/update", authorization, checkAdmin, async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy id chuyến bay" });
     }
     // Danh sách các lỗi
-    const errors = middleCheckFlight({
+    const errors = await middleCheckFlight({
       diemBay,
       diemDen,
       ngayBay,
@@ -1070,4 +1120,48 @@ router.post("/update", authorization, checkAdmin, async (req, res) => {
   }
 });
 
+router.get("/get/oldest-newest", async (req, res) => {
+  try {
+    const getOldestNewest = await GetOldestNewest();
+
+    return res.status(200).json({
+      message: "Get oldest and newest flight",
+      oldestF: getOldestNewest.oldestFlight,
+      newestF: getOldestNewest.newestFlight,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Lỗi khi get oldest and newest flight",
+      error: {
+        name: error.name,
+        message: error.message || "Lỗi khi get oldest and newest flight",
+        stack: error.stack,
+      },
+    });
+  }
+});
+
+async function GetOldestNewest() {
+  const flights = await Flight.aggregate([
+    {
+      $addFields: {
+        ngayBayDate: {
+          $dateFromString: {
+            dateString: "$ngayBay",
+            format: "%d-%m-%Y",
+          },
+        },
+      },
+    },
+    {
+      $facet: {
+        oldest: [{ $sort: { ngayBayDate: 1 } }, { $limit: 1 }],
+        newest: [{ $sort: { ngayBayDate: -1 } }, { $limit: 1 }],
+      },
+    },
+  ]);
+  const oldestFlight = flights[0]?.oldest[0]?.ngayBay || null;
+  const newestFlight = flights[0]?.newest[0]?.ngayBay || null;
+  return { oldestFlight, newestFlight };
+}
 module.exports = router;

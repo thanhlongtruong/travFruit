@@ -35,5 +35,6 @@ function connectDB(uri) {
 }
 
 const TravelDB = connectDB(process.env.MONGO_URI);
+// const TravelDB = connectDB(process.env.MONGO_URI_TEST);
 
 module.exports = { TravelDB };

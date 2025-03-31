@@ -46,6 +46,8 @@ const allowedOrigins = [
   "https://travfruitv3.vercel.app",
   "https://travfruitv3admin.vercel.app/",
   "https://travfruitv3admin.vercel.app",
+  "https://travfruitv3.netlify.app/",
+  "https://travfruitv3.netlify.app",
 ];
 
 app.use(
