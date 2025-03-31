@@ -1,6 +1,0 @@
-{
-  "routes": [
-    { "src": "^/$", "dest": "/api/home.js" },
-    { "src": "^/about$", "dest": "/api/about.js" }
-  ]
-}
