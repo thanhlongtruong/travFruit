@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const axios = require("axios");
 const Payment = require("../models/Payment");
-const convertDateToVN = require("../service/convertDateToVN");
+const { convertDateToVN } = require("../service/convertDateToVN");
 const { formatNumber } = require("../service/formatNumber");
 const DonHang = require("../models/DonHang");
 
