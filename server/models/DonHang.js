@@ -20,10 +20,10 @@ const DonHangSchema = mongoose.Schema({
   phuongThuc: {
     type: String,
   },
-  email: {
-    type: String,
-    required: true,
-  },
+  // email: {
+  //   type: String,
+  //   required: true,
+  // },
   createdAt: { type: Date, default: Date.now },
   expiredAt: { type: Date },
 });

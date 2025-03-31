@@ -33,10 +33,10 @@ const TicketSchema = mongoose.Schema({
     required: true,
     default: "Chưa thanh toán",
   },
-  maSoGhe: {
-    type: String,
-    required: true,
-  },
+  // maSoGhe: {
+  //   type: String,
+  //   required: true,
+  // },
   createdAt: { type: Date, default: Date.now },
 });
 
