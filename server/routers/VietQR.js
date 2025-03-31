@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const axios = require("axios");
 const Payment = require("../models/Payment");
-const convertDateToVNDate = require("../service/convertDateToVN");
+const convertDateToVN = require("../service/convertDateToVN");
 const { formatNumber } = require("../service/formatNumber");
 const DonHang = require("../models/DonHang");
 
@@ -55,9 +55,9 @@ router.post("/google-sheet", async (req, res) => {
         AMOUNT_VIETQR = parseInt(
           formatNumber(newestDonhang.tongGia.split(" ")[0])
         );
-        DESCRIPTION_VIETQR = `${convertDateToVNDate(
-          newestDonhang?.expiredAt
-        )} ${newestDonhang._id}`.replace(/[:/]/g, "");
+        DESCRIPTION_VIETQR = `${convertDateToVN(newestDonhang?.expiredAt)} ${
+          newestDonhang._id
+        }`.replace(/[:/]/g, "");
         if (
           response?.data.data[0]["Mô tả"].slice(-40) === DESCRIPTION_VIETQR &&
           AMOUNT_VIETQR === response?.data.data[0]["Giá trị"]
@@ -73,7 +73,7 @@ router.post("/google-sheet", async (req, res) => {
       }
     }
     AMOUNT_VIETQR = parseInt(formatNumber(donhang.tongGia.split(" ")[0]));
-    DESCRIPTION_VIETQR = `${convertDateToVNDate(donhang?.expiredAt)} ${
+    DESCRIPTION_VIETQR = `${convertDateToVN(donhang?.expiredAt)} ${
       donhang._id
     }`.replace(/[:/]/g, "");
     console.log(
