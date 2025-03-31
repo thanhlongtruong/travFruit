@@ -35,3 +35,7 @@ export const useSearchFlights = ({ searchParams }) => {
     keepPreviousData: false,
   });
 };
+
+export const GheMaSoGhe = async ({ idFlight }) => {
+  return await axios.post("/flights/get/soghe", { idFlight });
+};

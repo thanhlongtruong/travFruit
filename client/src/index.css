@@ -3,16 +3,16 @@
 @tailwind utilities;
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
 .div-flex-adjust-justify-between {
@@ -49,7 +49,7 @@ input[type="number"] {
     @apply relative flex flex-col;
   }
   .inputTag {
-    @apply bg-transparent border border-slate-500 p-3 rounded-md outline-none text-teal-400 uppercase;
+    @apply bg-transparent border border-slate-500 p-3 rounded-md outline-none text-teal-400;
   }
 
   .inputTag:valid,
@@ -57,7 +57,7 @@ input[type="number"] {
     @apply border-teal-400;
   }
   .inputTagBug {
-    @apply border-rose-400 border outline-none p-3 rounded-md text-rose-500 uppercase;
+    @apply border-rose-400 border outline-none p-3 rounded-md text-rose-500;
   }
   .inputTagBug ~ span {
     @apply absolute text-rose-500 p-[12px] h-full rounded-sm uppercase tracking-[3px] pointer-events-none duration-700;

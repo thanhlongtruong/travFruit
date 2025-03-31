@@ -112,10 +112,10 @@ function DatChoCuaToi() {
   });
 
   const submitFormInfo = async (data) => {
-    const array = Object.values(data);
+    // const array = Object.values(data);
     const payload = {
-      airportDeparture: array[0],
-      airportReturn: array[1],
+      airportDeparture: data.items,
+      airportReturn: data.itemsB || [],
       totalQuantityTickets:
         quantityTicketsDeparture.quantityTicketsOfAdult[0] +
         quantityTicketsDeparture.quantityTicketsOfAdult[1] +
@@ -156,6 +156,7 @@ function DatChoCuaToi() {
         ? quantityTicketsReturn.quantityTicketsOfAdult[1] +
           quantityTicketsReturn.quantityTicketsOfChild[1]
         : 0,
+      // email: data.email,
     };
     await mutationCreateOrder.mutate(payload);
   };
@@ -222,11 +223,68 @@ function DatChoCuaToi() {
               </div>
             </Link>
 
-            <div className="text-xl font-bold w-3/5">
-              <div className="mt-[16px]  bg-white shadow-lg rounded-md">
-                <div className="p-4 flex h-[52px] shadow-sm gap-x-3">
+            <div className="flex flex-col w-3/5">
+              <div className="text-xl font-bold">
+                <div className="mt-[16px]  bg-white shadow-lg rounded-md w-full">
+                  <div className="p-4 flex h-[52px] shadow-sm gap-x-3">
+                    <h3 className="text-base w-fit">Thông tin liên hệ</h3>
+                    <div className="relative">
+                      <div className="cursor-pointer icon-hover-trigger">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth="1.5"
+                          stroke="#0194F3"
+                          className="size-6"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="absolute left-1/2 transform text-wrap -translate-x-1/2 bottom-full mb-2 w-[300px] p-2 text-sm text-white bg-gray-700 rounded transition-opacity duration-300 opacity-0 hover-note">
+                        <p>
+                          - Thông tin liên hệ được lấy từ thông tin tài khoản
+                          của bạn.
+                        </p>
+
+                        <div className="absolute left-1/2 transform -translate-x-1/2 bottom-[-8px] w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-gray-700"></div>
+                      </div>
+                    </div>
+
+                    <style jsx="true">{`
+                      .icon-hover-trigger:hover + .hover-note {
+                        opacity: 1;
+                      }
+                    `}</style>
+                  </div>
+                  <div className="p-4 flex gap-3">
+                    <div className="inputBox w-fit">
+                      <input
+                        className={`inputTag`}
+                        type="text"
+                        value={user?.fullName}
+                      />
+                      <span className={`spanTag`}>HỌ VÀ TÊN</span>
+                    </div>
+                    <div className="inputBox w-fit">
+                      <input
+                        className={`inputTag`}
+                        type="text"
+                        value={user?.numberPhone}
+                      />
+                      <span className={`spanTag`}>Số điện thoại</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* <div className="mt-4">
+                <div className="p-4 flex h-[52px] shadow-sm gap-x-3 text-xl font-bold">
                   <h3 className="text-base w-fit">
-                    Thông tin liên hệ (nhận vé/phiếu thanh toán)
+                    Email nhận vé/phiếu thanh toán
                   </h3>
                   <div className="relative">
                     <div className="cursor-pointer icon-hover-trigger">
@@ -247,8 +305,8 @@ function DatChoCuaToi() {
                     </div>
                     <div className="absolute left-1/2 transform text-wrap -translate-x-1/2 bottom-full mb-2 w-[300px] p-2 text-sm text-white bg-gray-700 rounded transition-opacity duration-300 opacity-0 hover-note">
                       <p>
-                        - Thông tin liên hệ được lấy từ thông tin tài khoản của
-                        bạn.
+                        - Thông tin vé sẽ được gửi tới email khi khách hàng
+                        thanh toán thành công
                       </p>
 
                       <div className="absolute left-1/2 transform -translate-x-1/2 bottom-[-8px] w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-gray-700"></div>
@@ -261,25 +319,26 @@ function DatChoCuaToi() {
                     }
                   `}</style>
                 </div>
-                <div className="p-4 flex gap-3">
-                  <div className="inputBox w-fit">
+                <div className="flex items-center mt-6">
+                  <div className={`inputBox w-full`}>
                     <input
-                      className={`inputTag`}
+                      className={`${errors?.email ? "inputTagBug" : "inputTag"}`}
                       type="text"
-                      value={user?.fullName}
+                      required
+                      {...register("email", {
+                        required: "Email",
+                        pattern: {
+                          value: /^[^\s@]+@gmail\.com$/,
+                          message: "Email không hợp lệ",
+                        },
+                      })}
                     />
-                    <span className={`spanTag`}>HỌ VÀ TÊN</span>
-                  </div>
-                  <div className="inputBox w-fit">
-                    <input
-                      className={`inputTag`}
-                      type="text"
-                      value={user?.numberPhone}
-                    />
-                    <span className={`spanTag`}>Số điện thoại</span>
+                    <span className={`spanTag`}>
+                      {errors.email ? errors.email.message : "email"}
+                    </span>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -632,16 +691,20 @@ function ThongTinHanhKhach({
                   const today = new Date();
                   const birthDate = new Date(value);
                   const age = today.getFullYear() - birthDate.getFullYear();
-                  const isBirthdayPassed =
-                    today.getMonth() > birthDate.getMonth() ||
-                    (today.getMonth() === birthDate.getMonth() &&
-                      today.getDate() >= birthDate.getDate());
+                  const monthDiff = today.getMonth() - birthDate.getMonth();
+                  const dayDiff = today.getDate() - birthDate.getDate();
+
+                  const adjustedAge =
+                    monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)
+                      ? age - 1
+                      : age;
+
                   if (
                     watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
                     "người lớn"
                   ) {
                     return (
-                      (age >= 12 && age <= 80 && isBirthdayPassed) ||
+                      (adjustedAge >= 12 && adjustedAge <= 80) ||
                       "Người lớn từ 12 đến 80 tuổi"
                     );
                   }
@@ -650,7 +713,7 @@ function ThongTinHanhKhach({
                     "trẻ em"
                   ) {
                     return (
-                      (age <= 12 && age >= 2 && isBirthdayPassed) ||
+                      (adjustedAge <= 12 && adjustedAge >= 2) ||
                       "Trẻ em dưới 12 và trên 2 tuổi"
                     );
                   }
@@ -659,7 +722,7 @@ function ThongTinHanhKhach({
                     "em bé"
                   ) {
                     return (
-                      (age < 2 && isBirthdayPassed) ||
+                      adjustedAge < 2 ||
                       "Em bé dưới 2 tuổi và không quá hiện tại"
                     );
                   }

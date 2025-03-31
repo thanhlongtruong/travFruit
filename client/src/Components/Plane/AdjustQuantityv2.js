@@ -11,15 +11,6 @@ function AdjustQuantityv2({
   countDepartureFlights,
   countReturnFlights,
 }) {
-  console.log(
-    objDeparture,
-    setSelectedDepartureAirport,
-    setPassengerChooseDeparture,
-    objReturn,
-    countDepartureFlights,
-    countReturnFlights
-  );
-
   const seatsPerRow = 6; // 6 cột cố định
   const businessRows = Math.ceil(totalBusinessSeats / seatsPerRow); // Số hàng thương gia
   const economyRows = Math.ceil(totalEconomySeats / seatsPerRow); // Số hàng phổ thông

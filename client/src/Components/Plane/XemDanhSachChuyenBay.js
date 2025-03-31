@@ -18,11 +18,12 @@ import ItemFlight from "./ItemFlight.js";
 import { LoginSuccess } from "../Setting/StateLoginSucces.js";
 import { differenceInMinutes, parse } from "date-fns";
 import { useLocation } from "react-router-dom";
-import { useSearchFlights } from "../../API/Flight.js";
+import { GheMaSoGhe, useSearchFlights } from "../../API/Flight.js";
 import ComponentSearchFlight from "./SearchFlight.js";
 import { bouncy } from "ldrs";
 import { Helmet } from "react-helmet-async";
 import AdjustQuantityv2 from "./AdjustQuantityv2.js";
+import { useMutation } from "@tanstack/react-query";
 
 function XemDanhSachChuyenBay() {
   const {
@@ -45,6 +46,7 @@ function XemDanhSachChuyenBay() {
     handleReplacePriceAirport,
     showNotification,
   } = useContext(CONTEXT);
+
   bouncy.register();
   const location = useLocation();
 
@@ -90,6 +92,7 @@ function XemDanhSachChuyenBay() {
   const { data, isLoading, error } = useSearchFlights({
     searchParams: searchParams.toString(),
   });
+
   useEffect(() => {
     if (data) {
       setFlights(data);
@@ -132,6 +135,7 @@ function XemDanhSachChuyenBay() {
 
   const [oneWayTicket, setOneWayTicket] = useState([]);
   const [roundtripTicket, setRoundtripTicket] = useState([]);
+
   const handleFilterOneWayTicket = useCallback(
     ({ kindFilter }) => {
       const departureFlights = [...isFlights?.departureFlights];
@@ -190,17 +194,21 @@ function XemDanhSachChuyenBay() {
     },
     [isFlights, handleReplacePriceAirport]
   );
+
   useEffect(() => {
     handleFilterOneWayTicket({ kindFilter: "All" });
   }, [handleFilterOneWayTicket]);
+
   const [filterTakeoffTime, setFilterTakeoffTime] = useState([
     "00:00",
     "24:00",
   ]);
+
   const [filterLandingTime, setFilterLandingTime] = useState([
     "00:00",
     "24:00",
   ]);
+
   const handleFilterTakeoffTime = (event, newValue) => {
     let [startHour, endHour] = newValue;
 
@@ -218,6 +226,7 @@ function XemDanhSachChuyenBay() {
       endHour.toString().padStart(2, "0") + ":00",
     ]);
   };
+
   const handleFilterLadingTime = (event, newValue) => {
     let [startHour, endHour] = newValue;
 
@@ -246,7 +255,10 @@ function XemDanhSachChuyenBay() {
     useState(null);
   const [selectedReturnAirport, setSelectedReturnAirport] = useState(null);
 
-  const hanldeOpenAdjustQuantity_SelectedAirport = (airport, typeAirport) => {
+  const hanldeOpenAdjustQuantity_SelectedAirport = async (
+    airport,
+    typeAirport
+  ) => {
     const [day, month, year] = airport?.ngayBay.split("-").map(Number);
     const ngayBay = new Date(year, month - 1, day);
 
@@ -263,6 +275,9 @@ function XemDanhSachChuyenBay() {
 
       return;
     }
+
+    // const res = await mutateGheMaSoGhe.mutateAsync({ idFlight: airport._id });
+    // console.log(res);
 
     if (typeAirport === "departure" && passengerChooseDeparture) {
       const element = document.getElementById(
@@ -295,6 +310,16 @@ function XemDanhSachChuyenBay() {
     setOpenAdjustQuantity(true);
     setHideDetailItemFlight(false);
   };
+
+  // const mutateGheMaSoGhe = useMutation({
+  //   mutationFn: GheMaSoGhe,
+  //   onError: (error) => {
+  //     showNotification(
+  //       error?.response?.data?.message || "Lỗi khi lấy số ghế chuyến bay",
+  //       "Warn"
+  //     );
+  //   },
+  // });
 
   return (
     <>
