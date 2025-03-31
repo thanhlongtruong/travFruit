@@ -48,6 +48,11 @@ export const Create = async (data) => {
 export const Create3M = async ({ verify }) => {
   return await axios.get(`/flights/create/three-months?verify=${verify}`);
 };
+
 export const Create3MVerify = async () => {
   return await axios.get(`/flights/create/three-months/send-verify`);
+};
+
+export const GetOldestNewest = async () => {
+  return await axios.get(`/flights/get/oldest-newest`);
 };

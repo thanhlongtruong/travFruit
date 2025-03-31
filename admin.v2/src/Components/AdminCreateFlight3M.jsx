@@ -1,5 +1,5 @@
-import { useMutation } from "@tanstack/react-query";
-import { Create3M, Create3MVerify } from "./API/ChuyenBay";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Create3M, Create3MVerify, GetOldestNewest } from "./API/ChuyenBay";
 import { toast, ToastContainer } from "react-toastify";
 import { useToastOptions } from "./CustomToast";
 import { bouncy } from "ldrs";
@@ -9,6 +9,15 @@ import { useEffect, useState } from "react";
 function AdminCreateFlight3M() {
   bouncy.register();
 
+  const {
+    isLoading,
+    error,
+    data: { data: { oldestF, newestF } = {} } = {},
+  } = useQuery({
+    queryKey: ["oldestF", "newestF"],
+    queryFn: GetOldestNewest,
+    refetchOnWindowFocus: false,
+  });
   const [isVerify, setIsVerify] = useState(null);
 
   useEffect(() => {
@@ -33,9 +42,25 @@ function AdminCreateFlight3M() {
   const mutationCreate3M = useMutation({
     mutationFn: Create3M,
     onSuccess: (response) => {
+      setIsVerify(null);
+      const url = window.location.origin + window.location.pathname;
+      window.history.replaceState(null, "", url);
       toast.success(`${response?.data?.message}`, useToastOptions);
     },
   });
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-full justify-center items-center flex">
+        <l-bouncy size="45" speed="1.75" color="white" />
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div>Error: {JSON.stringify(error?.response?.data?.error || error)}</div>
+    );
+  }
   return (
     <>
       <ToastContainer
@@ -60,6 +85,12 @@ function AdminCreateFlight3M() {
         </p>
         <li>Xóa tất cả chuyến bay trước đó.</li>
         <li>Chuyến bay sẽ tạo ngẫu nhiên với 7 chuyến/ngày.</li>
+
+        {oldestF && newestF && (
+          <li>
+            Thời gian tạo chuyến bay: {oldestF} đến {newestF}
+          </li>
+        )}
       </ul>
       <button
         className="bg-blue-500 text-white p-2 rounded-lg"
@@ -79,18 +110,21 @@ function AdminCreateFlight3M() {
           "Xác nhận tạo chuyến bay"
         )}
       </button>
-      {mutationCreate3MVerify.isError ||
-        (mutationCreate3M.isError && (
-          <CatchErrorAPI
-            error={mutationCreate3MVerify.error || mutationCreate3M.error}
-            handleAgain={() => {
-              setIsVerify(null);
-              const url = window.location.origin + window.location.pathname;
-              window.history.replaceState(null, "", url);
-              window.location.reload();
-            }}
-          />
-        ))}
+      {(mutationCreate3MVerify.isError || mutationCreate3M.isError) && (
+        <CatchErrorAPI
+          error={mutationCreate3MVerify.error || mutationCreate3M.error}
+          handleAgain={
+            mutationCreate3M.isError
+              ? () => {
+                  setIsVerify(null);
+                  const url = window.location.origin + window.location.pathname;
+                  window.history.replaceState(null, "", url);
+                  window.location.reload();
+                }
+              : null
+          }
+        />
+      )}
     </>
   );
 }

@@ -478,6 +478,9 @@ function FormFlight({ flight, setShowDetailFlight, typeAction }) {
       validate: {
         validTime: (value) => {
           const gioBay = watch("items.gioBay");
+          const ngayBay = watch("items.ngayBay");
+          const ngayDen = watch("items.ngayDen");
+
           if (!gioBay) return true;
 
           const [hoursBay, minutesBay] = gioBay.split(":").map(Number);
@@ -486,7 +489,10 @@ function FormFlight({ flight, setShowDetailFlight, typeAction }) {
           const timeDiffMinutes =
             hoursDen * 60 + minutesDen - (hoursBay * 60 + minutesBay);
 
-          if (timeDiffMinutes < 45) {
+          const formatNgayBay = moment(ngayBay, "DD-MM-YYYY");
+          const formatNgayDen = moment(ngayDen, "DD-MM-YYYY");
+
+          if (timeDiffMinutes < 45 && formatNgayBay.isSame(formatNgayDen)) {
             return "* Thời gian đến phải cách thời gian bay ít nhất 45 phút.";
           }
           return true;
