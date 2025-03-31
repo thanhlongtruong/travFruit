@@ -3,8 +3,8 @@ import { jwtDecode } from "jwt-decode";
 import showNotification from "./showNotification";
 
 const instance = axios.create({
-  baseURL: "http://localhost:4001",
-  // baseURL: "https://travfruitv3-server.vercel.app",
+  // baseURL: "http://localhost:4001",
+  baseURL: "https://travfruitv3-server.vercel.app",
   timeout: 1000 * 60 * 5,
 });
 
