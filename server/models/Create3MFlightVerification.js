@@ -12,7 +12,6 @@ const Create3MFlightVerificationSchema = mongoose.Schema({
   },
   create3MFlightVerificationKey: {
     type: String,
-    unique: true,
     default: "uniqueCreate3MFlightVerification",
   },
 });

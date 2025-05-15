@@ -135,8 +135,8 @@ function ComponentHome() {
   return (
     <>
       <Helmet>
-        <title>Trang chu cua website travfruit</title>
-        <meta name="description" content="Trang chu cua website travfruit" />
+        <title>Trang chu travfruit</title>
+        <meta name="description" content="Trang chu travfruit" />
       </Helmet>
       {isShowInterfaceLogin && <InterFaceLogin />}
       {stateFlightShowCalendar && <FlightShowCalendar />}

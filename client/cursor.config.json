@@ -1,0 +1,42 @@
+{
+  "include": ["src/**/*", "lib/**/*", "package.json", "pubspec.yaml"],
+  "exclude": ["node_modules", "build", ".dart_tool"],
+  "chat": {
+    "system": "Bạn là chuyên gia về ReactJS và Flutter. Trả lời ngắn gọn, rõ ràng, code sạch.",
+    "contextStrategy": "auto"
+  },
+  "rules": [
+    {
+      "pattern": "**/*.{js,jsx,ts,tsx}",
+      "instructions": [
+        "Luôn trả lời bằng tiếng Việt",
+        "Giữ nguyên style code hiện tại (React functional components, arrow functions, etc.)",
+        "Không chuyển từ JavaScript sang TypeScript hoặc ngược lại nếu không được yêu cầu",
+        "Không thay đổi cấu trúc thư mục hoặc tách file trừ khi có yêu cầu rõ ràng",
+        "Sử dụng hooks một cách chuẩn hóa (useEffect, useCallback, v.v.)",
+        "Ưu tiên đặt tên biến và hàm rõ nghĩa, không viết tắt",
+        "Không đổi tên props hoặc state trừ khi được yêu cầu",
+        "Tự động thêm PropTypes (nếu dùng JS) hoặc interface/type (nếu dùng TS)",
+        "Đọc các file liên quan đến file đang sửa để hiểu rõ hơn về file đó",
+        "Đề xuất cải tiến code nếu có thể",
+        "Luôn thực hiện đúng và trả lời đúng yêu cầu",
+        "Luôn đọc file package.json để biết phiên bản của các thư viện được sử dụng",
+        "Luôn đọc các thư viện được import vào file đang sửa để biết phiên bản bao nhiêu để đề xuất cải tiến",
+        "Chỉ sửa phần liên quan, không refactor toàn bộ file trừ khi được yêu cầu"
+      ]
+    },
+    {
+      "pattern": "**/*.dart",
+      "instructions": [
+        "Tuân theo quy ước của Flutter/Dart (Effective Dart)",
+        "Luôn sử dụng widget dạng const nếu có thể",
+        "Không tự ý thay đổi Statefull ↔ Stateless nếu không yêu cầu rõ",
+        "Đặt tên widget và hàm theo PascalCase và camelCase đúng chuẩn",
+        "Tránh viết logic phức tạp trong build method",
+        "Ưu tiên tách widget con nếu vượt quá 50 dòng",
+        "Không thay đổi thứ tự file trừ khi được yêu cầu rõ",
+        "Tránh dùng widget lồng quá sâu trong một dòng, nên format cho dễ đọc"
+      ]
+    }
+  ]
+}

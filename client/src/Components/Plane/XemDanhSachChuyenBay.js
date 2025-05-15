@@ -327,25 +327,25 @@ function XemDanhSachChuyenBay() {
         <meta name="robots" content="noindex" />
       </Helmet>
       {openAdjustQuantity && (
-        <AdjustQuantity
-          objDeparture={selectedDepartureAirport}
-          setSelectedDepartureAirport={setSelectedDepartureAirport}
-          objReturn={passengerChooseDeparture ? selectedReturnAirport : null}
-          setPassengerChooseDeparture={setPassengerChooseDeparture}
-          setStateButtonSelectDepartureAirport={
-            setStateButtonSelectDepartureAirport
-          }
-          countDepartureFlights={isFlights.departureFlights.length}
-          countReturnFlights={isFlights.returnFlights.length}
-        />
-        // <AdjustQuantityv2
+        // <AdjustQuantity
         //   objDeparture={selectedDepartureAirport}
         //   setSelectedDepartureAirport={setSelectedDepartureAirport}
         //   objReturn={passengerChooseDeparture ? selectedReturnAirport : null}
         //   setPassengerChooseDeparture={setPassengerChooseDeparture}
+        //   setStateButtonSelectDepartureAirport={
+        //     setStateButtonSelectDepartureAirport
+        //   }
         //   countDepartureFlights={isFlights.departureFlights.length}
         //   countReturnFlights={isFlights.returnFlights.length}
         // />
+        <AdjustQuantityv2
+          objDeparture={selectedDepartureAirport}
+          setSelectedDepartureAirport={setSelectedDepartureAirport}
+          objReturn={passengerChooseDeparture ? selectedReturnAirport : null}
+          setPassengerChooseDeparture={setPassengerChooseDeparture}
+          countDepartureFlights={isFlights.departureFlights.length}
+          countReturnFlights={isFlights.returnFlights.length}
+        />
       )}
       <Header />
       <div
