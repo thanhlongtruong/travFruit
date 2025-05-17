@@ -13,20 +13,17 @@ const options = {
 
 async function connectDB(uri) {
   try {
-    await mongoose.connect(uri, options);
-
-    const conn = mongoose.connection;
-
-    conn.on("connected", function () {
+    // Đăng ký sự kiện trước khi kết nối
+    mongoose.connection.on("connected", function () {
       console.log("Connect db success", this.name);
     });
 
-    conn.on("disconnected", function () {
+    mongoose.connection.on("disconnected", function () {
       console.log("Disconnect db success", this.name);
       setTimeout(() => connectDB(uri), 5000);
     });
 
-    conn.on("error", (err) => {
+    mongoose.connection.on("error", (err) => {
       console.log("Connect db fail", err);
       if (err.code === "ECONNRESET") {
         console.log("Connection reset by peer, retrying...");
@@ -38,9 +35,13 @@ async function connectDB(uri) {
       setTimeout(() => connectDB(uri), 5000);
     });
 
+    // Thực hiện kết nối
+    const conn = await mongoose.connect(uri, options);
+    console.log("MongoDB connected successfully");
+
     process.on("SIGINT", async () => {
       try {
-        await conn.close();
+        await mongoose.connection.close();
         console.log("MongoDB connection closed through app termination");
         process.exit(0);
       } catch (err) {
@@ -56,7 +57,7 @@ async function connectDB(uri) {
   }
 }
 
-const TravelDB = connectDB(process.env.MONGO_URI);
-// const TravelDB = connectDB(process.env.MONGO_URI_TEST);
+// const TravelDB = connectDB(process.env.MONGO_URI);
+const TravelDB = connectDB(process.env.MONGO_URI_TEST);
 
 module.exports = { TravelDB };
