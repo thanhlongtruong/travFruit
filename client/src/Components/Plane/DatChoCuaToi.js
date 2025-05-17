@@ -197,8 +197,7 @@ function DatChoCuaToi() {
           <div className="flex justify-between w-full items-start my-10">
             <Link
               to="/Setting/InfoAccount"
-              className="relative flex w-1/3 p-6 bg-white rounded-md shadow-lg h-fit"
-            >
+              className="relative flex w-1/3 p-6 bg-white rounded-md shadow-lg h-fit">
               <div className="flex">
                 <div className="w-10 h-10 rounded-[100%] bg-blue-500">
                   <img
@@ -236,8 +235,7 @@ function DatChoCuaToi() {
                           viewBox="0 0 24 24"
                           strokeWidth="1.5"
                           stroke="#0194F3"
-                          className="size-6"
-                        >
+                          className="size-6">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -347,8 +345,9 @@ function DatChoCuaToi() {
               <button
                 type="button"
                 className="flex w-full border-b"
-                onClick={() => setHideAirportsDeparture(!hideAirportsDeparture)}
-              >
+                onClick={() =>
+                  setHideAirportsDeparture(!hideAirportsDeparture)
+                }>
                 <h1 className="text-center w-full text-xl uppercase font-bold mb-3">
                   -------Chuyến bay đi-------
                 </h1>
@@ -359,8 +358,7 @@ function DatChoCuaToi() {
                     viewBox="0 0 24 24"
                     strokeWidth="1.5"
                     stroke="currentColor"
-                    className="size-6"
-                  >
+                    className="size-6">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -374,8 +372,7 @@ function DatChoCuaToi() {
                     viewBox="0 0 24 24"
                     strokeWidth="1.5"
                     stroke="currentColor"
-                    className="size-6"
-                  >
+                    className="size-6">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -388,8 +385,7 @@ function DatChoCuaToi() {
             {fields.map((item, index) => (
               <div
                 key={airportDeparture._id + index}
-                className={`flex justify-between mb-6 transition-all duration-0 ${hideAirportsDeparture ? "h-0 overflow-hidden duration-500" : ""}`}
-              >
+                className={`flex justify-between mb-6 transition-all duration-0 ${hideAirportsDeparture ? "h-0 overflow-hidden duration-500" : ""}`}>
                 <InfoTicket
                   airport={{
                     loaiChuyenBay: "Chuyến bay đi",
@@ -433,8 +429,7 @@ function DatChoCuaToi() {
                       strokeWidth="1.5"
                       stroke="currentColor"
                       className="size-6 cursor-pointer"
-                      onClick={handleCopyPassengerAirportDepartureToReturn}
-                    >
+                      onClick={handleCopyPassengerAirportDepartureToReturn}>
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -449,8 +444,9 @@ function DatChoCuaToi() {
                       strokeWidth="1.5"
                       stroke="currentColor"
                       className="size-6 cursor-pointer"
-                      onClick={() => setHideAirportsReturn(!hideAirportsReturn)}
-                    >
+                      onClick={() =>
+                        setHideAirportsReturn(!hideAirportsReturn)
+                      }>
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -462,8 +458,7 @@ function DatChoCuaToi() {
                 {fieldsB.map((item, index) => (
                   <div
                     key={airportReturn._id + index}
-                    className={`flex justify-between mb-6 transition-all duration-0 ${hideAirportsReturn ? "h-0 overflow-hidden duration-500" : "h-fit duration-500"}`}
-                  >
+                    className={`flex justify-between mb-6 transition-all duration-0 ${hideAirportsReturn ? "h-0 overflow-hidden duration-500" : "h-fit duration-500"}`}>
                     <InfoTicket
                       airport={{
                         loaiChuyenBay: "Chuyến bay khứ hồi",
@@ -498,8 +493,7 @@ function DatChoCuaToi() {
 
             <button
               type={mutationCreateOrder.isPending ? "button" : "submit"}
-              className="flex p-3 bg-[#0194F3] text-white mt-3 float-right font-semibold rounded-lg gap-x-3 items-center justify-center"
-            >
+              className="flex p-3 bg-[#0194F3] text-white mt-3 float-right font-semibold rounded-lg gap-x-3 items-center justify-center">
               {mutationCreateOrder.isPending ? (
                 <l-bouncy size="30" speed="1.75" color="white" />
               ) : (
@@ -511,8 +505,7 @@ function DatChoCuaToi() {
                     viewBox="0 0 24 24"
                     strokeWidth="1.5"
                     stroke="currentColor"
-                    className="size-5"
-                  >
+                    className="size-5">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -743,8 +736,7 @@ function ThongTinHanhKhach({
       <div className="flex justify-between w-full">
         <button
           className={`border-2 rounded-lg h-fit flex justify-center gap-x-4 w-[47%] p-2  mb-6 ${watch(`${item}.${index}.hangVe`) === "Vé phổ thông" ? "border-[#0194F3] " : "border-gray-300 opacity-50 cursor-not-allowed"} `}
-          type="button"
-        >
+          type="button">
           <img
             alt=""
             className="w-16 bg-cover h-14"
@@ -773,8 +765,7 @@ function ThongTinHanhKhach({
         </button>
         <button
           type="button"
-          className={`border-2 rounded-lg h-fit flex gap-x-4 w-[47%] justify-center p-2 ${watch(`${item}.${index}.hangVe`) === "Vé thương gia" ? "border-[#0194F3]" : "border-gray-300 opacity-50 cursor-not-allowed"}`}
-        >
+          className={`border-2 rounded-lg h-fit flex gap-x-4 w-[47%] justify-center p-2 ${watch(`${item}.${index}.hangVe`) === "Vé thương gia" ? "border-[#0194F3]" : "border-gray-300 opacity-50 cursor-not-allowed"}`}>
           <img
             alt=""
             className="w-16 bg-cover h-14"

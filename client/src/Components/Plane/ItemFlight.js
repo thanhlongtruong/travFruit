@@ -9,8 +9,7 @@ const ItemFlight = (isFlight) => {
     <>
       <button
         type="button"
-        className="h-[130px] w-full bg-white p-3 flex justify-between items-center"
-      >
+        className="h-[130px] flex-wrap w-full bg-white p-3 flex justify-between items-center">
         <div className="flex items-center font-semibold sm:text-2xl gap-x-3 w-fit h-fit">
           <div className="flex flex-col items-center gap-y-1">
             <span className="text-sm font-semibold text-[#687176]">
