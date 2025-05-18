@@ -289,3 +289,33 @@ header ul li button {
     @apply scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-white;
   }
 }
+
+.rounded-scrollbar {
+  overflow-y: auto;
+  border-radius: 8px; /* Bo tròn góc phần tử */
+  background: #fff; /* Đảm bảo nền rõ ràng */
+  scrollbar-width: thin; /* Firefox: thanh cuộn mỏng */
+  scrollbar-color: #888 #f1f1f1; /* Firefox: màu thumb và track */
+}
+
+/* Webkit-based browsers (Chrome, Edge) */
+.rounded-scrollbar::-webkit-scrollbar {
+  width: 8px; /* Độ rộng thanh cuộn */
+}
+
+.rounded-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Màu nền track */
+  border-radius: 8px; /* Bo tròn góc track */
+  margin: 8px; /* Tăng margin để tránh cắt góc */
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.1); /* Thêm bóng nhẹ để rõ ràng hơn */
+}
+
+.rounded-scrollbar::-webkit-scrollbar-thumb {
+  background: #888; /* Màu thumb */
+  border-radius: 8px; /* Bo tròn góc thumb */
+  border: 1px solid #f1f1f1; /* Thêm viền để tăng độ rõ nét */
+}
+
+.rounded-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555; /* Màu khi hover */
+}

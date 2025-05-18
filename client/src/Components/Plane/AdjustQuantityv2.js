@@ -1,9 +1,18 @@
 import { useEffect, useContext, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
+import { useMutation } from "@tanstack/react-query";
+
 import { CONTEXT } from "../../Context/ContextGlobal.js";
-import { User, Baby } from "lucide-react";
+import {
+  User,
+  Baby,
+  ArrowBigUpDash,
+  ArrowBigDownDash,
+  BookCopy,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ItemFlight from "./ItemFlight.js";
+import { Create as CreateOrder } from "../../API/DonHang.js";
 
 function AdjustQuantityv2({
   objDeparture,
@@ -13,7 +22,12 @@ function AdjustQuantityv2({
   countDepartureFlights,
   countReturnFlights,
 }) {
-  const { showNotification, handleReplacePriceAirport } = useContext(CONTEXT);
+  const {
+    showNotification,
+    handleReplacePriceAirport,
+    convertDateToVNDate,
+    naviReload,
+  } = useContext(CONTEXT);
 
   const generateSeats = ({
     totalBusinessSeats,
@@ -106,6 +120,8 @@ function AdjustQuantityv2({
   const [clickedSeat, setClickedSeat] = useState(null);
   const [clickedSeatReturn, setClickedSeatReturn] = useState(null);
   const [showPassengerInfo, setShowPassengerInfo] = useState(false);
+  const [selectedSeatsInfo, setSelectedSeatsInfo] = useState([]);
+  const [selectedSeatsReturnInfo, setSelectedSeatsReturnInfo] = useState([]);
 
   useEffect(() => {
     setSeats(
@@ -123,7 +139,6 @@ function AdjustQuantityv2({
         bookedSeats: objReturn?.[2],
       })
     );
-    console.log(objDeparture, objReturn, seats, seatsReturn);
   }, [objDeparture, objReturn]);
 
   useEffect(() => {
@@ -430,6 +445,8 @@ function AdjustQuantityv2({
     },
   ];
 
+  const elementCroll = ["departure-flight", "return-flight"];
+
   const handleCalculatePrice = ({ passengerType, seatType, price }) => {
     if (passengerType === "adult") {
       if (seatType === "business") {
@@ -521,8 +538,44 @@ function AdjustQuantityv2({
       }
     }
 
+    // Lưu thông tin ghế đã chọn cho chuyến bay đi
+    const departureSeatsInfo = Array.from(selectedSeats).map((seatId) => {
+      const [row, col] = findSeatPosition(seatId);
+      const seat = seats[row][col];
+      return {
+        seatId: seat.id,
+        passengerType: seat.passengerType,
+        seatType: seat.type,
+        price: handleCalculatePrice({
+          passengerType: seat.passengerType,
+          seatType: seat.type,
+          price: objDeparture[0].gia,
+        }),
+      };
+    });
+    setSelectedSeatsInfo(departureSeatsInfo);
+
+    // Lưu thông tin ghế đã chọn cho chuyến bay về (nếu có)
+    if (objReturn) {
+      const returnSeatsInfo = Array.from(selectedSeatsReturn).map((seatId) => {
+        const [row, col] = findSeatPosition(seatId);
+        const seat = seatsReturn[row][col];
+        return {
+          seatId: seat.id,
+          passengerType: seat.passengerType,
+          seatType: seat.type,
+          price: handleCalculatePrice({
+            passengerType: seat.passengerType,
+            seatType: seat.type,
+            price: objReturn[0].gia,
+          }),
+        };
+      });
+      setSelectedSeatsReturnInfo(returnSeatsInfo);
+    }
+
     // Nếu đã chọn đủ số ghế, hiển thị form nhập thông tin
-    setShowPassengerInfo(true);
+    setShowPassengerInfo(!showPassengerInfo);
   };
 
   // Thêm hàm tính tổng tiền
@@ -564,226 +617,268 @@ function AdjustQuantityv2({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -100 }}
             transition={{ duration: 0.3 }}
-            className="overflow-y-auto col-start-1 bg-white col-span-2 rounded-lg shadow-lg">
-            <div className="p-5 text-center uppercase ">
-              <h2 className="text-xl font-bold mb-4">Thông tin hành khách</h2>
-              <ComponentInputInformationPassenger
-                airportDeparture={objDeparture[0]}
-                airportReturn={objReturn?.[0]}
-                oneWayFlight={true}
-                selectedSeats={selectedSeats}
-              />
+            className="overflow-hidden col-start-1 bg-white col-span-2 rounded-lg">
+            <div className="rounded-scrollbar h-full">
+              <div className="p-5 text-center  ">
+                <h2 className="text-xl font-bold uppercase">
+                  Thông tin hành khách
+                </h2>
+
+                <ComponentInputInformationPassenger
+                  airportDeparture={objDeparture[0]}
+                  airportReturn={objReturn?.[0]}
+                  oneWayFlight={false}
+                  selectedSeatsInfo={selectedSeatsInfo}
+                  selectedSeatsReturnInfo={selectedSeatsReturnInfo}
+                  convertDateToVNDate={convertDateToVNDate}
+                  naviReload={naviReload}
+                />
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="h-full scrollbar rounded-lg col-span-2 col-start-3 overflow-y-auto bg-white">
-        <div className="text-center pt-5">
-          {Array.from({ length: objReturn ? 2 : 1 }, (_, i) => (
-            <>
-              <h1 className="text-2xl font-bold uppercase">
-                Sơ đồ ghế máy bay
-              </h1>
-              <p
-                className={`pt-1 ${i === 0 ? "departure-flight" : "return-flight"}`}>
-                (Chuyến bay {i === 0 ? "đi" : "khứ hồi"})
-              </p>
-              <button
-                onClick={() => {
-                  const elements =
-                    document.getElementsByClassName("return-flight");
-                  if (elements.length > 0) {
-                    // Scroll to each element with a small delay between them
-                    Array.from(elements).forEach((element, index) => {
-                      setTimeout(() => {
-                        element.scrollIntoView({ behavior: "smooth" });
-                      }, index * 500); // 500ms delay between each scroll
-                    });
-                  }
-                }}
-                className="sticky top-0 z-[300] bg-black/50 h-5 w-5 rounded-full"></button>
-              <div className="mt-5 h-5 flex gap-5 justify-center mb-5 p-5 w-full bg-white">
-                {stypeChooseSeat.map((item, index) => (
-                  <div className="flex items-center gap-2" key={index}>
-                    <span
-                      className={`w-5 h-5 ${item.color} inline-block`}></span>
-                    <span>{item.name}</span>
-                  </div>
+      <div className="h-full col-span-2 col-start-3 bg-white overflow-hidden rounded-lg">
+        <div className="rounded-scrollbar h-full">
+          <div className="relative h-full">
+            {objReturn && (
+              <div className="fixed z-[500] transform -translate-y-1/2 top-1/2 left-[calc(50%-5px)] -translate-x-1/2 flex flex-col w-fit h-fit">
+                {Array.from({ length: elementCroll.length }, (_, i) => (
+                  <>
+                    <motion.button
+                      whileHover={{
+                        scale: 1.1,
+                        backgroundColor: "rgba(0,0,0,0.1)",
+                      }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        const elements = document.getElementsByClassName(
+                          elementCroll[i]
+                        );
+                        if (elements.length > 0) {
+                          // Scroll to each element with a small delay between them
+                          Array.from(elements).forEach((element, index) => {
+                            setTimeout(() => {
+                              element.scrollIntoView({ behavior: "smooth" });
+                            }, index * 500); // 500ms delay between each scroll
+                          });
+                        }
+                      }}
+                      className="h-fit w-fit p-2 rounded-full transition-colors duration-200 hover:bg-black/10 active:bg-black/20">
+                      {i === 0 ? (
+                        <ArrowBigUpDash size={20} />
+                      ) : (
+                        <ArrowBigDownDash size={20} />
+                      )}
+                    </motion.button>
+                  </>
                 ))}
               </div>
+            )}
+            <div className="text-center pt-5">
+              {Array.from({ length: objReturn ? 2 : 1 }, (_, i) => (
+                <>
+                  <h1 className="text-2xl font-bold uppercase">
+                    Sơ đồ ghế máy bay
+                  </h1>
+                  <p
+                    className={`pt-1 ${i === 0 ? "departure-flight" : "return-flight"}`}>
+                    (Chuyến bay {i === 0 ? "đi" : "khứ hồi"})
+                  </p>
 
-              <div className="max-w-2xl mx-auto mb-5">
-                <div className="flex flex-col gap-2">
-                  {(i === 0 ? seats : seatsReturn).map((row, rowIdx) => (
-                    <div key={rowIdx} className="flex justify-center gap-2">
-                      {row.map((seat, colIdx) =>
-                        seat ? (
-                          <div
-                            key={seat.id}
-                            className="relative seat-container"
-                            onClick={() => {
-                              // Chỉ cho phép click nếu ghế không nằm trong danh sách đã đặt
-                              if (
-                                !(
-                                  i === 0 ? objDeparture : objReturn
-                                )?.[2]?.soGhePhoThong_Booked?.includes(
-                                  seat.id
-                                ) &&
-                                !(
-                                  i === 0 ? objDeparture : objReturn
-                                )?.[2]?.soGheThuongGia_Booked?.includes(seat.id)
-                              ) {
-                                if (i === 0) {
-                                  setClickedSeat(
-                                    clickedSeat === seat.id ? null : seat.id
-                                  );
-                                } else if (i === 1) {
-                                  setClickedSeatReturn(
-                                    clickedSeatReturn === seat.id
-                                      ? null
-                                      : seat.id
-                                  );
-                                }
-                              }
-                            }}>
-                            <AnimatePresence>
-                              {(i === 0 ? clickedSeat : clickedSeatReturn) ===
-                                seat.id &&
-                                !(
-                                  i === 0 ? objDeparture : objReturn
-                                )?.[2]?.soGhePhoThong_Booked?.includes(
-                                  seat.id
-                                ) &&
-                                !(
-                                  i === 0 ? objDeparture : objReturn
-                                )?.[2]?.soGheThuongGia_Booked?.includes(
-                                  seat.id
-                                ) && (
-                                  <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 10 }}
-                                    className="absolute -left-2/3 bottom-full -translate-x-1/2 mb-1 bg-white p-0 overflow-hidden rounded-lg shadow-lg z-30 border border-gray-200">
-                                    {!seat.booked ? (
-                                      <div className="flex w-[90px]">
-                                        <motion.button
-                                          whileHover={{ scale: 1.05 }}
-                                          whileTap={{ scale: 0.95 }}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handlePassengerTypeSelect(
-                                              rowIdx,
-                                              colIdx,
-                                              "adult",
-                                              i === 0
-                                                ? objDeparture?.[1]
-                                                : objReturn?.[1],
-                                              i === 0 ? "departure" : "return"
-                                            );
-                                            i === 0
-                                              ? setClickedSeat(null)
-                                              : setClickedSeatReturn(null);
-                                          }}
-                                          className="w-1/2 h-8 hover:bg-gray-100 transition-colors flex items-center justify-center">
-                                          <User size={18} />
-                                        </motion.button>
-                                        <motion.button
-                                          whileHover={{ scale: 1.05 }}
-                                          whileTap={{ scale: 0.95 }}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handlePassengerTypeSelect(
-                                              rowIdx,
-                                              colIdx,
-                                              "child",
-                                              i === 0
-                                                ? objDeparture?.[1]
-                                                : objReturn?.[1],
-                                              i === 0 ? "departure" : "return"
-                                            );
-                                            i === 0
-                                              ? setClickedSeat(null)
-                                              : setClickedSeatReturn(null);
-                                          }}
-                                          className="w-1/2 h-8 hover:bg-gray-100 transition-colors flex items-center justify-center">
-                                          <Baby size={18} />
-                                        </motion.button>
-                                      </div>
-                                    ) : (
-                                      <div className="flex w-[90px]">
-                                        <motion.button
-                                          whileHover={{ scale: 1.05 }}
-                                          whileTap={{ scale: 0.95 }}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handlePassengerTypeSelect(
-                                              rowIdx,
-                                              colIdx,
-                                              "adult",
-                                              i === 0
-                                                ? objDeparture?.[1]
-                                                : objReturn?.[1],
-                                              i === 0 ? "departure" : "return"
-                                            );
-                                            i === 0
-                                              ? setClickedSeat(null)
-                                              : setClickedSeatReturn(null);
-                                          }}
-                                          className={`w-1/2 h-8 transition-colors flex items-center justify-center ${
-                                            seat.passengerType === "adult"
-                                              ? "bg-blue-100"
-                                              : "hover:bg-gray-100"
-                                          }`}>
-                                          <User size={18} />
-                                        </motion.button>
-                                        <motion.button
-                                          whileHover={{ scale: 1.05 }}
-                                          whileTap={{ scale: 0.95 }}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handlePassengerTypeSelect(
-                                              rowIdx,
-                                              colIdx,
-                                              "child",
-                                              i === 0
-                                                ? objDeparture?.[1]
-                                                : objReturn?.[1],
-                                              i === 0 ? "departure" : "return"
-                                            );
-                                            i === 0
-                                              ? setClickedSeat(null)
-                                              : setClickedSeatReturn(null);
-                                          }}
-                                          className={`w-1/2 h-8 transition-colors flex items-center justify-center ${
-                                            seat.passengerType === "child"
-                                              ? "bg-blue-100"
-                                              : "hover:bg-gray-100"
-                                          }`}>
-                                          <Baby size={18} />
-                                        </motion.button>
-                                      </div>
+                  <div className="mt-5 h-5 flex gap-5 justify-center mb-5 p-5 w-full bg-white">
+                    {stypeChooseSeat.map((item, index) => (
+                      <div className="flex items-center gap-2" key={index}>
+                        <span
+                          className={`w-5 h-5 ${item.color} inline-block`}></span>
+                        <span>{item.name}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="max-w-2xl mx-auto mb-5">
+                    <div className="flex flex-col gap-2">
+                      {(i === 0 ? seats : seatsReturn).map((row, rowIdx) => (
+                        <div key={rowIdx} className="flex justify-center gap-2">
+                          {row.map((seat, colIdx) =>
+                            seat ? (
+                              <div
+                                key={seat.id}
+                                className="relative seat-container"
+                                onClick={() => {
+                                  // Chỉ cho phép click nếu ghế không nằm trong danh sách đã đặt
+                                  if (
+                                    !(
+                                      i === 0 ? objDeparture : objReturn
+                                    )?.[2]?.soGhePhoThong_Booked?.includes(
+                                      seat.id
+                                    ) &&
+                                    !(
+                                      i === 0 ? objDeparture : objReturn
+                                    )?.[2]?.soGheThuongGia_Booked?.includes(
+                                      seat.id
+                                    )
+                                  ) {
+                                    if (i === 0) {
+                                      setClickedSeat(
+                                        clickedSeat === seat.id ? null : seat.id
+                                      );
+                                    } else if (i === 1) {
+                                      setClickedSeatReturn(
+                                        clickedSeatReturn === seat.id
+                                          ? null
+                                          : seat.id
+                                      );
+                                    }
+                                  }
+                                }}>
+                                <AnimatePresence>
+                                  {(i === 0
+                                    ? clickedSeat
+                                    : clickedSeatReturn) === seat.id &&
+                                    !(
+                                      i === 0 ? objDeparture : objReturn
+                                    )?.[2]?.soGhePhoThong_Booked?.includes(
+                                      seat.id
+                                    ) &&
+                                    !(
+                                      i === 0 ? objDeparture : objReturn
+                                    )?.[2]?.soGheThuongGia_Booked?.includes(
+                                      seat.id
+                                    ) && (
+                                      <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 10 }}
+                                        className="absolute -left-2/3 bottom-full -translate-x-1/2 mb-1 bg-white p-0 overflow-hidden rounded-lg shadow-lg z-30 border border-gray-200">
+                                        {!seat.booked ? (
+                                          <div className="flex w-[90px]">
+                                            <motion.button
+                                              whileHover={{ scale: 1.05 }}
+                                              whileTap={{ scale: 0.95 }}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handlePassengerTypeSelect(
+                                                  rowIdx,
+                                                  colIdx,
+                                                  "adult",
+                                                  i === 0
+                                                    ? objDeparture?.[1]
+                                                    : objReturn?.[1],
+                                                  i === 0
+                                                    ? "departure"
+                                                    : "return"
+                                                );
+                                                i === 0
+                                                  ? setClickedSeat(null)
+                                                  : setClickedSeatReturn(null);
+                                              }}
+                                              className="w-1/2 h-8 hover:bg-gray-100 transition-colors flex items-center justify-center">
+                                              <User size={18} />
+                                            </motion.button>
+                                            <motion.button
+                                              whileHover={{ scale: 1.05 }}
+                                              whileTap={{ scale: 0.95 }}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handlePassengerTypeSelect(
+                                                  rowIdx,
+                                                  colIdx,
+                                                  "child",
+                                                  i === 0
+                                                    ? objDeparture?.[1]
+                                                    : objReturn?.[1],
+                                                  i === 0
+                                                    ? "departure"
+                                                    : "return"
+                                                );
+                                                i === 0
+                                                  ? setClickedSeat(null)
+                                                  : setClickedSeatReturn(null);
+                                              }}
+                                              className="w-1/2 h-8 hover:bg-gray-100 transition-colors flex items-center justify-center">
+                                              <Baby size={18} />
+                                            </motion.button>
+                                          </div>
+                                        ) : (
+                                          <div className="flex w-[90px]">
+                                            <motion.button
+                                              whileHover={{ scale: 1.05 }}
+                                              whileTap={{ scale: 0.95 }}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handlePassengerTypeSelect(
+                                                  rowIdx,
+                                                  colIdx,
+                                                  "adult",
+                                                  i === 0
+                                                    ? objDeparture?.[1]
+                                                    : objReturn?.[1],
+                                                  i === 0
+                                                    ? "departure"
+                                                    : "return"
+                                                );
+                                                i === 0
+                                                  ? setClickedSeat(null)
+                                                  : setClickedSeatReturn(null);
+                                              }}
+                                              className={`w-1/2 h-8 transition-colors flex items-center justify-center ${
+                                                seat.passengerType === "adult"
+                                                  ? "bg-blue-100"
+                                                  : "hover:bg-gray-100"
+                                              }`}>
+                                              <User size={18} />
+                                            </motion.button>
+                                            <motion.button
+                                              whileHover={{ scale: 1.05 }}
+                                              whileTap={{ scale: 0.95 }}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handlePassengerTypeSelect(
+                                                  rowIdx,
+                                                  colIdx,
+                                                  "child",
+                                                  i === 0
+                                                    ? objDeparture?.[1]
+                                                    : objReturn?.[1],
+                                                  i === 0
+                                                    ? "departure"
+                                                    : "return"
+                                                );
+                                                i === 0
+                                                  ? setClickedSeat(null)
+                                                  : setClickedSeatReturn(null);
+                                              }}
+                                              className={`w-1/2 h-8 transition-colors flex items-center justify-center ${
+                                                seat.passengerType === "child"
+                                                  ? "bg-blue-100"
+                                                  : "hover:bg-gray-100"
+                                              }`}>
+                                              <Baby size={18} />
+                                            </motion.button>
+                                          </div>
+                                        )}
+                                      </motion.div>
                                     )}
-                                  </motion.div>
-                                )}
-                            </AnimatePresence>
-                            <motion.div
-                              whileHover={{
-                                scale:
-                                  (i === 0
-                                    ? objDeparture
-                                    : objReturn)?.[2]?.soGhePhoThong_Booked?.includes(
-                                    seat.id
-                                  ) ||
-                                  (i === 0
-                                    ? objDeparture
-                                    : objReturn)?.[2]?.soGheThuongGia_Booked?.includes(
-                                    seat.id
-                                  )
-                                    ? 1
-                                    : 1.05,
-                              }}
-                              className={`w-10 h-10 flex items-center justify-center border rounded text-sm transition-all duration-200 select-none
+                                </AnimatePresence>
+                                <motion.div
+                                  whileHover={{
+                                    scale:
+                                      (i === 0
+                                        ? objDeparture
+                                        : objReturn)?.[2]?.soGhePhoThong_Booked?.includes(
+                                        seat.id
+                                      ) ||
+                                      (i === 0
+                                        ? objDeparture
+                                        : objReturn)?.[2]?.soGheThuongGia_Booked?.includes(
+                                        seat.id
+                                      )
+                                        ? 1
+                                        : 1.05,
+                                  }}
+                                  className={`w-10 h-10 flex items-center justify-center border rounded text-sm transition-all duration-200 select-none
                             ${
                               (i === 0
                                 ? objDeparture
@@ -802,155 +897,176 @@ function AdjustQuantityv2({
                                     ? "bg-yellow-300 hover:bg-yellow-400 cursor-pointer"
                                     : "bg-green-300 hover:bg-green-400 cursor-pointer"
                             }`}>
-                              {(i === 0
-                                ? objDeparture
-                                : objReturn)?.[2]?.soGhePhoThong_Booked?.includes(
-                                seat.id
-                              ) ||
-                              (i === 0
-                                ? objDeparture
-                                : objReturn)?.[2]?.soGheThuongGia_Booked?.includes(
-                                seat.id
-                              ) ? (
-                                seat.id
-                              ) : seat.booked ? (
-                                seat.passengerType === "adult" ? (
-                                  <User size={20} />
-                                ) : (
-                                  <Baby size={20} />
-                                )
-                              ) : (
-                                seat.id
-                              )}
-                            </motion.div>
-                          </div>
-                        ) : (
-                          <div
-                            key={`aisle-${rowIdx}-${colIdx}`}
-                            className="w-10 h-10 bg-gray-100"></div>
-                        )
-                      )}
+                                  {(i === 0
+                                    ? objDeparture
+                                    : objReturn)?.[2]?.soGhePhoThong_Booked?.includes(
+                                    seat.id
+                                  ) ||
+                                  (i === 0
+                                    ? objDeparture
+                                    : objReturn)?.[2]?.soGheThuongGia_Booked?.includes(
+                                    seat.id
+                                  ) ? (
+                                    seat.id
+                                  ) : seat.booked ? (
+                                    seat.passengerType === "adult" ? (
+                                      <User size={20} />
+                                    ) : (
+                                      <Baby size={20} />
+                                    )
+                                  ) : (
+                                    seat.id
+                                  )}
+                                </motion.div>
+                              </div>
+                            ) : (
+                              <div
+                                key={`aisle-${rowIdx}-${colIdx}`}
+                                className="w-10 h-10 bg-gray-100"></div>
+                            )
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                </>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="col-start-5 col-span-2 overflow-hidden h-full bg-white rounded-lg">
+        <div className="rounded-scrollbar h-full">
+          {Array.from({ length: objReturn ? 2 : 1 }, (_, i) => (
+            <>
+              <div className="p-5 uppercase">
+                <h2 className="text-xl text-center font-bold">
+                  Thông tin đặt chỗ
+                </h2>
+                <p
+                  className={`pt-1 text-center text-sm ${i === 0 ? "departure-flight" : "return-flight"}`}>
+                  (Chuyến bay {i === 0 ? "đi" : "khứ hồi"})
+                </p>
+
+                <div className="h-fit bg-transparent rounded-2xl shadow-md w-full overflow-hidden">
+                  <ItemFlight
+                    hangBay={`${(i === 0 ? objDeparture : objReturn)[0].hangBay}`}
+                    soHieu={`${(i === 0 ? objDeparture : objReturn)[0].soHieu}`}
+                    loaiMayBay={`${(i === 0 ? objDeparture : objReturn)[0].loaiMayBay}`}
+                    gioBay={`${(i === 0 ? objDeparture : objReturn)[0].gioBay}`}
+                    diemBay={`${(i === 0 ? objDeparture : objReturn)[0].diemBay}`}
+                    gioDen={`${(i === 0 ? objDeparture : objReturn)[0].gioDen}`}
+                    diemDen={`${(i === 0 ? objDeparture : objReturn)[0].diemDen}`}
+                    gia={`${(i === 0 ? objDeparture : objReturn)[0].gia}`}
+                    ThuongGia={`${(i === 0 ? objDeparture : objReturn)[0].ThuongGia}`}
+                    PhoThong={`${(i === 0 ? objDeparture : objReturn)[0].PhoThong}`}
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <h3 className="font-semibold mb-2">Hành khách</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <User size={20} className="text-blue-500" />
+                      <span>
+                        Người lớn:{" "}
+                        {i === 0 ? objDeparture?.[1]?.[0] : objReturn?.[1]?.[0]}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Baby size={20} className="text-blue-500" />
+                      <span>
+                        Trẻ em:{" "}
+                        {i === 0 ? objDeparture?.[1]?.[1] : objReturn?.[1]?.[1]}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <h3 className="font-semibold mb-2">Ghế đã chọn</h3>
+                  <div className="space-y-2 ">
+                    {(i === 0 ? selectedSeats : selectedSeatsReturn).size ===
+                    0 ? (
+                      <div className="flex items-center justify-center p-2 rounded ">
+                        <span className="text-gray-500">Trống</span>
+                      </div>
+                    ) : (
+                      Array.from(
+                        i === 0 ? selectedSeats : selectedSeatsReturn
+                      ).map((seatId) => {
+                        const [row, col] = findSeatPosition(seatId);
+                        const seat = (i === 0 ? seats : seatsReturn)[row]?.[
+                          col
+                        ];
+                        return (
+                          <div
+                            key={seatId}
+                            className="flex items-center justify-between bg-gray-50 p-2 rounded cursor-pointer"
+                            onClick={() => {
+                              const element = document.getElementById(
+                                seatId + (i === 0 ? "departure" : "return")
+                              );
+                              if (element) {
+                                element.scrollIntoView({ behavior: "smooth" });
+                                element.style.boxShadow =
+                                  "0 0 10px 0 rgba(0,0,0,0.5)";
+                                element.style.transition =
+                                  "box-shadow 0.5s ease";
+                                setTimeout(() => {
+                                  element.style.boxShadow = "";
+                                }, 500);
+                              }
+                            }}>
+                            <span className="font-medium">{seatId}</span>
+                            <span className="font-medium">
+                              {handleCalculatePrice({
+                                passengerType: seat?.passengerType,
+                                seatType: seat?.type,
+                                price: (i === 0 ? objDeparture : objReturn)[0]
+                                  .gia,
+                              })}
+
+                              <span className="text-xs text-gray-600">
+                                {seat?.type === "business"
+                                  ? "(Thương gia)"
+                                  : "(Phổ thông)"}
+                              </span>
+                            </span>
+                            <span className="text-sm text-gray-600">
+                              {seat?.passengerType === "adult"
+                                ? "Người lớn"
+                                : "Trẻ em"}
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2">
+                    Tổng số tiền cần thanh toán
+                  </h3>
+                  <p className="text-xl font-bold text-[#FF5E1F]">
+                    {(i === 0 ? selectedSeats : selectedSeatsReturn).size > 0
+                      ? calculateTotalPrice(i === 0 ? "departure" : "return")
+                      : "0 VND"}
+                  </p>
                 </div>
               </div>
             </>
           ))}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleShowPassengerInfo}
+            className="flex p-3 bg-[#0194F3] mb-5 text-white mt-3 mx-auto font-semibold rounded-lg gap-x-3 items-center justify-center transition-all duration-200 hover:bg-[#0184d9] hover:shadow-lg active:shadow-md">
+            Nhập thông tin hành khách
+          </motion.button>
         </div>
-      </div>
-
-      <div className="col-start-5 col-span-2 overflow-y-auto h-full rounded-lg bg-white">
-        {Array.from({ length: objReturn ? 2 : 1 }, (_, i) => (
-          <>
-            <div className="p-5 uppercase">
-              <h2 className="text-xl text-center font-bold mb-1">
-                Thông tin đặt chỗ
-              </h2>
-              <p
-                className={`text-center text-sm ${i === 0 ? "departure-flight" : "return-flight"}`}>
-                (Chuyến bay {i === 0 ? "đi" : "khứ hồi"})
-              </p>
-
-              <div className="h-fit bg-transparent rounded-2xl shadow-md w-full overflow-hidden">
-                <ItemFlight
-                  hangBay={`${(i === 0 ? objDeparture : objReturn)[0].hangBay}`}
-                  soHieu={`${(i === 0 ? objDeparture : objReturn)[0].soHieu}`}
-                  loaiMayBay={`${(i === 0 ? objDeparture : objReturn)[0].loaiMayBay}`}
-                  gioBay={`${(i === 0 ? objDeparture : objReturn)[0].gioBay}`}
-                  diemBay={`${(i === 0 ? objDeparture : objReturn)[0].diemBay}`}
-                  gioDen={`${(i === 0 ? objDeparture : objReturn)[0].gioDen}`}
-                  diemDen={`${(i === 0 ? objDeparture : objReturn)[0].diemDen}`}
-                  gia={`${(i === 0 ? objDeparture : objReturn)[0].gia}`}
-                  ThuongGia={`${(i === 0 ? objDeparture : objReturn)[0].ThuongGia}`}
-                  PhoThong={`${(i === 0 ? objDeparture : objReturn)[0].PhoThong}`}
-                />
-              </div>
-
-              <div className="mb-6">
-                <h3 className="font-semibold mb-2">Hành khách</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <User size={20} className="text-blue-500" />
-                    <span>
-                      Người lớn:{" "}
-                      {i === 0 ? objDeparture?.[1]?.[0] : objReturn?.[1]?.[0]}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Baby size={20} className="text-blue-500" />
-                    <span>
-                      Trẻ em:{" "}
-                      {i === 0 ? objDeparture?.[1]?.[1] : objReturn?.[1]?.[1]}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <h3 className="font-semibold mb-2">Ghế đã chọn</h3>
-                <div className="space-y-2">
-                  {(i === 0 ? selectedSeats : selectedSeatsReturn).size ===
-                  0 ? (
-                    <div className="flex items-center justify-center bg-gray-50 p-2 rounded">
-                      <span className="text-gray-500">Trống</span>
-                    </div>
-                  ) : (
-                    Array.from(
-                      i === 0 ? selectedSeats : selectedSeatsReturn
-                    ).map((seatId) => {
-                      const [row, col] = findSeatPosition(seatId);
-                      const seat = (i === 0 ? seats : seatsReturn)[row]?.[col];
-                      return (
-                        <div
-                          key={seatId}
-                          className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                          <span className="font-medium">{seatId}</span>
-                          <span className="font-medium">
-                            {handleCalculatePrice({
-                              passengerType: seat?.passengerType,
-                              seatType: seat?.type,
-                              price: (i === 0 ? objDeparture : objReturn)[0]
-                                .gia,
-                            })}
-
-                            <span className="text-xs text-gray-600">
-                              {seat?.type === "business"
-                                ? "(Thương gia)"
-                                : "(Phổ thông)"}
-                            </span>
-                          </span>
-                          <span className="text-sm text-gray-600">
-                            {seat?.passengerType === "adult"
-                              ? "Người lớn"
-                              : "Trẻ em"}
-                          </span>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-2">
-                  Tổng số tiền cần thanh toán
-                </h3>
-                <p className="text-xl font-bold text-[#FF5E1F]">
-                  {(i === 0 ? selectedSeats : selectedSeatsReturn).size > 0
-                    ? calculateTotalPrice(i === 0 ? "departure" : "return")
-                    : "0 VND"}
-                </p>
-              </div>
-            </div>
-          </>
-        ))}
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleShowPassengerInfo}
-          className="flex p-3 bg-[#0194F3] mb-5 text-white mt-3 mx-auto font-semibold rounded-lg gap-x-3 items-center justify-center transition-all duration-200 hover:bg-[#0184d9] hover:shadow-lg active:shadow-md">
-          Nhập thông tin hành khách
-        </motion.button>
       </div>
     </div>
   );
@@ -960,9 +1076,13 @@ const ComponentInputInformationPassenger = ({
   airportDeparture,
   airportReturn,
   oneWayFlight,
-  selectedSeats,
+  selectedSeatsInfo,
+  selectedSeatsReturnInfo,
+  convertDateToVNDate,
+  naviReload,
 }) => {
-  console.log(selectedSeats);
+  console.log(selectedSeatsInfo, selectedSeatsReturnInfo);
+
   const {
     register,
     handleSubmit,
@@ -972,24 +1092,28 @@ const ComponentInputInformationPassenger = ({
     formState: { errors },
   } = useForm({
     defaultValues: {
-      items: Array(3).fill({
+      items: Array(selectedSeatsInfo.length).fill({
         loaiTuoi: "",
         Ten: "",
         ngaySinh: "",
         hangVe: "",
         giaVe: 0,
         maChuyenBay: airportDeparture._id,
+        maSoGhe: "",
+        flightType: "departure",
       }),
       ...(oneWayFlight
         ? {}
         : {
-            itemsB: Array().fill({
+            itemsB: Array(selectedSeatsReturnInfo.length).fill({
               loaiTuoi: "",
               Ten: "",
               ngaySinh: "",
               hangVe: "",
               giaVe: 0,
               maChuyenBay: airportReturn?._id,
+              maSoGhe: "",
+              flightType: "return",
             }),
           }),
     },
@@ -1005,9 +1129,6 @@ const ComponentInputInformationPassenger = ({
     name: "itemsB",
   });
 
-  const [hideAirportsDeparture, setHideAirportsDeparture] = useState(false);
-  const [hideAirportsReturn, setHideAirportsReturn] = useState(false);
-
   const handleCopyPassengerAirportDepartureToReturn = () => {
     fieldsB.forEach((item, index) => {
       setValue(`itemsB.${index}.Ten`, watch(`items.${index}.Ten`));
@@ -1015,65 +1136,50 @@ const ComponentInputInformationPassenger = ({
     });
   };
 
+  const mutationCreateOrder = useMutation({
+    mutationFn: CreateOrder,
+    onSuccess: (response) => {
+      const timeEnd = convertDateToVNDate(response.data.expiredAt);
+      const data = {
+        timeEndPayOrder: timeEnd,
+        objectOrder: response.data,
+        airportDeparture: airportDeparture,
+        airportReturn: oneWayFlight ? {} : airportReturn,
+      };
+
+      localStorage.setItem(
+        "payment",
+        JSON.stringify(`${response.data.idDH} ${response.data.expiredAt}`)
+      );
+      naviReload("/XemDanhSachChuyenbBay/ThanhToan", {
+        state: {
+          data: data,
+        },
+      });
+    },
+  });
+
   const submitFormInfo = (data) => {
     console.log(data);
   };
-  // onClick={() => setHideAirportsDeparture(!hideAirportsDeparture)}
   return (
     <div>
       <form onSubmit={handleSubmit(submitFormInfo)} className="">
         {!oneWayFlight && (
-          <button>
-            type="button" className="flex w-full border-b"
-            <h1 className="text-center w-full text-xl uppercase font-bold mb-3">
-              -------Chuyến bay đi-------
-            </h1>
-            {/* {!hideAirportsDeparture ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="size-6">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12"
-                />
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="size-6">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25"
-                />
-              </svg>
-            )} */}
-          </button>
+          <h1 className="pt-1 text-center w-full text-base uppercase mb-3 departure-flight">
+            -------Chuyến bay đi-------
+          </h1>
         )}
 
         {fields.map((item, index) => (
           <div
             key={airportDeparture._id + index}
-            className={`w-full flex justify-between mb-6 transition-all duration-0 ${hideAirportsDeparture ? "h-0 overflow-hidden duration-500" : ""}`}>
+            className={`w-full flex justify-between mb-6 transition-all duration-500`}>
             <ThongTinHanhKhach
               register={register}
               index={index}
               item="items"
-              // passenger={quantityTicketsDeparture}
-              passenger={{
-                quantityTicketsOfAdult: [1, 0],
-                quantityTicketsOfChild: [1, 0],
-                quantityTicketsOfBaby: 0,
-              }}
+              selectedSeatsInfo={selectedSeatsInfo}
               errors={errors}
               setValue={setValue}
               watch={watch}
@@ -1084,70 +1190,71 @@ const ComponentInputInformationPassenger = ({
 
         {!oneWayFlight && (
           <>
-            <div className="flex w-full border-b">
-              <h1 className="text-center w-full text-xl uppercase font-bold mb-3">
-                -------Chuyến bay khứ hồi-------
-              </h1>
-              {/* <div className="flex gap-x-6">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="size-6 cursor-pointer"
-                  onClick={handleCopyPassengerAirportDepartureToReturn}>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"
-                  />
-                </svg>
-
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="size-6 cursor-pointer"
-                  onClick={() => setHideAirportsReturn(!hideAirportsReturn)}>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d={`${!hideAirportsReturn ? "M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" : "M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25"}`}
-                  />
-                </svg>
-              </div> */}
+            <h1 className="pt-1 text-center w-full text-base uppercase  return-flight">
+              -------Chuyến bay khứ hồi-------
+            </h1>
+            <div className="flex justify-center w-full h-fit mb-3 pt-1">
+              <BookCopy
+                size={20}
+                className="cursor-pointer"
+                onClick={handleCopyPassengerAirportDepartureToReturn}
+              />
             </div>
+            {fieldsB.map((item, index) => (
+              <div
+                key={airportReturn._id + index}
+                className={`flex justify-between mb-6 transition-all duration-500`}>
+                <ThongTinHanhKhach
+                  register={register}
+                  index={index}
+                  item="itemsB"
+                  selectedSeatsInfo={selectedSeatsReturnInfo}
+                  errors={errors}
+                  setValue={setValue}
+                  watch={watch}
+                  airport={airportReturn}
+                />
+              </div>
+            ))}
           </>
         )}
 
-        <button
-          // type={mutationCreateOrder.isPending ? "button" : "submit"}
-          className="flex p-3 bg-[#0194F3] text-white mt-3 float-right font-semibold rounded-lg gap-x-3 items-center justify-center">
-          {/* {mutationCreateOrder.isPending ? (
-            <l-bouncy size="30" speed="1.75" color="white" />
-          ) : (
-            <>
-              Thanh toán
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="size-5">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"
-                />
-              </svg>
-            </>
-          )} */}
-          Thanh toán
-        </button>
+        <div className="flex flex-col md:flex-row justify-between gap-x-3">
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex p-3 bg-[#0194F3] mb-5 text-white mt-3 mx-auto font-semibold rounded-lg gap-x-3 items-center justify-center transition-all duration-200 hover:bg-[#0184d9] hover:shadow-lg active:shadow-md">
+            Xem lại vé
+          </motion.button>
+
+          <motion.button
+            type={mutationCreateOrder.isPending ? "button" : "submit"}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex p-3 bg-[#0194F3] mb-5 text-white mt-3 mx-auto font-semibold rounded-lg gap-x-3 items-center justify-center transition-all duration-200 hover:bg-[#0184d9] hover:shadow-lg active:shadow-md">
+            {mutationCreateOrder.isPending ? (
+              <l-bouncy size="30" speed="1.75" color="white" />
+            ) : (
+              <>
+                Sang trang thanh toán
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                  className="size-5">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"
+                  />
+                </svg>
+              </>
+            )}
+          </motion.button>
+        </div>
       </form>
     </div>
   );
@@ -1162,115 +1269,54 @@ function ThongTinHanhKhach({
   watch,
   airport,
   passenger,
+  selectedSeatsInfo,
 }) {
   const { handleReplacePriceAirport } = useContext(CONTEXT);
 
-  // useEffect(() => {
-  //   setValue(
-  //     `${item}.${index}.hangVe`,
-  //     passenger.quantityTicketsOfAdult[0] > 0 &&
-  //       index + 1 <= passenger.quantityTicketsOfAdult[0]
-  //       ? "Vé phổ thông"
-  //       : passenger.quantityTicketsOfAdult[1] > 0 &&
-  //           index <
-  //             passenger.quantityTicketsOfAdult[0] +
-  //               passenger.quantityTicketsOfAdult[1]
-  //         ? "Vé thương gia"
-  //         : passenger.quantityTicketsOfChild[0] > 0 &&
-  //             index <
-  //               passenger.quantityTicketsOfChild[0] +
-  //                 passenger.quantityTicketsOfAdult[0] +
-  //                 passenger.quantityTicketsOfAdult[1]
-  //           ? "Vé phổ thông"
-  //           : passenger.quantityTicketsOfChild[1] > 0
-  //             ? "Vé thương gia"
-  //             : "Ngồi chung với người lớn",
-  //     { shouldValidate: true }
-  //   );
+  useEffect(() => {
+    setValue(
+      `${item}.${index}.hangVe`,
+      selectedSeatsInfo[index].seatType === "business"
+        ? "Vé thương gia"
+        : "Vé phổ thông",
 
-  //   // setValue(
-  //   //   `${item}.${index}.loaiTuoi`,
-  //   //   passenger.quantityTicketsOfAdult[0] +
-  //   //     passenger.quantityTicketsOfAdult[1] >
-  //   //     0 &&
-  //   //     index + 1 <=
-  //   //       passenger.quantityTicketsOfAdult[0] +
-  //   //         passenger.quantityTicketsOfAdult[1]
-  //   //     ? `người lớn thứ ${index + 1}`
-  //   //     : passenger.quantityTicketsOfChild[0] +
-  //   //           passenger.quantityTicketsOfChild[1] >
-  //   //           0 &&
-  //   //         index <
-  //   //           passenger.quantityTicketsOfChild[0] +
-  //   //             passenger.quantityTicketsOfChild[1] +
-  //   //             passenger.quantityTicketsOfAdult[0] +
-  //   //             passenger.quantityTicketsOfAdult[1]
-  //   //       ? `trẻ em thứ ${
-  //   //           index -
-  //   //           (passenger.quantityTicketsOfAdult[0] +
-  //   //             passenger.quantityTicketsOfAdult[1]) +
-  //   //           1
-  //   //         }`
-  //   //       : passenger.quantityTicketsOfBaby > 0 &&
-  //   //           index <
-  //   //             passenger.quantityTicketsOfBaby +
-  //   //               passenger.quantityTicketsOfChild[0] +
-  //   //               passenger.quantityTicketsOfChild[1] +
-  //   //               passenger.quantityTicketsOfAdult[0] +
-  //   //               passenger.quantityTicketsOfAdult[1]
-  //   //         ? `em bé thứ ${
-  //   //             index -
-  //   //             (passenger.quantityTicketsOfChild[0] +
-  //   //               passenger.quantityTicketsOfChild[1] +
-  //   //               passenger.quantityTicketsOfAdult[0] +
-  //   //               passenger.quantityTicketsOfAdult[1]) +
-  //   //             1
-  //   //           }`
-  //   //         : "aaa"
-  //   // );
+      { shouldValidate: true }
+    );
 
-  //   // setValue(
-  //   //   `${item}.${index}.giaVe`,
-  //   //   watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] === "người lớn" &&
-  //   //     watch(`${item}.${index}.hangVe`) === "Vé phổ thông"
-  //   //     ? new Intl.NumberFormat("vi-VN").format(
-  //   //         handleReplacePriceAirport(airport.gia)
-  //   //       ) + " VND"
-  //   //     : watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] === "người lớn" &&
-  //   //         watch(`${item}.${index}.hangVe`) === "Vé thương gia"
-  //   //       ? new Intl.NumberFormat("vi-VN").format(
-  //   //           Math.floor(handleReplacePriceAirport(airport.gia) * 1.5)
-  //   //         ) + " VND"
-  //   //       : watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] === "trẻ em" &&
-  //   //           watch(`${item}.${index}.hangVe`) === "Vé phổ thông"
-  //   //         ? new Intl.NumberFormat("vi-VN").format(
-  //   //             Math.floor(handleReplacePriceAirport(airport.gia) * 0.75)
-  //   //           ) + " VND"
-  //   //         : watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
-  //   //               "trẻ em" &&
-  //   //             watch(`${item}.${index}.hangVe`) === "Vé thương gia"
-  //   //           ? new Intl.NumberFormat("vi-VN").format(
-  //   //               Math.floor(
-  //   //                 handleReplacePriceAirport(airport.gia) * 0.75 * 1.5
-  //   //               )
-  //   //             ) + " VND"
-  //   //           : watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] === "em bé"
-  //   //             ? "0 VND"
-  //   //             : ""
-  //   // );
-  // }, [
-  //   index,
-  //   setValue,
-  //   passenger,
-  //   airport,
-  //   watch,
-  //   handleReplacePriceAirport,
-  //   item,
-  // ]);
+    setValue(`${item}.${index}.maSoGhe`, selectedSeatsInfo[index].seatId, {
+      shouldValidate: true,
+    });
+    setValue(
+      `${item}.${index}.loaiTuoi`,
+      selectedSeatsInfo[index].passengerType === "adult"
+        ? "Người lớn"
+        : "Trẻ em",
+      {
+        shouldValidate: true,
+      }
+    );
+    setValue(`${item}.${index}.giaVe`, selectedSeatsInfo[index].price, {
+      shouldValidate: true,
+    });
+  }, [
+    index,
+    setValue,
+    passenger,
+    airport,
+    watch,
+    handleReplacePriceAirport,
+    item,
+    selectedSeatsInfo,
+  ]);
+
   return (
-    <div className="bg-white shadow-lg rounded-md p-5 w-full">
+    <div
+      id={
+        watch(`${item}.${index}.maSoGhe`) + watch(`${item}.${index}.flightType`)
+      }
+      className="bg-white shadow-lg rounded-md p-5 w-full">
       <h3 className="text-sm font-bold mb-6 text-left">
-        Thông tin vé ghế {watch(`${item}.${index}.loaiTuoi`)}{" "}
+        Thông tin vé ghế {watch(`${item}.${index}.maSoGhe`)}{" "}
       </h3>
 
       <div className="flex flex-col gap-x-5 mb-6 text-base font-semibold">
@@ -1322,28 +1368,21 @@ function ThongTinHanhKhach({
                       ? age - 1
                       : age;
 
-                  if (
-                    watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
-                    "người lớn"
-                  ) {
+                  const passengerType = watch(`${item}.${index}.loaiTuoi`);
+
+                  if (passengerType === "Người lớn") {
                     return (
                       (adjustedAge >= 12 && adjustedAge <= 80) ||
                       "Người lớn từ 12 đến 80 tuổi"
                     );
                   }
-                  if (
-                    watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
-                    "trẻ em"
-                  ) {
+                  if (passengerType === "Trẻ em") {
                     return (
-                      (adjustedAge <= 12 && adjustedAge >= 2) ||
+                      (adjustedAge < 12 && adjustedAge >= 2) ||
                       "Trẻ em dưới 12 và trên 2 tuổi"
                     );
                   }
-                  if (
-                    watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
-                    "em bé"
-                  ) {
+                  if (passengerType === "Em bé") {
                     return (
                       adjustedAge < 2 ||
                       "Em bé dưới 2 tuổi và không quá hiện tại"
@@ -1362,71 +1401,6 @@ function ThongTinHanhKhach({
           </span>
         </div>
       </div>
-
-      {/* <div className="flex justify-between w-full">
-        <button
-          className={`border-2 rounded-lg h-fit flex justify-center gap-x-4 w-[47%] p-2  mb-6 ${watch(`${item}.${index}.hangVe`) === "Vé phổ thông" ? "border-[#0194F3] " : "border-gray-300 opacity-50 cursor-not-allowed"} `}
-          type="button">
-          <img
-            alt=""
-            className="w-16 bg-cover h-14"
-            src="https://ik.imagekit.io/tvlk/image/imageResource/2022/12/20/1671519148670-d3ca3132946e435bd467ccc096730670.png"
-          />
-          <div className="flex flex-col">
-            <span className="text-base font-bold">Vé phổ thông</span>
-            <span className="text-lg font-semibold text-[#FF5E1F]">
-              {watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
-              "người lớn"
-                ? new Intl.NumberFormat("vi-VN").format(
-                    handleReplacePriceAirport(airport.gia)
-                  )
-                : watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
-                    "trẻ em"
-                  ? new Intl.NumberFormat("vi-VN").format(
-                      handleReplacePriceAirport(airport.gia) * 0.75
-                    )
-                  : "0"}{" "}
-              {" VND"}
-              <span className="text-sm font-semibold text-[#a0a0a0]">
-                / khách
-              </span>
-            </span>
-          </div>
-        </button>
-        <button
-          type="button"
-          className={`border-2 rounded-lg h-fit flex gap-x-4 w-[47%] justify-center p-2 ${watch(`${item}.${index}.hangVe`) === "Vé thương gia" ? "border-[#0194F3]" : "border-gray-300 opacity-50 cursor-not-allowed"}`}>
-          <img
-            alt=""
-            className="w-16 bg-cover h-14"
-            src="https://ik.imagekit.io/tvlk/image/imageResource/2022/12/23/1671789427394-4441a4e3f0b96ea01dccf4a620bad996.png"
-          />
-          <div className="flex flex-col">
-            <span className="text-base font-bold whitespace-nowrap">
-              Vé thương gia
-            </span>
-            <span className="text-lg font-semibold text-[#FF5E1F]">
-              {watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
-              "người lớn"
-                ? new Intl.NumberFormat("vi-VN").format(
-                    Math.floor(handleReplacePriceAirport(airport.gia) * 1.5)
-                  )
-                : watch(`${item}.${index}.loaiTuoi`).split(" thứ")[0] ===
-                    "trẻ em"
-                  ? new Intl.NumberFormat("vi-VN").format(
-                      Math.floor(
-                        handleReplacePriceAirport(airport.gia) * 0.75 * 1.5
-                      )
-                    )
-                  : "0"}{" "}
-              {" VND"}
-              <span className="text-sm font-semibold text-[#a0a0a0]">
-                /khách
-              </span>
-            </span>
-          </div>
-        </button>
-      </div> */}
     </div>
   );
 }
