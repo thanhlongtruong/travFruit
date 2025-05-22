@@ -1,5 +1,4 @@
 import { Route, Routes } from "react-router-dom";
-import DatChoCuaToi from "./Components/Plane/DatChoCuaToi.js";
 
 import Setting from "./Components/Setting/Setting.js";
 import XemDanhSachChuyenBay from "./Components/Plane/XemDanhSachChuyenBay.js";
@@ -38,12 +37,9 @@ function App() {
         />
         <Route path="/Setting/InfoAccount" element={<Setting />} />
         <Route path="/Setting/HistoryTicket" element={<Setting />} />
+
         <Route
-          path="/XemDanhSachChuyenbBay/DatChoCuaToi"
-          element={<DatChoCuaToi />}
-        />
-        <Route
-          path="/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan"
+          path="/XemDanhSachChuyenbBay/ThanhToan"
           element={<TrangThanhToan />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />

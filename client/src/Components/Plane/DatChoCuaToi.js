@@ -103,7 +103,7 @@ function DatChoCuaToi() {
         "payment",
         JSON.stringify(`${response.data.idDH} ${response.data.expiredAt}`)
       );
-      naviReload("/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan", {
+      naviReload("/XemDanhSachChuyenbBay/ThanhToan", {
         state: {
           data: data,
         },

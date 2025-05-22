@@ -217,15 +217,13 @@ function History() {
             </div> */}
 
             <div
-              className={`absolute w-fit transform -translate-x-1/2 left-[50%] whitespace-nowrap transition-opacity duration-300 ${optionShow[0] || isSearch[0] ? "opacity-0 pointer-events-none" : "opacity-100"}`}
-            >
+              className={`absolute w-fit transform -translate-x-1/2 left-[50%] whitespace-nowrap transition-opacity duration-300 ${optionShow[0] || isSearch[0] ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
               Lịch sử đơn hàng
             </div>
 
             {!isSearch[0] && (
               <div
-                className={`flex h-[42px] w-fit items-center absolute left-[12%]`}
-              >
+                className={`flex h-[42px] w-fit items-center absolute left-[12%]`}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -241,8 +239,7 @@ function History() {
                       pre[3],
                       pre[4],
                     ])
-                  }
-                >
+                  }>
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -251,8 +248,7 @@ function History() {
                 </svg>
 
                 <div
-                  className={`ml-3 gap-x-3 w-[420px] h-[42px] transition-opacity duration-300 flex ${optionShow[0] ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-                >
+                  className={`ml-3 gap-x-3 w-[420px] h-[42px] transition-opacity duration-300 flex ${optionShow[0] ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
                   {Array.from({ length: 4 }, (_, i) => (
                     <OptionShowHistoryOrder
                       index={i}
@@ -343,8 +339,7 @@ function OptionShowHistoryOrder({
     <button
       type="button"
       className={`${stateChoose ? "bg-[#109AF4] text-white" : "text-[#109AF4]"} select-none flex font-medium p-2 text-base rounded-xl border border-[#109AF4] transition duration-0 hover:duration-700 hover:ease-in-out`}
-      onClick={() => handleChooseOptionShow(index)}
-    >
+      onClick={() => handleChooseOptionShow(index)}>
       {content}
     </button>
   );
@@ -449,7 +444,7 @@ function HistoryDon({
     const response = await mutationPay.mutateAsync({ orderId: order._id });
     if (response.status === 200) {
       if (response.data.payment?.payUrl === "NO payURL") {
-        naviReload("/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan", {
+        naviReload("/XemDanhSachChuyenbBay/ThanhToan", {
           state: {
             data: data,
           },
@@ -524,13 +519,11 @@ function HistoryDon({
       {dataReservation?.map((order, index) => (
         <div
           key={order._id}
-          className={`w-full p-2 mb-5 hover:text-zinc-800 outline-slate-300 hover:duration-500 transition-all overflow-hidden duration-300 relative outline outline-1  rounded-lg select-none min-h-[110px]`}
-        >
+          className={`w-full p-2 mb-5 hover:text-zinc-800 outline-slate-300 hover:duration-500 transition-all overflow-hidden duration-300 relative outline outline-1  rounded-lg select-none min-h-[110px]`}>
           <div>
             <div
               className="flex justify-between w-full cursor-pointer"
-              onClick={() => handleHistoryVe(index)}
-            >
+              onClick={() => handleHistoryVe(index)}>
               <div className="font-semibold w-full overflow-hidden">
                 <p className="line-clamp-1">
                   Ngày đặt vé: {convertDateToVNDate(order.createdAt)}
@@ -596,8 +589,7 @@ function HistoryDon({
             <div className="absolute z-10 flex top-2 right-2 gap-x-3">
               <button
                 className={`font-semibold line-clamp-1 rounded-md text-[14px] p-2 self-center text-white transition ease-in-out active:bg-slate-200 ${order.trangThai === "Đã hủy" || order.trangThai === "Đã thanh toán" ? "bg-slate-500 cursor-not-allowed" : "cursor-pointer bg-red-500"}`}
-                onClick={() => huyOrder(dataReservation[index])}
-              >
+                onClick={() => huyOrder(dataReservation[index])}>
                 {mutationUpdatepdateStatus.isPending ? (
                   <l-bouncy size="30" speed="1.75" color="white" />
                 ) : (
@@ -611,8 +603,7 @@ function HistoryDon({
               ) && (
                 <button
                   className={`font-semibold line-clamp-1 rounded-md text-[14px] p-2 self-center text-white transition ease-in-out active:bg-slate-200 ${order.trangThai === "Đã hủy" || order.trangThai === "Đã thanh toán" ? "bg-slate-500 cursor-not-allowed" : "cursor-pointer bg-red-500"}`}
-                  onClick={() => huyVeKhuHoi(dataReservation[index])}
-                >
+                  onClick={() => huyVeKhuHoi(dataReservation[index])}>
                   {mutationUpdatepdateStatus.isPending ? (
                     <l-bouncy size="30" speed="1.75" color="white" />
                   ) : (
@@ -623,8 +614,7 @@ function HistoryDon({
 
               <button
                 className={`transition-all duration-500 font-semibold line-clamp-1 rounded-md text-[14px] p-2 self-center text-white ease-in-out active:bg-slate-200 bg-[#109AF4]`}
-                onClick={() => thanhToan(dataReservation[index])}
-              >
+                onClick={() => thanhToan(dataReservation[index])}>
                 {mutationPay.isPending ? (
                   <l-bouncy size="30" speed="1.75" color="white" />
                 ) : (
@@ -656,8 +646,7 @@ function HistoryVe({ order }) {
           <div className={`flex w-fit h-fit}`}>
             <div
               className={`w-fit h-fit`}
-              onClick={() => hanldeChooseTicket(index)}
-            >
+              onClick={() => hanldeChooseTicket(index)}>
               <InfoTicket
                 airport={{
                   loaiChuyenBay: ticket.flights.loaiChuyenBay,

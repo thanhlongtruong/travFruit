@@ -4,7 +4,7 @@ function InfoTicket({ airport, enableUpdateTIcket }) {
   let currentLocation = window.location.href;
   const currentPath = new URL(currentLocation).pathname;
   const arrayUrl = [
-    "/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan",
+    "/XemDanhSachChuyenbBay/ThanhToan",
     "/Setting/HistoryTicket",
   ];
   let place = arrayUrl.includes(currentPath);

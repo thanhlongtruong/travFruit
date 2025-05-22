@@ -45,6 +45,7 @@ function XemDanhSachChuyenBay() {
     setDeparture_Return_Date,
     handleReplacePriceAirport,
     showNotification,
+    setSavedSeatState,
   } = useContext(CONTEXT);
 
   bouncy.register();
@@ -58,35 +59,52 @@ function XemDanhSachChuyenBay() {
   const searchParams = new URLSearchParams(location.search);
 
   useEffect(() => {
-    const departure = searchParams.get("departure");
-    const arrival = searchParams.get("arrival");
-    const departureDate = searchParams.get("departureDate");
-    const oneWayTicket_ = searchParams.get("oneWayTicket");
-    const returnDate = searchParams.get("returnDate");
-    const passengers = searchParams.get("passengers");
-    setAirportFrom(departure);
-    setAirportTo(arrival);
-    setEditQuantityPassenger(passengers.split(",").map(Number));
+    try {
+      const departure = searchParams.get("departure");
+      const arrival = searchParams.get("arrival");
+      const departureDate = searchParams.get("departureDate");
+      const oneWayTicket_ = searchParams.get("oneWayTicket");
+      const returnDate = searchParams.get("returnDate");
+      const passengers = searchParams.get("passengers");
 
-    const [day, month, year] = departureDate.split("-").map(Number);
-    const dateDeparFormat = new Date(year, month - 1, day);
+      if (!departure || !arrival || !departureDate || !passengers) {
+        console.error("Missing required parameters");
+        return;
+      }
 
-    let dateReturn = new Date(
-      dateDeparFormat.getTime() + 2 * 24 * 60 * 60 * 1000
-    );
+      setAirportFrom(departure);
+      setAirportTo(arrival);
+      setEditQuantityPassenger(passengers.split(",").map(Number));
 
-    if (oneWayTicket_ === "true") {
-      dateReturn = new Date(
-        dateDeparFormat.getTime() + 2 * 24 * 60 * 60 * 1000
-      );
-    } else {
-      const [day, month, year] = returnDate.split("-").map(Number);
-      dateReturn = new Date(year, month - 1, day);
+      const parseDate = (dateStr) => {
+        const [day, month, year] = dateStr.split("-").map(Number);
+        if (isNaN(day) || isNaN(month) || isNaN(year)) {
+          throw new Error("Invalid date format");
+        }
+        return new Date(year, month - 1, day);
+      };
+
+      const dateDeparFormat = parseDate(departureDate);
+
+      let dateReturn;
+
+      if (oneWayTicket_ === "true") {
+        dateReturn = new Date(
+          dateDeparFormat.getTime() + 2 * 24 * 60 * 60 * 1000
+        );
+        setBayMotChieu(true);
+      } else {
+        if (!returnDate) {
+          throw new Error("Return date is required for round trip");
+        }
+        dateReturn = parseDate(returnDate);
+        setBayMotChieu(false);
+      }
+
+      setDeparture_Return_Date([dateDeparFormat, dateReturn]);
+    } catch (error) {
+      console.error("Error processing search parameters:", error);
     }
-
-    setDeparture_Return_Date([dateDeparFormat, dateReturn]);
-
-    setBayMotChieu(oneWayTicket_ === "true");
   }, []);
 
   const { data, isLoading, error } = useSearchFlights({
@@ -276,10 +294,6 @@ function XemDanhSachChuyenBay() {
       return;
     }
 
-    const resSoGhe = await mutateGheMaSoGhe.mutateAsync({
-      idFlight: airport._id,
-    });
-
     if (typeAirport === "departure" && passengerChooseDeparture) {
       const element = document.getElementById(
         `${selectedDepartureAirport[0]._id}`
@@ -292,26 +306,30 @@ function XemDanhSachChuyenBay() {
     if (typeAirport === "cancelDeparture") {
       setSelectedDepartureAirport(null);
       setPassengerChooseDeparture(false);
+      setSavedSeatState({
+        selectedSeats: new Set(),
+        selectedSeatsReturn: new Set(),
+        seats: [],
+        seatsReturn: [],
+      });
       return;
     }
-    if (
-      typeAirport === "departure" &&
-      !passengerChooseDeparture &&
-      resSoGhe.data.message === "Lấy số ghế thành công"
-    ) {
-      setSelectedDepartureAirport([
-        airport,
-        editQuantityPassenger,
-        {
-          soGhePhoThong_Booked: resSoGhe.data.maSoGhePhoThong,
-          soGheThuongGia_Booked: resSoGhe.data.maSoGheThuongGia,
-        },
-      ]);
+    if (typeAirport === "departure" && !passengerChooseDeparture) {
+      const resSoGhe = await mutateGheMaSoGhe.mutateAsync({
+        idFlight: airport._id,
+      });
+      if (resSoGhe.data.message === "Lấy số ghế thành công") {
+        setSelectedDepartureAirport([
+          airport,
+          editQuantityPassenger,
+          {
+            soGhePhoThong_Booked: resSoGhe.data.maSoGhePhoThong,
+            soGheThuongGia_Booked: resSoGhe.data.maSoGheThuongGia,
+          },
+        ]);
+      }
     }
-    if (
-      typeAirport === "return" &&
-      resSoGhe.data.message === "Lấy số ghế thành công"
-    ) {
+    if (typeAirport === "return") {
       if (!passengerChooseDeparture) {
         const element = document.getElementById("one-way-ticket");
         if (element) {
@@ -319,14 +337,19 @@ function XemDanhSachChuyenBay() {
         }
         return;
       }
-      setSelectedReturnAirport([
-        airport,
-        editQuantityPassenger,
-        {
-          soGhePhoThong_Booked: resSoGhe.data.maSoGhePhoThong,
-          soGheThuongGia_Booked: resSoGhe.data.maSoGheThuongGia,
-        },
-      ]);
+      const resSoGhe = await mutateGheMaSoGhe.mutateAsync({
+        idFlight: airport._id,
+      });
+      if (resSoGhe.data.message === "Lấy số ghế thành công") {
+        setSelectedReturnAirport([
+          airport,
+          editQuantityPassenger,
+          {
+            soGhePhoThong_Booked: resSoGhe.data.maSoGhePhoThong,
+            soGheThuongGia_Booked: resSoGhe.data.maSoGheThuongGia,
+          },
+        ]);
+      }
     }
 
     setOpenAdjustQuantity(true);
@@ -351,22 +374,10 @@ function XemDanhSachChuyenBay() {
       <Header />
 
       {openAdjustQuantity && (
-        // <AdjustQuantity
-        //   objDeparture={selectedDepartureAirport}
-        //   setSelectedDepartureAirport={setSelectedDepartureAirport}
-        //   objReturn={passengerChooseDeparture ? selectedReturnAirport : null}
-        //   setPassengerChooseDeparture={setPassengerChooseDeparture}
-        //   setStateButtonSelectDepartureAirport={
-        //     setStateButtonSelectDepartureAirport
-        //   }
-        //   countDepartureFlights={isFlights.departureFlights.length}
-        //   countReturnFlights={isFlights.returnFlights.length}
-        // />
         <AdjustQuantityv2
           objDeparture={selectedDepartureAirport}
           setSelectedDepartureAirport={setSelectedDepartureAirport}
-          // objReturn={passengerChooseDeparture ? selectedReturnAirport : null}
-          objReturn={selectedDepartureAirport}
+          objReturn={passengerChooseDeparture ? selectedReturnAirport : null}
           setPassengerChooseDeparture={setPassengerChooseDeparture}
           countDepartureFlights={isFlights.departureFlights.length}
           countReturnFlights={isFlights.returnFlights.length}
@@ -374,20 +385,28 @@ function XemDanhSachChuyenBay() {
       )}
       <div
         onClick={() => setShowOptionSetting_LoginSuccess(false)}
-        className={`bg-slate-100 relative w-full h-full`}>
+        className={`bg-slate-100 relative w-full min-h-screen`}>
         {isShowOptionSetting_LoginSuccess && <LoginSuccess />}
 
-        <div className="flex justify-around w-full h-full py-4">
-          <div className="sticky z-0 top-[87px] h-[500px] flex flex-col items-center w-[32%] overflow-y-scroll px-3">
+        <div className="flex justify-around w-full h-full py-4 gap-4">
+          <div className="sticky z-0 top-[87px] h-[calc(100vh-120px)] flex flex-col items-center w-[32%] overflow-y-auto px-3 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
             <div className="w-full">
               <div className="flex mb-5 justify-between w-full h-fit flex-wrap gap-y-3">
                 <button
-                  className={`h-fit w-[38%] transition-colors line-clamp-1 duration-0 font-semibold text-lg cursor-pointer p-2 rounded-lg text-white ${parseInt(filterTakeoffTime[0].split(":")) !== 0 || parseInt(filterTakeoffTime[1].split(":")) !== 24 || parseInt(filterLandingTime[0].split(":")) !== 0 || parseInt(filterLandingTime[1].split(":")) !== 24 || filterPrice !== Number(500000).toLocaleString("vi-VN") ? "bg-[#0194f3] duration-500" : "bg-neutral-500 duration-500"}`}
+                  className={`h-fit w-[38%] transition-all duration-300 line-clamp-1 font-semibold text-lg cursor-pointer p-2 rounded-lg text-white ${
+                    parseInt(filterTakeoffTime[0].split(":")) !== 0 ||
+                    parseInt(filterTakeoffTime[1].split(":")) !== 24 ||
+                    parseInt(filterLandingTime[0].split(":")) !== 0 ||
+                    parseInt(filterLandingTime[1].split(":")) !== 24 ||
+                    filterPrice !== Number(500000).toLocaleString("vi-VN")
+                      ? "bg-[#0194f3] hover:bg-[#0184d9]"
+                      : "bg-neutral-500 hover:bg-neutral-600"
+                  }`}
                   onClick={handleDefaultFilter}>
                   Đặt lại lựa chọn
                 </button>
                 <button
-                  className="text-[#0194f3] w-[57%] h-fit font-semibold text-lg cursor-pointer bg-white p-2 rounded-lg line-clamp-1 "
+                  className="text-[#0194f3] w-[57%] h-fit font-semibold text-lg cursor-pointer bg-white p-2 rounded-lg line-clamp-1 hover:bg-gray-50 transition-colors duration-200"
                   onClick={() => {
                     const element = document.getElementById("one-way-ticket");
                     if (element) {
@@ -398,7 +417,7 @@ function XemDanhSachChuyenBay() {
                 </button>
                 {!bayMotChieu && (
                   <button
-                    className="w-[57%] float-right h-fit text-[#0194f3] font-semibold text-lg cursor-pointer bg-white p-2 rounded-lg line-clamp-2"
+                    className="w-[57%] float-right h-fit text-[#0194f3] font-semibold text-lg cursor-pointer bg-white p-2 rounded-lg line-clamp-2 hover:bg-gray-50 transition-colors duration-200"
                     onClick={() => {
                       const element =
                         document.getElementById("round-trip-ticket");
@@ -448,17 +467,13 @@ function XemDanhSachChuyenBay() {
             </div>
           </div>
 
-          <div className="flex flex-col items-center w-[65%] h-full">
-            <div
-              className="relative flex items-center justify-center w-full h-fit"
-              onClick={() =>
-                handleShowAirports([0, 1, 2], [false, false, false])
-              }>
+          <div className="flex flex-col items-center w-[65%] h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+            <div className="relative flex items-center justify-center w-full h-fit mb-4">
               <svg
                 viewBox="0 0 672 185"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
-                className="transform scale-x-[-1]">
+                className="transform scale-x-[-1] w-full">
                 <path
                   d="M672 20c0-11.046-8.954-20-20-20H20C8.954 0 0 8.954 0 20v92.139c0 10.408 7.983 19.076 18.355 19.932l632 52.143c11.655.962 21.645-8.238 21.645-19.932V20Z"
                   fill="#007CE8"></path>
@@ -535,14 +550,18 @@ function XemDanhSachChuyenBay() {
             </div>
 
             <div
-              className="relative flex items-center shadow-2xl shadow-blue-500/50 h-[55px] gap-x-2 w-full rounded-xl p-2 bg-white"
+              className="relative flex items-center shadow-lg shadow-blue-500/30 h-[55px] gap-x-2 w-full rounded-xl p-2 bg-white mb-4"
               id="one-way-ticket">
               <button
                 type="button"
                 onClick={() =>
                   handleFilterOneWayTicket({ kindFilter: "IncreasePrice" })
                 }
-                className={`${filterPrice_Increase_Reduce[0] ? "bg-[#109AF4] text-white" : "text-[#109AF4]"} flex  font-medium p-2 rounded-xl border border-[#109AF4]`}>
+                className={`${
+                  filterPrice_Increase_Reduce[0]
+                    ? "bg-[#109AF4] text-white hover:bg-[#0184d9]"
+                    : "text-[#109AF4] hover:bg-blue-50"
+                } flex font-medium p-2 rounded-xl border border-[#109AF4] transition-colors duration-200`}>
                 Giá
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -563,7 +582,11 @@ function XemDanhSachChuyenBay() {
                 onClick={() =>
                   handleFilterOneWayTicket({ kindFilter: "ReducePrice" })
                 }
-                className={`${filterPrice_Increase_Reduce[1] ? "bg-[#109AF4] text-white" : "text-[#109AF4]"} flex font-medium p-2 rounded-xl border border-[#109AF4]`}>
+                className={`${
+                  filterPrice_Increase_Reduce[1]
+                    ? "bg-[#109AF4] text-white hover:bg-[#0184d9]"
+                    : "text-[#109AF4] hover:bg-blue-50"
+                } flex font-medium p-2 rounded-xl border border-[#109AF4] transition-colors duration-200`}>
                 Giá
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -584,20 +607,30 @@ function XemDanhSachChuyenBay() {
                 onClick={() =>
                   handleFilterOneWayTicket({ kindFilter: "Airlines" })
                 }
-                className={`${filterAirlines ? "bg-[#109AF4] text-white" : "text-[#109AF4]"} flex font-medium p-2 rounded-xl border border-[#109AF4]`}>
+                className={`${
+                  filterAirlines
+                    ? "bg-[#109AF4] text-white hover:bg-[#0184d9]"
+                    : "text-[#109AF4] hover:bg-blue-50"
+                } flex font-medium p-2 rounded-xl border border-[#109AF4] transition-colors duration-200`}>
                 Hãng bay
               </button>
 
               <button
                 type="button"
                 onClick={() => handleFilterOneWayTicket({ kindFilter: "All" })}
-                className={`${filterPrice_Increase_Reduce[0] || filterPrice_Increase_Reduce[1] || filterAirlines ? "bg-[#109AF4] text-white" : "text-[#109AF4]"} absolute right-3 font-medium p-2 rounded-xl border border-[#109AF4]`}>
+                className={`${
+                  filterPrice_Increase_Reduce[0] ||
+                  filterPrice_Increase_Reduce[1] ||
+                  filterAirlines
+                    ? "bg-[#109AF4] text-white hover:bg-[#0184d9]"
+                    : "text-[#109AF4] hover:bg-blue-50"
+                } absolute right-3 font-medium p-2 rounded-xl border border-[#109AF4] transition-colors duration-200`}>
                 Hủy
               </button>
             </div>
 
             {isLoading ? (
-              <div className="p-20 ">
+              <div className="flex items-center justify-center p-20">
                 <l-bouncy size="40" speed="1.75" color="black" />
               </div>
             ) : (
@@ -692,7 +725,7 @@ function ShowFlight({
           </span>
         ) : (
           <>
-            {index === 1 && !bayMotChieu && (
+            {bayMotChieu === false && index === 1 && (
               <>
                 <div
                   key={index}
@@ -702,11 +735,11 @@ function ShowFlight({
                   <span className="mx-4 text-[#444] uppercase">khứ hồi</span>
                   <div className="border-t border-gray-400 flex-grow border-dashed"></div>
                 </div>
-                {roundtripTicket.length === 0 && (
+                {bayMotChieu === false && roundtripTicket.length === 0 && (
                   <span
                     id="one-way-ticket"
                     className="p-5 text-lg font-semibold w-[80%] m-auto text-rose-500 text-center border-dashed">
-                    Không có chuyến bay khứ nào nào trong ngày{" "}
+                    Không có chuyến bay khứ hồi nào trong ngày{" "}
                     {
                       convertDateToVNDate(Departure_Return_Date[1]).split(
                         " "
@@ -854,7 +887,7 @@ function ShowFlight({
                             "return"
                           );
                         }}>
-                        {!mutateGheMaSoGhe.isPending ? (
+                        {mutateGheMaSoGhe.isPending ? (
                           <l-bouncy size="30" speed="1.75" color="white" />
                         ) : !passengerChooseDeparture ? (
                           "Bạn chưa chọn chuyến bay đi"

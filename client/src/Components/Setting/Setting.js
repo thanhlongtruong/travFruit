@@ -10,10 +10,13 @@ import CountdownTimer from "../Utils/CountdownTimer";
 import { useContext } from "react";
 import { CONTEXT } from "../../Context/ContextGlobal";
 import { Helmet } from "react-helmet-async";
+import useDeviceDetect from "../../hooks/useDeviceDetect";
 
 function Setting() {
+  const { isMobile, isTablet, isDesktop } = useDeviceDetect();
   const location = useLocation();
   const isInfoAccount = location.pathname === "/Setting/InfoAccount";
+  console.log(isMobile, isTablet, isDesktop);
 
   const { QR_VietQR, setQR_VietQR, timeExpired_VietQR, orderId_VietQR } =
     useContext(CONTEXT);
@@ -28,8 +31,7 @@ function Setting() {
       {QR_VietQR && timeExpired_VietQR && (
         <div
           className="w-full h-full bg-white/50 backdrop-brightness-75 fixed z-[100]"
-          onClick={() => setQR_VietQR(null)}
-        >
+          onClick={() => setQR_VietQR(null)}>
           <div className="w-96 h-96 absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
             <img src={QR_VietQR} alt="QR-VietQR" />
             <CountdownTimer
@@ -39,12 +41,15 @@ function Setting() {
           </div>
         </div>
       )}
-      <div className="w-full p-5 h-full bg-slate-100">
-        <div className="w-[80%] h-full flex gap-x-3 m-auto justify-between">
-          <div className="w-0 h-0 lg:w-[30%] lg:h-fit overflow-hidden rounded-lg border bg-white border-[#0194F3] shadow-2xl shadow-blue-500/50">
-            <OptionSetting />
-          </div>
-          <div className="w-full lg:w-[65%] h-full overflow-auto rounded-lg border bg-white shadow-2xl shadow-blue-500/50 border-[#0194F3]">
+      <div className={`w-full h-full bg-slate-100 ${isMobile ? "" : " p-5"}`}>
+        <div
+          className={`${isMobile ? "w-full" : "w-[80%]"} h-full flex gap-x-3 m-auto justify-between`}>
+          {(isTablet || isDesktop) && (
+            <div className="w-0 h-0 lg:w-[30%] lg:h-fit overflow-hidden rounded-lg border bg-white border-[#0194F3] shadow-2xl shadow-blue-500/50">
+              <OptionSetting />
+            </div>
+          )}
+          <div className="w-full lg:w-[65%] h-fit rounded-scrollbar border bg-white shadow-2xl shadow-blue-500/50 border-[#0194F3]">
             {isInfoAccount ? (
               <InterFaceLogin registerTrue={true} />
             ) : (

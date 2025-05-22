@@ -9,6 +9,8 @@ import {
   ArrowBigUpDash,
   ArrowBigDownDash,
   BookCopy,
+  Info,
+  SquareX,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ItemFlight from "./ItemFlight.js";
@@ -27,6 +29,12 @@ function AdjustQuantityv2({
     handleReplacePriceAirport,
     convertDateToVNDate,
     naviReload,
+    bayMotChieu,
+    setBayMotChieu,
+    setHideDetailItemFlight,
+    setOpenAdjustQuantity,
+    savedSeatState,
+    setSavedSeatState,
   } = useContext(CONTEXT);
 
   const generateSeats = ({
@@ -156,6 +164,18 @@ function AdjustQuantityv2({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [clickedSeat, clickedSeatReturn]);
+
+  useEffect(() => {
+    // Khôi phục trạng thái ghế đã lưu khi component được mount
+    if (savedSeatState.selectedSeats.size > 0) {
+      setSelectedSeats(savedSeatState.selectedSeats);
+      setSeats(savedSeatState.seats);
+    }
+    if (savedSeatState.selectedSeatsReturn.size > 0) {
+      setSelectedSeatsReturn(savedSeatState.selectedSeatsReturn);
+      setSeatsReturn(savedSeatState.seatsReturn);
+    }
+  }, []);
 
   const handlePassengerTypeSelect = (
     rowIdx,
@@ -374,6 +394,14 @@ function AdjustQuantityv2({
             ...seat,
             booked: true,
             passengerType: "adult",
+            price: handleCalculatePrice({
+              passengerType: "adult",
+              seatType: seat.type,
+              price:
+                typeFlight === "return"
+                  ? objReturn[0].gia
+                  : objDeparture[0].gia,
+            }),
           };
         }
       } else if (type === "child") {
@@ -400,6 +428,14 @@ function AdjustQuantityv2({
             ...seat,
             booked: true,
             passengerType: "child",
+            price: handleCalculatePrice({
+              passengerType: "child",
+              seatType: seat.type,
+              price:
+                typeFlight === "return"
+                  ? objReturn[0].gia
+                  : objDeparture[0].gia,
+            }),
           };
         }
       } else {
@@ -475,7 +511,7 @@ function AdjustQuantityv2({
     }
   };
 
-  const handleShowPassengerInfo = () => {
+  const checkChooseSeat = () => {
     const adultSeatsCount = Array.from(selectedSeats).filter((seatId) => {
       const [row, col] = findSeatPosition(seatId);
       return seats[row]?.[col]?.passengerType === "adult";
@@ -492,18 +528,18 @@ function AdjustQuantityv2({
     // Kiểm tra số lượng ghế đã chọn
     if (adultSeatsCount < passengerCount[0]) {
       showNotification(
-        `Bạn cần chọn thêm ${passengerCount[0] - adultSeatsCount} ghế cho người lớn`,
+        `${passengerCount[0] - adultSeatsCount} hành khách người lớn chưa chọn ghế`,
         "Warn"
       );
-      return;
+      return false;
     }
 
     if (childSeatsCount < passengerCount[1]) {
       showNotification(
-        `Bạn cần chọn thêm ${passengerCount[1] - childSeatsCount} ghế cho trẻ em`,
+        `${passengerCount[1] - childSeatsCount} hành khách trẻ em chưa chọn ghế`,
         "Warn"
       );
-      return;
+      return false;
     }
 
     if (objReturn?.[1]) {
@@ -523,43 +559,29 @@ function AdjustQuantityv2({
 
       if (adultSeatsCountReturn < passengerCountReturn[0]) {
         showNotification(
-          `Bạn cần chọn thêm ${passengerCountReturn[0] - adultSeatsCountReturn} ghế cho người lớn của chuyến bay khứ hồi`,
+          `${passengerCountReturn[0] - adultSeatsCountReturn} hành khách người lớn của chuyến bay khứ hồi chưa chọn ghế`,
           "Warn"
         );
-        return;
+        return false;
       }
 
       if (childSeatsCountReturn < passengerCountReturn[1]) {
         showNotification(
-          `Bạn cần chọn thêm ${passengerCountReturn[1] - childSeatsCountReturn} ghế cho trẻ em của chuyến bay khứ hồi`,
+          `${passengerCountReturn[1] - childSeatsCountReturn} hành khách trẻ em của chuyến bay khứ hồi chưa chọn ghế`,
           "Warn"
         );
-        return;
+        return false;
       }
     }
+    return true;
+  };
 
-    // Lưu thông tin ghế đã chọn cho chuyến bay đi
-    const departureSeatsInfo = Array.from(selectedSeats).map((seatId) => {
-      const [row, col] = findSeatPosition(seatId);
-      const seat = seats[row][col];
-      return {
-        seatId: seat.id,
-        passengerType: seat.passengerType,
-        seatType: seat.type,
-        price: handleCalculatePrice({
-          passengerType: seat.passengerType,
-          seatType: seat.type,
-          price: objDeparture[0].gia,
-        }),
-      };
-    });
-    setSelectedSeatsInfo(departureSeatsInfo);
-
-    // Lưu thông tin ghế đã chọn cho chuyến bay về (nếu có)
-    if (objReturn) {
-      const returnSeatsInfo = Array.from(selectedSeatsReturn).map((seatId) => {
+  const handleShowPassengerInfo = () => {
+    if (checkChooseSeat()) {
+      // Lưu thông tin ghế đã chọn cho chuyến bay đi
+      const departureSeatsInfo = Array.from(selectedSeats).map((seatId) => {
         const [row, col] = findSeatPosition(seatId);
-        const seat = seatsReturn[row][col];
+        const seat = seats[row][col];
         return {
           seatId: seat.id,
           passengerType: seat.passengerType,
@@ -567,15 +589,38 @@ function AdjustQuantityv2({
           price: handleCalculatePrice({
             passengerType: seat.passengerType,
             seatType: seat.type,
-            price: objReturn[0].gia,
+            price: objDeparture[0].gia,
           }),
         };
       });
-      setSelectedSeatsReturnInfo(returnSeatsInfo);
-    }
+      setSelectedSeatsInfo(departureSeatsInfo);
 
-    // Nếu đã chọn đủ số ghế, hiển thị form nhập thông tin
-    setShowPassengerInfo(!showPassengerInfo);
+      // Lưu thông tin ghế đã chọn cho chuyến bay về (nếu có)
+      if (objReturn) {
+        const returnSeatsInfo = Array.from(selectedSeatsReturn).map(
+          (seatId) => {
+            const [row, col] = findSeatPosition(seatId);
+            const seat = seatsReturn[row][col];
+            return {
+              seatId: seat.id,
+              passengerType: seat.passengerType,
+              seatType: seat.type,
+              price: handleCalculatePrice({
+                passengerType: seat.passengerType,
+                seatType: seat.type,
+                price: objReturn[0].gia,
+              }),
+            };
+          }
+        );
+        setSelectedSeatsReturnInfo(returnSeatsInfo);
+      }
+
+      setBayMotChieu(true);
+
+      // Nếu đã chọn đủ số ghế, hiển thị form nhập thông tin
+      setShowPassengerInfo(!showPassengerInfo);
+    }
   };
 
   // Thêm hàm tính tổng tiền
@@ -608,6 +653,22 @@ function AdjustQuantityv2({
     return new Intl.NumberFormat("vi-VN").format(total) + " VND";
   };
 
+  const chooseFlightReturn = () => {
+    if (checkChooseSeat()) {
+      // Lưu trạng thái ghế vào context trước khi đóng component
+      setSavedSeatState({
+        selectedSeats: selectedSeats,
+        selectedSeatsReturn: selectedSeatsReturn,
+        seats: seats,
+        seatsReturn: seatsReturn,
+      });
+
+      setPassengerChooseDeparture(true);
+      setOpenAdjustQuantity(false);
+      setHideDetailItemFlight(true);
+    }
+  };
+
   return (
     <div className="font-mono overflow-hidden fixed inset-0 z-[101] grid grid-cols-1 md:grid-cols-6 p-5 gap-5 w-full h-full bg-white/10 backdrop-brightness-75">
       <AnimatePresence>
@@ -632,6 +693,7 @@ function AdjustQuantityv2({
                   selectedSeatsReturnInfo={selectedSeatsReturnInfo}
                   convertDateToVNDate={convertDateToVNDate}
                   naviReload={naviReload}
+                  handleReplacePriceAirport={handleReplacePriceAirport}
                 />
               </div>
             </div>
@@ -667,270 +729,300 @@ function AdjustQuantityv2({
                       }}
                       className="h-fit w-fit p-2 rounded-full transition-colors duration-200 hover:bg-black/10 active:bg-black/20">
                       {i === 0 ? (
-                        <ArrowBigUpDash size={20} />
+                        <NotifySheet
+                          content={`Di chuyển đến chuyến bay đi`}
+                          icon={<ArrowBigUpDash size={20} />}
+                        />
                       ) : (
-                        <ArrowBigDownDash size={20} />
+                        <NotifySheet
+                          content={`Di chuyển đến chuyến bay khứ hồi`}
+                          icon={<ArrowBigDownDash size={20} />}
+                        />
                       )}
                     </motion.button>
                   </>
                 ))}
               </div>
             )}
-            <div className="text-center pt-5">
-              {Array.from({ length: objReturn ? 2 : 1 }, (_, i) => (
-                <>
-                  <h1 className="text-2xl font-bold uppercase">
-                    Sơ đồ ghế máy bay
-                  </h1>
-                  <p
-                    className={`pt-1 ${i === 0 ? "departure-flight" : "return-flight"}`}>
-                    (Chuyến bay {i === 0 ? "đi" : "khứ hồi"})
-                  </p>
+            <div className="text-center p-5">
+              <div className="relative">
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setOpenAdjustQuantity(false);
+                    setHideDetailItemFlight(true);
+                  }}
+                  className="absolute right-5 top-0 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
+                  <SquareX size={24} className="text-gray-600" />
+                </motion.button>
+                {Array.from({ length: objReturn ? 2 : 1 }, (_, i) => (
+                  <>
+                    <h1 className="text-2xl font-bold uppercase">
+                      Sơ đồ ghế máy bay
+                    </h1>
+                    <p
+                      className={`pt-1 ${i === 0 ? "departure-flight" : "return-flight"}`}>
+                      (Chuyến bay {i === 0 ? "đi" : "khứ hồi"})
+                    </p>
 
-                  <div className="mt-5 h-5 flex gap-5 justify-center mb-5 p-5 w-full bg-white">
-                    {stypeChooseSeat.map((item, index) => (
-                      <div className="flex items-center gap-2" key={index}>
-                        <span
-                          className={`w-5 h-5 ${item.color} inline-block`}></span>
-                        <span>{item.name}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="max-w-2xl mx-auto mb-5">
-                    <div className="flex flex-col gap-2">
-                      {(i === 0 ? seats : seatsReturn).map((row, rowIdx) => (
-                        <div key={rowIdx} className="flex justify-center gap-2">
-                          {row.map((seat, colIdx) =>
-                            seat ? (
-                              <div
-                                key={seat.id}
-                                className="relative seat-container"
-                                onClick={() => {
-                                  // Chỉ cho phép click nếu ghế không nằm trong danh sách đã đặt
-                                  if (
-                                    !(
-                                      i === 0 ? objDeparture : objReturn
-                                    )?.[2]?.soGhePhoThong_Booked?.includes(
-                                      seat.id
-                                    ) &&
-                                    !(
-                                      i === 0 ? objDeparture : objReturn
-                                    )?.[2]?.soGheThuongGia_Booked?.includes(
-                                      seat.id
-                                    )
-                                  ) {
-                                    if (i === 0) {
-                                      setClickedSeat(
-                                        clickedSeat === seat.id ? null : seat.id
-                                      );
-                                    } else if (i === 1) {
-                                      setClickedSeatReturn(
-                                        clickedSeatReturn === seat.id
-                                          ? null
-                                          : seat.id
-                                      );
-                                    }
-                                  }
-                                }}>
-                                <AnimatePresence>
-                                  {(i === 0
-                                    ? clickedSeat
-                                    : clickedSeatReturn) === seat.id &&
-                                    !(
-                                      i === 0 ? objDeparture : objReturn
-                                    )?.[2]?.soGhePhoThong_Booked?.includes(
-                                      seat.id
-                                    ) &&
-                                    !(
-                                      i === 0 ? objDeparture : objReturn
-                                    )?.[2]?.soGheThuongGia_Booked?.includes(
-                                      seat.id
-                                    ) && (
-                                      <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: 10 }}
-                                        className="absolute -left-2/3 bottom-full -translate-x-1/2 mb-1 bg-white p-0 overflow-hidden rounded-lg shadow-lg z-30 border border-gray-200">
-                                        {!seat.booked ? (
-                                          <div className="flex w-[90px]">
-                                            <motion.button
-                                              whileHover={{ scale: 1.05 }}
-                                              whileTap={{ scale: 0.95 }}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handlePassengerTypeSelect(
-                                                  rowIdx,
-                                                  colIdx,
-                                                  "adult",
-                                                  i === 0
-                                                    ? objDeparture?.[1]
-                                                    : objReturn?.[1],
-                                                  i === 0
-                                                    ? "departure"
-                                                    : "return"
-                                                );
-                                                i === 0
-                                                  ? setClickedSeat(null)
-                                                  : setClickedSeatReturn(null);
-                                              }}
-                                              className="w-1/2 h-8 hover:bg-gray-100 transition-colors flex items-center justify-center">
-                                              <User size={18} />
-                                            </motion.button>
-                                            <motion.button
-                                              whileHover={{ scale: 1.05 }}
-                                              whileTap={{ scale: 0.95 }}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handlePassengerTypeSelect(
-                                                  rowIdx,
-                                                  colIdx,
-                                                  "child",
-                                                  i === 0
-                                                    ? objDeparture?.[1]
-                                                    : objReturn?.[1],
-                                                  i === 0
-                                                    ? "departure"
-                                                    : "return"
-                                                );
-                                                i === 0
-                                                  ? setClickedSeat(null)
-                                                  : setClickedSeatReturn(null);
-                                              }}
-                                              className="w-1/2 h-8 hover:bg-gray-100 transition-colors flex items-center justify-center">
-                                              <Baby size={18} />
-                                            </motion.button>
-                                          </div>
-                                        ) : (
-                                          <div className="flex w-[90px]">
-                                            <motion.button
-                                              whileHover={{ scale: 1.05 }}
-                                              whileTap={{ scale: 0.95 }}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handlePassengerTypeSelect(
-                                                  rowIdx,
-                                                  colIdx,
-                                                  "adult",
-                                                  i === 0
-                                                    ? objDeparture?.[1]
-                                                    : objReturn?.[1],
-                                                  i === 0
-                                                    ? "departure"
-                                                    : "return"
-                                                );
-                                                i === 0
-                                                  ? setClickedSeat(null)
-                                                  : setClickedSeatReturn(null);
-                                              }}
-                                              className={`w-1/2 h-8 transition-colors flex items-center justify-center ${
-                                                seat.passengerType === "adult"
-                                                  ? "bg-blue-100"
-                                                  : "hover:bg-gray-100"
-                                              }`}>
-                                              <User size={18} />
-                                            </motion.button>
-                                            <motion.button
-                                              whileHover={{ scale: 1.05 }}
-                                              whileTap={{ scale: 0.95 }}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handlePassengerTypeSelect(
-                                                  rowIdx,
-                                                  colIdx,
-                                                  "child",
-                                                  i === 0
-                                                    ? objDeparture?.[1]
-                                                    : objReturn?.[1],
-                                                  i === 0
-                                                    ? "departure"
-                                                    : "return"
-                                                );
-                                                i === 0
-                                                  ? setClickedSeat(null)
-                                                  : setClickedSeatReturn(null);
-                                              }}
-                                              className={`w-1/2 h-8 transition-colors flex items-center justify-center ${
-                                                seat.passengerType === "child"
-                                                  ? "bg-blue-100"
-                                                  : "hover:bg-gray-100"
-                                              }`}>
-                                              <Baby size={18} />
-                                            </motion.button>
-                                          </div>
-                                        )}
-                                      </motion.div>
-                                    )}
-                                </AnimatePresence>
-                                <motion.div
-                                  whileHover={{
-                                    scale:
-                                      (i === 0
-                                        ? objDeparture
-                                        : objReturn)?.[2]?.soGhePhoThong_Booked?.includes(
-                                        seat.id
-                                      ) ||
-                                      (i === 0
-                                        ? objDeparture
-                                        : objReturn)?.[2]?.soGheThuongGia_Booked?.includes(
-                                        seat.id
-                                      )
-                                        ? 1
-                                        : 1.05,
-                                  }}
-                                  className={`w-10 h-10 flex items-center justify-center border rounded text-sm transition-all duration-200 select-none
-                            ${
-                              (i === 0
-                                ? objDeparture
-                                : objReturn)?.[2]?.soGhePhoThong_Booked?.includes(
-                                seat.id
-                              ) ||
-                              (i === 0
-                                ? objDeparture
-                                : objReturn)?.[2]?.soGheThuongGia_Booked?.includes(
-                                seat.id
-                              )
-                                ? "bg-red-500 text-white cursor-not-allowed opacity-80"
-                                : seat.booked
-                                  ? "bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
-                                  : seat.type === "business"
-                                    ? "bg-yellow-300 hover:bg-yellow-400 cursor-pointer"
-                                    : "bg-green-300 hover:bg-green-400 cursor-pointer"
-                            }`}>
-                                  {(i === 0
-                                    ? objDeparture
-                                    : objReturn)?.[2]?.soGhePhoThong_Booked?.includes(
-                                    seat.id
-                                  ) ||
-                                  (i === 0
-                                    ? objDeparture
-                                    : objReturn)?.[2]?.soGheThuongGia_Booked?.includes(
-                                    seat.id
-                                  ) ? (
-                                    seat.id
-                                  ) : seat.booked ? (
-                                    seat.passengerType === "adult" ? (
-                                      <User size={20} />
-                                    ) : (
-                                      <Baby size={20} />
-                                    )
-                                  ) : (
-                                    seat.id
-                                  )}
-                                </motion.div>
-                              </div>
-                            ) : (
-                              <div
-                                key={`aisle-${rowIdx}-${colIdx}`}
-                                className="w-10 h-10 bg-gray-100"></div>
-                            )
-                          )}
+                    <div className="mt-5 h-5 flex gap-5 justify-center mb-5 p-5 w-full bg-white">
+                      {stypeChooseSeat.map((item, index) => (
+                        <div className="flex items-center gap-2" key={index}>
+                          <span
+                            className={`w-5 h-5 ${item.color} inline-block`}></span>
+                          <span>{item.name}</span>
                         </div>
                       ))}
                     </div>
-                  </div>
-                </>
-              ))}
+
+                    <div className="max-w-2xl mx-auto mb-5">
+                      <div className="flex flex-col gap-2">
+                        {(i === 0 ? seats : seatsReturn).map((row, rowIdx) => (
+                          <div
+                            key={rowIdx}
+                            className="flex justify-center gap-2">
+                            {row.map((seat, colIdx) =>
+                              seat ? (
+                                <div
+                                  key={seat.id}
+                                  className="relative seat-container"
+                                  onClick={() => {
+                                    // Chỉ cho phép click nếu ghế không nằm trong danh sách đã đặt
+                                    if (
+                                      !(
+                                        i === 0 ? objDeparture : objReturn
+                                      )?.[2]?.soGhePhoThong_Booked?.includes(
+                                        seat.id
+                                      ) &&
+                                      !(
+                                        i === 0 ? objDeparture : objReturn
+                                      )?.[2]?.soGheThuongGia_Booked?.includes(
+                                        seat.id
+                                      )
+                                    ) {
+                                      if (i === 0) {
+                                        setClickedSeat(
+                                          clickedSeat === seat.id
+                                            ? null
+                                            : seat.id
+                                        );
+                                      } else if (i === 1) {
+                                        setClickedSeatReturn(
+                                          clickedSeatReturn === seat.id
+                                            ? null
+                                            : seat.id
+                                        );
+                                      }
+                                    }
+                                  }}>
+                                  <AnimatePresence>
+                                    {(i === 0
+                                      ? clickedSeat
+                                      : clickedSeatReturn) === seat.id &&
+                                      !(
+                                        i === 0 ? objDeparture : objReturn
+                                      )?.[2]?.soGhePhoThong_Booked?.includes(
+                                        seat.id
+                                      ) &&
+                                      !(
+                                        i === 0 ? objDeparture : objReturn
+                                      )?.[2]?.soGheThuongGia_Booked?.includes(
+                                        seat.id
+                                      ) && (
+                                        <motion.div
+                                          initial={{ opacity: 0, y: 10 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          exit={{ opacity: 0, y: 10 }}
+                                          className="absolute -left-2/3 bottom-full -translate-x-1/2 mb-1 bg-white p-0 overflow-hidden rounded-lg shadow-lg z-30 border border-gray-200">
+                                          {!seat.booked ? (
+                                            <div className="flex w-[90px]">
+                                              <motion.button
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handlePassengerTypeSelect(
+                                                    rowIdx,
+                                                    colIdx,
+                                                    "adult",
+                                                    i === 0
+                                                      ? objDeparture?.[1]
+                                                      : objReturn?.[1],
+                                                    i === 0
+                                                      ? "departure"
+                                                      : "return"
+                                                  );
+                                                  i === 0
+                                                    ? setClickedSeat(null)
+                                                    : setClickedSeatReturn(
+                                                        null
+                                                      );
+                                                }}
+                                                className="w-1/2 h-8 hover:bg-gray-100 transition-colors flex items-center justify-center">
+                                                <User size={18} />
+                                              </motion.button>
+                                              <motion.button
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handlePassengerTypeSelect(
+                                                    rowIdx,
+                                                    colIdx,
+                                                    "child",
+                                                    i === 0
+                                                      ? objDeparture?.[1]
+                                                      : objReturn?.[1],
+                                                    i === 0
+                                                      ? "departure"
+                                                      : "return"
+                                                  );
+                                                  i === 0
+                                                    ? setClickedSeat(null)
+                                                    : setClickedSeatReturn(
+                                                        null
+                                                      );
+                                                }}
+                                                className="w-1/2 h-8 hover:bg-gray-100 transition-colors flex items-center justify-center">
+                                                <Baby size={18} />
+                                              </motion.button>
+                                            </div>
+                                          ) : (
+                                            <div className="flex w-[90px]">
+                                              <motion.button
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handlePassengerTypeSelect(
+                                                    rowIdx,
+                                                    colIdx,
+                                                    "adult",
+                                                    i === 0
+                                                      ? objDeparture?.[1]
+                                                      : objReturn?.[1],
+                                                    i === 0
+                                                      ? "departure"
+                                                      : "return"
+                                                  );
+                                                  i === 0
+                                                    ? setClickedSeat(null)
+                                                    : setClickedSeatReturn(
+                                                        null
+                                                      );
+                                                }}
+                                                className={`w-1/2 h-8 transition-colors flex items-center justify-center ${
+                                                  seat.passengerType === "adult"
+                                                    ? "bg-blue-100"
+                                                    : "hover:bg-gray-100"
+                                                }`}>
+                                                <User size={18} />
+                                              </motion.button>
+                                              <motion.button
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handlePassengerTypeSelect(
+                                                    rowIdx,
+                                                    colIdx,
+                                                    "child",
+                                                    i === 0
+                                                      ? objDeparture?.[1]
+                                                      : objReturn?.[1],
+                                                    i === 0
+                                                      ? "departure"
+                                                      : "return"
+                                                  );
+                                                  i === 0
+                                                    ? setClickedSeat(null)
+                                                    : setClickedSeatReturn(
+                                                        null
+                                                      );
+                                                }}
+                                                className={`w-1/2 h-8 transition-colors flex items-center justify-center ${
+                                                  seat.passengerType === "child"
+                                                    ? "bg-blue-100"
+                                                    : "hover:bg-gray-100"
+                                                }`}>
+                                                <Baby size={18} />
+                                              </motion.button>
+                                            </div>
+                                          )}
+                                        </motion.div>
+                                      )}
+                                  </AnimatePresence>
+                                  <motion.div
+                                    whileHover={{
+                                      scale:
+                                        (i === 0
+                                          ? objDeparture
+                                          : objReturn)?.[2]?.soGhePhoThong_Booked?.includes(
+                                          seat.id
+                                        ) ||
+                                        (i === 0
+                                          ? objDeparture
+                                          : objReturn)?.[2]?.soGheThuongGia_Booked?.includes(
+                                          seat.id
+                                        )
+                                          ? 1
+                                          : 1.05,
+                                    }}
+                                    className={`w-10 h-10 flex items-center justify-center border rounded text-sm transition-all duration-200 select-none
+                              ${
+                                (i === 0
+                                  ? objDeparture
+                                  : objReturn)?.[2]?.soGhePhoThong_Booked?.includes(
+                                  seat.id
+                                ) ||
+                                (i === 0
+                                  ? objDeparture
+                                  : objReturn)?.[2]?.soGheThuongGia_Booked?.includes(
+                                  seat.id
+                                )
+                                  ? "bg-red-500 text-white cursor-not-allowed opacity-80"
+                                  : seat.booked
+                                    ? "bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
+                                    : seat.type === "business"
+                                      ? "bg-yellow-300 hover:bg-yellow-400 cursor-pointer"
+                                      : "bg-green-300 hover:bg-green-400 cursor-pointer"
+                              }`}>
+                                    {(i === 0
+                                      ? objDeparture
+                                      : objReturn)?.[2]?.soGhePhoThong_Booked?.includes(
+                                      seat.id
+                                    ) ||
+                                    (i === 0
+                                      ? objDeparture
+                                      : objReturn)?.[2]?.soGheThuongGia_Booked?.includes(
+                                      seat.id
+                                    ) ? (
+                                      seat.id
+                                    ) : seat.booked ? (
+                                      seat.passengerType === "adult" ? (
+                                        <User size={20} />
+                                      ) : (
+                                        <Baby size={20} />
+                                      )
+                                    ) : (
+                                      seat.id
+                                    )}
+                                  </motion.div>
+                                </div>
+                              ) : (
+                                <div
+                                  key={`aisle-${rowIdx}-${colIdx}`}
+                                  className="w-10 h-10 bg-gray-100"></div>
+                              )
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -940,8 +1032,8 @@ function AdjustQuantityv2({
         <div className="rounded-scrollbar h-full">
           {Array.from({ length: objReturn ? 2 : 1 }, (_, i) => (
             <>
-              <div className="p-5 uppercase">
-                <h2 className="text-xl text-center font-bold">
+              <div className="p-5">
+                <h2 className="text-xl text-center font-bold uppercase">
                   Thông tin đặt chỗ
                 </h2>
                 <p
@@ -951,21 +1043,28 @@ function AdjustQuantityv2({
 
                 <div className="h-fit bg-transparent rounded-2xl shadow-md w-full overflow-hidden">
                   <ItemFlight
-                    hangBay={`${(i === 0 ? objDeparture : objReturn)[0].hangBay}`}
-                    soHieu={`${(i === 0 ? objDeparture : objReturn)[0].soHieu}`}
-                    loaiMayBay={`${(i === 0 ? objDeparture : objReturn)[0].loaiMayBay}`}
-                    gioBay={`${(i === 0 ? objDeparture : objReturn)[0].gioBay}`}
-                    diemBay={`${(i === 0 ? objDeparture : objReturn)[0].diemBay}`}
-                    gioDen={`${(i === 0 ? objDeparture : objReturn)[0].gioDen}`}
-                    diemDen={`${(i === 0 ? objDeparture : objReturn)[0].diemDen}`}
-                    gia={`${(i === 0 ? objDeparture : objReturn)[0].gia}`}
-                    ThuongGia={`${(i === 0 ? objDeparture : objReturn)[0].ThuongGia}`}
-                    PhoThong={`${(i === 0 ? objDeparture : objReturn)[0].PhoThong}`}
+                    hangBay={`${(i === 0 ? objDeparture : objReturn)[0]?.hangBay}`}
+                    soHieu={`${(i === 0 ? objDeparture : objReturn)[0]?.soHieu}`}
+                    loaiMayBay={`${(i === 0 ? objDeparture : objReturn)[0]?.loaiMayBay}`}
+                    gioBay={`${(i === 0 ? objDeparture : objReturn)[0]?.gioBay}`}
+                    diemBay={`${(i === 0 ? objDeparture : objReturn)[0]?.diemBay}`}
+                    gioDen={`${(i === 0 ? objDeparture : objReturn)[0]?.gioDen}`}
+                    diemDen={`${(i === 0 ? objDeparture : objReturn)[0]?.diemDen}`}
+                    gia={`${(i === 0 ? objDeparture : objReturn)[0]?.gia}`}
+                    ThuongGia={`${(i === 0 ? objDeparture : objReturn)[0]?.ThuongGia}`}
+                    PhoThong={`${(i === 0 ? objDeparture : objReturn)[0]?.PhoThong}`}
                   />
                 </div>
 
                 <div className="mb-6">
-                  <h3 className="font-semibold mb-2">Hành khách</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">Hành khách</h3>
+
+                    <NotifySheet
+                      content={`Giá thương gia người lớn tăng 150% so với giá gốc. Giá trẻ em tính 75% giá người lớn.`}
+                      icon={<Info size={18} stroke="#0194F3" />}
+                    />
+                  </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <User size={20} className="text-blue-500" />
@@ -985,7 +1084,13 @@ function AdjustQuantityv2({
                 </div>
 
                 <div className="mb-6">
-                  <h3 className="font-semibold mb-2">Ghế đã chọn</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">Ghế đã chọn</h3>
+                    <NotifySheet
+                      content={`Chọn ở dưới để biết thông tin hành khách cụ thể khi điền thông tin hành khách`}
+                      icon={<Info size={18} stroke="#0194F3" />}
+                    />
+                  </div>
                   <div className="space-y-2 ">
                     {(i === 0 ? selectedSeats : selectedSeatsReturn).size ===
                     0 ? (
@@ -1021,12 +1126,7 @@ function AdjustQuantityv2({
                             }}>
                             <span className="font-medium">{seatId}</span>
                             <span className="font-medium">
-                              {handleCalculatePrice({
-                                passengerType: seat?.passengerType,
-                                seatType: seat?.type,
-                                price: (i === 0 ? objDeparture : objReturn)[0]
-                                  .gia,
-                              })}
+                              {seat?.price}
 
                               <span className="text-xs text-gray-600">
                                 {seat?.type === "business"
@@ -1059,12 +1159,23 @@ function AdjustQuantityv2({
               </div>
             </>
           ))}
+
+          {!bayMotChieu && !objReturn && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={chooseFlightReturn}
+              className="flex p-3 bg-[#0194F3] mb-5 text-white mt-3 mx-auto font-semibold rounded-lg gap-x-3 items-center justify-center transition-all duration-200 hover:bg-[#0184d9] hover:shadow-lg active:shadow-md">
+              Chọn chuyến bay khứ hồi
+            </motion.button>
+          )}
+
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleShowPassengerInfo}
             className="flex p-3 bg-[#0194F3] mb-5 text-white mt-3 mx-auto font-semibold rounded-lg gap-x-3 items-center justify-center transition-all duration-200 hover:bg-[#0184d9] hover:shadow-lg active:shadow-md">
-            Nhập thông tin hành khách
+            Tiếp tục & Nhập thông tin hành khách
           </motion.button>
         </div>
       </div>
@@ -1080,9 +1191,8 @@ const ComponentInputInformationPassenger = ({
   selectedSeatsReturnInfo,
   convertDateToVNDate,
   naviReload,
+  handleReplacePriceAirport,
 }) => {
-  console.log(selectedSeatsInfo, selectedSeatsReturnInfo);
-
   const {
     register,
     handleSubmit,
@@ -1159,8 +1269,28 @@ const ComponentInputInformationPassenger = ({
     },
   });
 
-  const submitFormInfo = (data) => {
-    console.log(data);
+  const submitFormInfo = async (data) => {
+    const totalPriceTickets =
+      new Intl.NumberFormat("vi-VN").format(
+        data.items.reduce((acc, item) => {
+          const giaVeSo = handleReplacePriceAirport(item?.giaVe);
+
+          return acc + giaVeSo;
+        }, 0) +
+          (data.itemsB || []).reduce((acc, item) => {
+            const giaVeSo = handleReplacePriceAirport(item?.giaVe);
+
+            return acc + giaVeSo;
+          }, 0)
+      ) + " VND";
+
+    const payload = {
+      airportDeparture: data.items,
+      airportReturn: data?.itemsB || [],
+      totalQuantityTickets: data.items.length + (data.itemsB?.length || 0),
+      totalPriceTickets: totalPriceTickets,
+    };
+    await mutationCreateOrder.mutate(payload);
   };
   return (
     <div>
@@ -1194,10 +1324,15 @@ const ComponentInputInformationPassenger = ({
               -------Chuyến bay khứ hồi-------
             </h1>
             <div className="flex justify-center w-full h-fit mb-3 pt-1">
-              <BookCopy
-                size={20}
-                className="cursor-pointer"
-                onClick={handleCopyPassengerAirportDepartureToReturn}
+              <NotifySheet
+                content={`Sao chép thông tin chuyến bay đi`}
+                icon={
+                  <BookCopy
+                    size={20}
+                    className="cursor-pointer"
+                    onClick={handleCopyPassengerAirportDepartureToReturn}
+                  />
+                }
               />
             </div>
             {fieldsB.map((item, index) => (
@@ -1219,42 +1354,32 @@ const ComponentInputInformationPassenger = ({
           </>
         )}
 
-        <div className="flex flex-col md:flex-row justify-between gap-x-3">
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex p-3 bg-[#0194F3] mb-5 text-white mt-3 mx-auto font-semibold rounded-lg gap-x-3 items-center justify-center transition-all duration-200 hover:bg-[#0184d9] hover:shadow-lg active:shadow-md">
-            Xem lại vé
-          </motion.button>
-
-          <motion.button
-            type={mutationCreateOrder.isPending ? "button" : "submit"}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex p-3 bg-[#0194F3] mb-5 text-white mt-3 mx-auto font-semibold rounded-lg gap-x-3 items-center justify-center transition-all duration-200 hover:bg-[#0184d9] hover:shadow-lg active:shadow-md">
-            {mutationCreateOrder.isPending ? (
-              <l-bouncy size="30" speed="1.75" color="white" />
-            ) : (
-              <>
-                Sang trang thanh toán
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="size-5">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"
-                  />
-                </svg>
-              </>
-            )}
-          </motion.button>
-        </div>
+        <motion.button
+          type={mutationCreateOrder.isPending ? "button" : "submit"}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="flex p-3 bg-[#0194F3] mb-5 text-white mt-3 mx-auto font-semibold rounded-lg gap-x-3 items-center justify-center transition-all duration-200 hover:bg-[#0184d9] hover:shadow-lg active:shadow-md">
+          {mutationCreateOrder.isPending ? (
+            <l-bouncy size="30" speed="1.75" color="white" />
+          ) : (
+            <>
+              Xác nhận & Sang trang thanh toán
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                stroke="currentColor"
+                className="size-5">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"
+                />
+              </svg>
+            </>
+          )}
+        </motion.button>
       </form>
     </div>
   );
@@ -1402,6 +1527,39 @@ function ThongTinHanhKhach({
         </div>
       </div>
     </div>
+  );
+}
+
+function NotifySheet({ content, icon }) {
+  return (
+    <>
+      <div className="relative">
+        <div className="flex items-center w-fit">
+          <div
+            className="cursor-pointer transition-transform duration-200 hover:scale-110"
+            onMouseEnter={(e) => {
+              const tooltip = e.currentTarget.nextElementSibling;
+              tooltip.style.opacity = "1";
+              tooltip.style.transform = "translate(-50%, 0) scale(1)";
+            }}
+            onMouseLeave={(e) => {
+              const tooltip = e.currentTarget.nextElementSibling;
+              tooltip.style.opacity = "0";
+              tooltip.style.transform = "translate(-50%, 0) scale(0.95)";
+            }}>
+            {icon}
+          </div>
+          <div
+            className="absolute font-medium overflow-hidden -top-24 left-1/2 -translate-x-1/2 z-10 max-w-48 min-w-28 text-sm text-white bg-gray-800/95 rounded-lg shadow-lg transition-all duration-200 opacity-0 scale-95 pointer-events-none"
+            style={{ transform: "translate(-50%, 0) scale(0.95)" }}>
+            <div className="p-1">
+              <p className="text-center">{content}</p>
+            </div>
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-gray-800/95 transform rotate-45"></div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 

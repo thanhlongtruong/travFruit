@@ -1,6 +1,6 @@
 import { CONTEXT } from "../../Context/ContextGlobal.js";
 import { useNavigate } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { InstructionSheet } from "../Utils/InstructionSheet.js";
 import { Lunar } from "lunar-javascript";
 import DatePicker from "react-datepicker";
@@ -43,6 +43,9 @@ export default function ComponentSearchFlight({
     setInvalid_AirportFrom_AirportTo,
   } = useContext(CONTEXT);
   const navigate = useNavigate();
+
+  // State để lưu trạng thái chuyến bay một chiều hay không, để hiển thị lên UI
+  const [oneWayTicket, setOneWayTicket] = useState(bayMotChieu);
 
   const handleCheckAllInformationBeforeSearch = ({
     departure,
@@ -116,14 +119,18 @@ export default function ComponentSearchFlight({
       return;
     }
 
+    if (!AirportFrom || !AirportTo || !resultCheck.formatDate_departure) {
+      throw new Error("Missing required search parameters");
+    }
+
     const params = new URLSearchParams({
       departure: AirportFrom,
       arrival: AirportTo,
       departureIATA: resultCheck.IATA_departure[1],
       arrivalIATA: resultCheck.IATA_arrival[1],
       departureDate: resultCheck.formatDate_departure,
-      oneWayTicket: bayMotChieu,
-      ...(bayMotChieu
+      oneWayTicket: oneWayTicket,
+      ...(oneWayTicket
         ? {}
         : {
             returnDate: resultCheck.formatDate_return,
@@ -131,7 +138,8 @@ export default function ComponentSearchFlight({
       passengers: editQuantityPassenger,
     }).toString();
 
-    navigate(`/XemDanhSachChuyenBay?${params}`);
+    navigate(`/XemDanhSachChuyenBay?${params}`, { replace: true });
+    navigate(0);
   };
 
   const compareDateSkipTime = (date) => {
@@ -181,142 +189,149 @@ export default function ComponentSearchFlight({
 
   return (
     <>
-      <div className={`flex justify-between w-auto h-fit ${div1}`}>
-        <div className="flex items-center w-full gap-x-5 h-fit">
-          <div className="w-fit relative">
-            <div className="flex items-center gap-x-5 w-fit">
-              <span className={`font-semibold uppercase ${span}`}>Nơi đi</span>
-              <InstructionSheet
-                content={`Có thể tìm kiếm theo: Tên thành phố, Tên sân bay, mã IATA. Vui lòng chọn địa điểm từ danh sách đề xuất`}
-              />
-            </div>
-            <div
-              className={`absolute -mb-5 text-sm font-semibold text-white transition-all duration-300 transform -translate-x-1/2 bg-gray-700 rounded whitespace-nowrap left-1/2 bottom-full  ${invalid_AirportFrom_AirportTo[0].status || invalid_AirportFrom_AirportTo[1].status ? "w-fit p-2" : "w-0 overflow-hidden"}`}
-            >
-              <p>{`${invalid_AirportFrom_AirportTo[0].status ? invalid_AirportFrom_AirportTo[0].noti : invalid_AirportFrom_AirportTo[1].status ? invalid_AirportFrom_AirportTo[1].noti : ""}`}</p>
-              <div className="absolute left-1/2 transform -translate-x-1/2 bottom-[-8px] w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-gray-700"></div>
-            </div>
-            <div className="flex items-center w-fit border-[#cdd0d1] border-b gap-x-3 p-2">
-              <label htmlFor="Origin">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className={`${svgStroke} cursor-pointer`}
-                >
-                  <path
-                    d="M3 21H21"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  ></path>
-                  <path
-                    d="M12 9L15.1924 7.93585C17.317 7.22767 19.6563 7.95843 21 9.75L7.44513 14.0629C5.86627 14.5653 4.1791 13.6926 3.67674 12.1137C3.66772 12.0854 3.65912 12.0569 3.65094 12.0283L3 9.75L5.25 10.875L9 9.75L4.5 3H5.25L12 9Z"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  ></path>
-                </svg>
-              </label>
+      <div
+        className={`flex flex-col md:flex-row gap-4 w-full h-fit p-5 items-start`}>
+        <div className="flex-1 relative w-fit">
+          <div className="flex items-center gap-x-5 w-fit">
+            <span
+              className={`font-semibold uppercase text-sm tracking-wider text-white md:text-base lg:text-lg`}>
+              Nơi đi
+            </span>
+            <InstructionSheet
+              content={`Có thể tìm kiếm theo: Tên thành phố, Tên sân bay, mã IATA. Vui lòng chọn địa điểm từ danh sách đề xuất`}
+            />
+          </div>
+          <div
+            className={`absolute -mb-5 text-sm font-semibold text-white transition-all duration-300 transform -translate-x-1/2 bg-gray-700 rounded whitespace-nowrap left-1/2 bottom-full  ${invalid_AirportFrom_AirportTo[0].status || invalid_AirportFrom_AirportTo[1].status ? "w-fit p-2" : "w-0 overflow-hidden"}`}>
+            <p>{`${invalid_AirportFrom_AirportTo[0].status ? invalid_AirportFrom_AirportTo[0].noti : invalid_AirportFrom_AirportTo[1].status ? invalid_AirportFrom_AirportTo[1].noti : ""}`}</p>
+            <div className="absolute left-1/2 transform -translate-x-1/2 bottom-[-8px] w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-gray-700"></div>
+          </div>
+          <div className="w-fit flex items-center border-[#cdd0d1] border-b gap-x-3 p-2">
+            <label htmlFor="Origin">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className={`stroke-[#0194f3] size-6 lg:size-8 cursor-pointer`}>
+                <path
+                  d="M3 21H21"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"></path>
+                <path
+                  d="M12 9L15.1924 7.93585C17.317 7.22767 19.6563 7.95843 21 9.75L7.44513 14.0629C5.86627 14.5653 4.1791 13.6926 3.67674 12.1137C3.66772 12.0854 3.65912 12.0569 3.65094 12.0283L3 9.75L5.25 10.875L9 9.75L4.5 3H5.25L12 9Z"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"></path>
+              </svg>
+            </label>
 
-              <input
-                id="Origin"
-                placeholder="Origin (Tên thành phố)"
-                className={`w-[280px] h-full ${span} font-semibold text-white bg-transparent outline-none -tracking-tighter`}
-                value={AirportFrom}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleShowAirports([0, 1, 2], [true, true, false]);
-                }}
-                onChange={(event) => {
-                  handleInputAirport(event, "From");
-                }}
-              />
-            </div>
+            <input
+              id="Origin"
+              type="text"
+              placeholder="Tên thành phố, sân bay, IATA"
+              className={`h-full text-base text-white lg:text-lg bg-transparent outline-none -tracking-tighter`}
+              value={AirportFrom}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShowAirports([0, 1, 2], [true, true, false]);
+              }}
+              onChange={(event) => {
+                handleInputAirport(event, "From");
+              }}
+            />
+          </div>
 
+          {showAirports[0] && showAirports[1] && (
             <FilterAirport
               showAirports={showAirports}
               Airport={AirportFrom}
               filteredAirports={AirportsVN}
               handleChooseAirport={handleChooseAirport}
-              type={
-                showAirports[0] && showAirports[1]
-                  ? "Origin"
-                  : showAirports[0] && showAirports[2]
-                    ? "Destination"
-                    : ""
-              }
+              type={"Origin"}
               AirportsVN={AirportsVN}
               AirportFrom={AirportFrom}
               AirportTo={AirportTo}
               styleLocationShowListAirline={styleLocationShowListAirline}
             />
-          </div>
+          )}
+        </div>
 
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="1.5"
-            className={`${svgStroke} cursor-pointer`}
-            onClick={handleSwapPlaceAirport}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth="1.5"
+          className={`stroke-[#0194f3] flex-1 size-6 lg:size-8 cursor-pointer m-auto my-4 md:my-0`}
+          onClick={handleSwapPlaceAirport}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
+          />
+        </svg>
+
+        <div className="w-fit relative flex-1">
+          <div className="flex items-center gap-x-3">
+            <span
+              className={`font-semibold uppercase text-sm tracking-wider text-white md:text-base lg:text-lg`}>
+              Nơi đến
+            </span>
+            <InstructionSheet
+              content={`Có thể tìm kiếm theo: Tên thành phố, Tên sân bay, mã IATA. Vui lòng chọn địa điểm từ danh sách đề xuất`}
             />
-          </svg>
-
-          <div className="w-fit relative">
-            <div className="flex items-center gap-x-3">
-              <span className={`uppercase font-semibold ${span}`}>nơi Đến</span>
-              <InstructionSheet
-                content={`Có thể tìm kiếm theo: Tên thành phố, Tên sân bay, mã IATA. Vui lòng chọn địa điểm từ danh sách đề xuất`}
-              />
-            </div>
-            <div
-              className={`absolute -mb-5 text-sm font-semibold text-white transition-all duration-300 transform -translate-x-1/2 bg-gray-700 rounded whitespace-nowrap left-1/2 bottom-full  ${invalid_AirportFrom_AirportTo[0].status || invalid_AirportFrom_AirportTo[1].status ? "w-fit p-2" : "w-0 overflow-hidden"}`}
-            >
-              <p>{`${invalid_AirportFrom_AirportTo[0].status ? invalid_AirportFrom_AirportTo[0].noti : invalid_AirportFrom_AirportTo[1].status ? invalid_AirportFrom_AirportTo[1].noti : ""}`}</p>
-              <div className="absolute left-1/2 transform -translate-x-1/2 bottom-[-8px] w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-gray-700"></div>
-            </div>
-            <div className="flex items-center w-full p-2 border-[#cdd0d1] border-b gap-x-3">
-              <label htmlFor="Destination">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className={`${svgStroke} cursor-pointer`}
-                >
-                  <path
-                    d="M3 21H21"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  ></path>
-                  <path
-                    d="M12 9L15.1924 7.93585C17.317 7.22767 19.6563 7.95843 21 9.75L7.44513 14.0629C5.86627 14.5653 4.1791 13.6926 3.67674 12.1137C3.66772 12.0854 3.65912 12.0569 3.65094 12.0283L3 9.75L5.25 10.875L9 9.75L4.5 3H5.25L12 9Z"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    transform="rotate(28 10 10)"
-                  ></path>
-                </svg>
-              </label>
-              <input
-                id="Destination"
-                placeholder="Destination (Tên thành phố)"
-                className={`w-[280px] h-full ${span} font-semibold text-white bg-transparent outline-none -tracking-tighter`}
-                value={AirportTo}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleShowAirports([0, 1, 2], [true, false, true]);
-                }}
-                onChange={(event) => handleInputAirport(event, "To")}
-              />
-            </div>
           </div>
+          <div
+            className={`absolute -mb-5 text-sm font-semibold text-white transition-all duration-300 transform -translate-x-1/2 bg-gray-700 rounded whitespace-nowrap left-1/2 bottom-full  ${invalid_AirportFrom_AirportTo[0].status || invalid_AirportFrom_AirportTo[1].status ? "w-fit p-2" : "w-0 overflow-hidden"}`}>
+            <p>{`${invalid_AirportFrom_AirportTo[0].status ? invalid_AirportFrom_AirportTo[0].noti : invalid_AirportFrom_AirportTo[1].status ? invalid_AirportFrom_AirportTo[1].noti : ""}`}</p>
+            <div className="absolute left-1/2 transform -translate-x-1/2 bottom-[-8px] w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-gray-700"></div>
+          </div>
+          <div className="flex items-center w-fit p-2 border-[#cdd0d1] border-b gap-x-3">
+            <label htmlFor="Destination">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className={`stroke-[#0194f3] size-6 lg:size-8 cursor-pointer`}>
+                <path
+                  d="M3 21H21"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"></path>
+                <path
+                  d="M12 9L15.1924 7.93585C17.317 7.22767 19.6563 7.95843 21 9.75L7.44513 14.0629C5.86627 14.5653 4.1791 13.6926 3.67674 12.1137C3.66772 12.0854 3.65912 12.0569 3.65094 12.0283L3 9.75L5.25 10.875L9 9.75L4.5 3H5.25L12 9Z"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  transform="rotate(28 10 10)"></path>
+              </svg>
+            </label>
+            <input
+              id="Destination"
+              type="text"
+              placeholder="Tên thành phố, sân bay, IATA"
+              className={`h-full text-base text-white lg:text-lg bg-transparent outline-none -tracking-tighter`}
+              value={AirportTo}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShowAirports([0, 1, 2], [true, false, true]);
+              }}
+              onChange={(event) => handleInputAirport(event, "To")}
+            />
+          </div>
+          {showAirports[0] && showAirports[2] && (
+            <FilterAirport
+              showAirports={showAirports}
+              Airport={AirportFrom}
+              filteredAirports={AirportsVN}
+              handleChooseAirport={handleChooseAirport}
+              type={"Destination"}
+              AirportsVN={AirportsVN}
+              AirportFrom={AirportFrom}
+              AirportTo={AirportTo}
+              styleLocationShowListAirline={styleLocationShowListAirline}
+            />
+          )}
         </div>
       </div>
 
@@ -331,15 +346,13 @@ export default function ComponentSearchFlight({
                 setChoosePassenger(!choosePassenger);
                 handleShowAirports([0, 1, 2], [false, false, false]);
               }}
-              className="flex items-center p-2 text-white border-b cursor-pointer gap-x-3"
-            >
+              className="flex items-center p-2 text-white border-b cursor-pointer gap-x-3">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth="1.5"
-                className={`${svgStroke} cursor-pointer`}
-              >
+                className={`${svgStroke} cursor-pointer`}>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -348,8 +361,7 @@ export default function ComponentSearchFlight({
               </svg>
 
               <span
-                className={`w-full h-full ${span}} font-semibold text-white bg-transparent outline-none -tracking-tighter whitespace-nowrap`}
-              >
+                className={`w-full h-full ${span}} font-semibold text-white bg-transparent outline-none -tracking-tighter whitespace-nowrap`}>
                 {editQuantityPassenger[0]} Người lớn, {editQuantityPassenger[1]}{" "}
                 Trẻ em, {editQuantityPassenger[2]} Em bé
               </span>
@@ -359,8 +371,7 @@ export default function ComponentSearchFlight({
                 viewBox="0 0 24 24"
                 strokeWidth="1.5"
                 stroke="currentColor"
-                className="size-6"
-              >
+                className="size-6">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -372,8 +383,7 @@ export default function ComponentSearchFlight({
             {choosePassenger && (
               <ul
                 className={`absolute p-3 bg-white ${topChoosePassenger} w-fit`}
-                onClick={(e) => e.stopPropagation()}
-              >
+                onClick={(e) => e.stopPropagation()}>
                 <li className="flex text-[#0194f3] font-semibold justify-between mb-2 items-center">
                   <span className="select-none whitespace-nowrap">
                     Người lớn (Trên 12 tuổi)
@@ -386,8 +396,7 @@ export default function ComponentSearchFlight({
                       strokeWidth="1.5"
                       stroke="currentColor"
                       className="cursor-pointer size-7"
-                      onClick={() => handleEditQuantityPassenger(0, "Reduce")}
-                    >
+                      onClick={() => handleEditQuantityPassenger(0, "Reduce")}>
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -404,8 +413,9 @@ export default function ComponentSearchFlight({
                       strokeWidth="1.5"
                       stroke="currentColor"
                       className="cursor-pointer size-7"
-                      onClick={() => handleEditQuantityPassenger(0, "Increase")}
-                    >
+                      onClick={() =>
+                        handleEditQuantityPassenger(0, "Increase")
+                      }>
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -424,8 +434,7 @@ export default function ComponentSearchFlight({
                       strokeWidth="1.5"
                       stroke="currentColor"
                       className="cursor-pointer size-7"
-                      onClick={() => handleEditQuantityPassenger(1, "Reduce")}
-                    >
+                      onClick={() => handleEditQuantityPassenger(1, "Reduce")}>
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -442,8 +451,9 @@ export default function ComponentSearchFlight({
                       strokeWidth="1.5"
                       stroke="currentColor"
                       className="cursor-pointer size-7"
-                      onClick={() => handleEditQuantityPassenger(1, "Increase")}
-                    >
+                      onClick={() =>
+                        handleEditQuantityPassenger(1, "Increase")
+                      }>
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -462,8 +472,7 @@ export default function ComponentSearchFlight({
                       strokeWidth="1.5"
                       stroke="currentColor"
                       className="cursor-pointer size-7"
-                      onClick={() => handleEditQuantityPassenger(2, "Reduce")}
-                    >
+                      onClick={() => handleEditQuantityPassenger(2, "Reduce")}>
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -480,8 +489,9 @@ export default function ComponentSearchFlight({
                       strokeWidth="1.5"
                       stroke="currentColor"
                       className="cursor-pointer size-7"
-                      onClick={() => handleEditQuantityPassenger(2, "Increase")}
-                    >
+                      onClick={() =>
+                        handleEditQuantityPassenger(2, "Increase")
+                      }>
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -495,57 +505,55 @@ export default function ComponentSearchFlight({
           </div>
 
           <div
-            className={`flex flex-col border-[#cdd0d1] border-b ${div2_1} overflow-hidden gap-x-3 justify-center`}
-          >
+            className={`flex flex-col border-[#cdd0d1] border-b ${div2_1} gap-x-3 justify-center`}>
             <span
-              className={`select-none uppercase font-semibold ${span} whitespace-nowrap`}
-            >
+              className={`select-none uppercase font-semibold ${span} whitespace-nowrap`}>
               Ngày đi
             </span>
-            <DatePicker
-              selected={Departure_Return_Date[0]}
-              onChange={(date) => handlePickDeparture_Return_Date(date, 0)}
-              dateFormat={"dd/MM/yyyy"}
-              minDate={(() => {
-                const tomorrow = new Date();
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                return tomorrow;
-              })()}
-              maxDate={new Date("2030-01-01")}
-              locale={"vi"}
-              renderDayContents={(day, date) => {
-                const lunarDate = Lunar.fromDate(date, 0);
-                return (
-                  <span>
-                    {day} <br />
-                    <small style={{ fontSize: "0.7em" }}>
-                      {lunarDate.getDay()}/{lunarDate.getMonth()}
-                    </small>
-                  </span>
-                );
-              }}
-              className={`flex ${span} font-semibold bg-transparent outline-none -tracking-tighter ${textDatePicker} whitespace-nowrap`}
-            />
+            <div style={{ position: "relative" }}>
+              <DatePicker
+                selected={Departure_Return_Date[0]}
+                onChange={(date) => handlePickDeparture_Return_Date(date, 0)}
+                dateFormat={"dd/MM/yyyy"}
+                minDate={(() => {
+                  const tomorrow = new Date();
+                  tomorrow.setDate(tomorrow.getDate() + 1);
+                  return tomorrow;
+                })()}
+                maxDate={new Date("2030-01-01")}
+                locale={"vi"}
+                renderDayContents={(day, date) => {
+                  const lunarDate = Lunar.fromDate(date, 0);
+                  return (
+                    <span>
+                      {day} <br />
+                      <small style={{ fontSize: "0.7em" }}>
+                        {lunarDate.getDay()}/{lunarDate.getMonth()}
+                      </small>
+                    </span>
+                  );
+                }}
+                className={`flex ${span} font-semibold bg-transparent outline-none -tracking-tighter ${textDatePicker} whitespace-nowrap`}
+                portalId="date-picker-portal"
+              />
+            </div>
           </div>
 
           <div
-            className={`flex flex-col h-fit ${div2_1}  gap-y-1 overflow-hidden`}
-          >
+            className={`flex flex-col h-fit ${div2_1}  gap-y-1 overflow-hidden`}>
             <button
               className="gap-x-3 w-fit flex items-center text-white font-semibold uppercase whitespace-nowrap"
               onClick={(e) => {
                 e.stopPropagation();
-                setBayMotChieu(!bayMotChieu);
-              }}
-            >
-              {bayMotChieu ? (
+                setOneWayTicket(!oneWayTicket);
+              }}>
+              {oneWayTicket ? (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth="2.5"
-                  className="size-6 stroke-white"
-                >
+                  className="size-6 stroke-white">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -558,8 +566,7 @@ export default function ComponentSearchFlight({
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth="2.5"
-                  className="size-6 stroke-white"
-                >
+                  className="size-6 stroke-white">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -571,37 +578,39 @@ export default function ComponentSearchFlight({
             </button>
 
             <div
-              className={`flex flex-col text-[25px] justify-center border-[#cdd0d1] border-b w-fit gap-x-3 ${bayMotChieu ? "opacity-0 select-none pointer-events-none" : ""}`}
-            >
+              className={`flex flex-col text-[25px] justify-center border-[#cdd0d1] border-b w-fit gap-x-3 ${oneWayTicket ? "opacity-0 select-none pointer-events-none" : ""}`}>
               <span
-                className={`select-none uppercase font-semibold ${span} whitespace-nowrap`}
-              >
+                className={`select-none uppercase font-semibold ${span} whitespace-nowrap`}>
                 Ngày về
               </span>
-              <DatePicker
-                selected={Departure_Return_Date[1]}
-                onChange={(date) => handlePickDeparture_Return_Date(date, 1)}
-                dateFormat={"dd/MM/yyyy"}
-                minDate={
-                  new Date(
-                    Departure_Return_Date[0].getTime() + 2 * 24 * 60 * 60 * 1000
-                  )
-                }
-                maxDate={new Date("2030-01-01")}
-                locale={"vi"}
-                renderDayContents={(day, date) => {
-                  const lunarDate = Lunar.fromDate(date);
-                  return (
-                    <span>
-                      {day} <br />
-                      <small style={{ fontSize: "0.7em" }}>
-                        {lunarDate.getDay()}/{lunarDate.getMonth()}
-                      </small>
-                    </span>
-                  );
-                }}
-                className={`flex font-semibold ${span} bg-transparent outline-none -tracking-tighter ${textDatePicker} whitespace-nowrap w-fit`}
-              />
+              <div style={{ position: "relative" }}>
+                <DatePicker
+                  selected={Departure_Return_Date[1]}
+                  onChange={(date) => handlePickDeparture_Return_Date(date, 1)}
+                  dateFormat={"dd/MM/yyyy"}
+                  minDate={
+                    new Date(
+                      Departure_Return_Date[0].getTime() +
+                        2 * 24 * 60 * 60 * 1000
+                    )
+                  }
+                  maxDate={new Date("2030-01-01")}
+                  locale={"vi"}
+                  renderDayContents={(day, date) => {
+                    const lunarDate = Lunar.fromDate(date);
+                    return (
+                      <span>
+                        {day} <br />
+                        <small style={{ fontSize: "0.7em" }}>
+                          {lunarDate.getDay()}/{lunarDate.getMonth()}
+                        </small>
+                      </span>
+                    );
+                  }}
+                  className={`flex font-semibold ${span} bg-transparent outline-none -tracking-tighter ${textDatePicker} whitespace-nowrap w-fit`}
+                  portalId="date-picker-portal"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -609,15 +618,13 @@ export default function ComponentSearchFlight({
         <button
           className={`${invalid_AirportFrom_AirportTo[0].status || invalid_AirportFrom_AirportTo[1].status ? "bg-slate-500 cursor-not-allowed" : "bg-[#ff5e1f] cursor-pointer"} p-5 rounded-2xl border-4 border-[rgba(205,208,209,0.50)] w-fit h-fit`}
           type="button"
-          onClick={handleSearch}
-        >
+          onClick={handleSearch}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth="1.5"
-            className="size-6 stroke-white"
-          >
+            className="size-6 stroke-white">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -648,8 +655,7 @@ const FilterAirport = ({
   return (
     <>
       <ul
-        className={`${showAirports[0] && filteredAirports.length !== 0 ? "min-h-0 max-h-44 overflow-y-auto" : "w-0 h-0 overflow-hidden p-0"} ${styleLocationShowListAirline?.top} absolute z-10 ${type === "Origin" ? "left-0" : type === "Destination" ? styleLocationShowListAirline?.left : ""} font-semibold bg-white w-fit tracking-wider transition-all duration-1000`}
-      >
+        className={`${showAirports[0] && filteredAirports.length !== 0 ? "min-h-0 max-h-60 overflow-y-auto w-full" : "w-0 h-0 overflow-hidden p-0"} absolute z-10 font-semibold bg-white w-fit tracking-wider transition-all duration-1000`}>
         {filteredAirports
           .filter((item) => {
             const searchAirport =
@@ -659,24 +665,189 @@ const FilterAirport = ({
             const city = item.city.toLowerCase();
             const airport = item.airport.toLowerCase();
             const IATA = item.IATA.toLowerCase();
+            const city_IATA =
+              item.city.toLowerCase() + " (" + item.IATA.toLowerCase() + ")";
 
             return (
               (AirportFrom && city.includes(searchAirport)) ||
               removeAccents(city).includes(searchAirport) ||
               airport.includes(searchAirport) ||
-              IATA.includes(searchAirport)
+              IATA.includes(searchAirport) ||
+              city_IATA.includes(searchAirport)
             );
           })
           .map((items) => (
             <li
-              className="w-full h-full p-2 border-b cursor-pointer whitespace-nowrap hover:bg-slate-100"
+              className="w-full h-full p-2 border-b cursor-pointer hover:bg-slate-100"
               key={items.IATA}
-              onClick={() => handleChooseAirport(items, type)}
-            >
+              onClick={() => handleChooseAirport(items, type)}>
               {items.city + ", " + items.airport + " (" + items.IATA + ")"}
             </li>
           ))}
       </ul>
     </>
+  );
+};
+
+const FlightSearchInput = ({
+  AirportsVN,
+  AirportFrom,
+  AirportTo,
+  handleChooseAirport,
+  handleSwapPlaceAirport,
+}) => {
+  const [showFromList, setShowFromList] = useState(false);
+  const [showToList, setShowToList] = useState(false);
+  const [searchFrom, setSearchFrom] = useState("");
+  const [searchTo, setSearchTo] = useState("");
+
+  const handleFromClick = () => {
+    setShowFromList(true);
+    setShowToList(false);
+  };
+
+  const handleToClick = () => {
+    setShowToList(true);
+    setShowFromList(false);
+  };
+
+  const handleFromSelect = (airport) => {
+    handleChooseAirport(airport, "Origin");
+    setShowFromList(false);
+    setSearchFrom("");
+  };
+
+  const handleToSelect = (airport) => {
+    handleChooseAirport(airport, "Destination");
+    setShowToList(false);
+    setSearchTo("");
+  };
+
+  const filteredFromAirports = AirportsVN.filter((airport) => {
+    const searchTerm = searchFrom.toLowerCase();
+    return (
+      airport.city.toLowerCase().includes(searchTerm) ||
+      airport.airport.toLowerCase().includes(searchTerm) ||
+      airport.IATA.toLowerCase().includes(searchTerm)
+    );
+  });
+
+  const filteredToAirports = AirportsVN.filter((airport) => {
+    const searchTerm = searchTo.toLowerCase();
+    return (
+      airport.city.toLowerCase().includes(searchTerm) ||
+      airport.airport.toLowerCase().includes(searchTerm) ||
+      airport.IATA.toLowerCase().includes(searchTerm)
+    );
+  });
+
+  return (
+    <div className="flex flex-col gap-4 w-full max-w-2xl mx-auto p-4">
+      <div className="flex items-center gap-4">
+        <div className="flex-1 relative">
+          <div className="flex items-center border rounded-lg p-2 bg-white">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-6 h-6 text-blue-500 mr-2">
+              <path
+                d="M3 21H21"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M12 9L15.1924 7.93585C17.317 7.22767 19.6563 7.95843 21 9.75L7.44513 14.0629C5.86627 14.5653 4.1791 13.6926 3.67674 12.1137C3.66772 12.0854 3.65912 12.0569 3.65094 12.0283L3 9.75L5.25 10.875L9 9.75L4.5 3H5.25L12 9Z"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <input
+              type="text"
+              placeholder="Nơi đi"
+              value={searchFrom}
+              onChange={(e) => setSearchFrom(e.target.value)}
+              onClick={handleFromClick}
+              className="w-full outline-none"
+            />
+          </div>
+          {showFromList && (
+            <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              {filteredFromAirports.map((airport) => (
+                <div
+                  key={airport.IATA}
+                  onClick={() => handleFromSelect(airport)}
+                  className="p-2 hover:bg-gray-100 cursor-pointer">
+                  {airport.city} ({airport.IATA}) - {airport.airport}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={handleSwapPlaceAirport}
+          className="p-2 rounded-full hover:bg-gray-100">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="1.5"
+            className="w-6 h-6 text-blue-500">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
+            />
+          </svg>
+        </button>
+
+        <div className="flex-1 relative">
+          <div className="flex items-center border rounded-lg p-2 bg-white">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-6 h-6 text-blue-500 mr-2"
+              transform="rotate(180)">
+              <path
+                d="M3 21H21"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M12 9L15.1924 7.93585C17.317 7.22767 19.6563 7.95843 21 9.75L7.44513 14.0629C5.86627 14.5653 4.1791 13.6926 3.67674 12.1137C3.66772 12.0854 3.65912 12.0569 3.65094 12.0283L3 9.75L5.25 10.875L9 9.75L4.5 3H5.25L12 9Z"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <input
+              type="text"
+              placeholder="Nơi đến"
+              value={searchTo}
+              onChange={(e) => setSearchTo(e.target.value)}
+              onClick={handleToClick}
+              className="w-full outline-none"
+            />
+          </div>
+          {showToList && (
+            <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              {filteredToAirports.map((airport) => (
+                <div
+                  key={airport.IATA}
+                  onClick={() => handleToSelect(airport)}
+                  className="p-2 hover:bg-gray-100 cursor-pointer">
+                  {airport.city} ({airport.IATA}) - {airport.airport}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };

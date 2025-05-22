@@ -62,14 +62,6 @@ function About() {
                         TravFruit là một website mô tả về quá trình đặt vé
                         chuyến bay.
                       </li>
-                      <li>
-                        Trang web gồm 7 page : Home - /, About - /about, Thông
-                        tin tài khoản - /Setting/InfoAccount, Lịch sử đơn hàng -
-                        /Setting/HistoryTicket, XemDanhSachChuyenbBay -
-                        /XemDanhSachChuyenbBay, DatChoCuaToi -
-                        /XemDanhSachChuyenbBay/DatChoCuaToi, ThanhToan -
-                        /XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan,
-                      </li>
                     </ul>
                   </li>
 

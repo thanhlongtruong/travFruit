@@ -87,7 +87,7 @@ header {
   width: 100%;
   height: 80px;
   background: #ffffff;
-  padding: 0 50px;
+  padding: 8px;
   transition: 0.5s;
   z-index: 100;
   display: flex;
@@ -318,4 +318,28 @@ header ul li button {
 
 .rounded-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #555; /* Màu khi hover */
+}
+
+.date-picker-wrapper {
+  position: relative;
+  z-index: 1000;
+}
+
+.date-picker-popper {
+  z-index: 1000 !important;
+}
+
+.react-datepicker-popper {
+  z-index: 1000 !important;
+}
+
+/* Ngăn chặn scroll khi DatePicker mở */
+.react-datepicker-popper[data-placement^="top"] {
+  margin-bottom: 8px;
+}
+
+/* Đảm bảo DatePicker không bị ảnh hưởng bởi overflow của parent */
+.react-datepicker-wrapper,
+.react-datepicker__input-container {
+  position: static !important;
 }

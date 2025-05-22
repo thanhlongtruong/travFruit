@@ -226,11 +226,9 @@ function InterFaceLogin({ registerTrue = false }) {
   return (
     <>
       <div
-        className={`${!registerTrue ? "fixed items-center h-full" : `relative items-start ${showChoosePassword ? "h-[519px]" : "h-[371px] "}`} overflow-hidden z-50 flex justify-center w-full`}
-      >
+        className={`${!registerTrue ? "fixed items-center h-full inset-0" : ` items-start h-fit`} flex justify-center w-full`}>
         <div
-          className={`absolute z-40 h-fit ${!registerTrue ? "w-[450px] m-auto" : "w-full"}  rounded-lg bg-[#444] p-4`}
-        >
+          className={`h-fit ${!registerTrue ? "w-[450px] m-auto" : "w-full"}  rounded-lg bg-[#444] p-4`}>
           <div className="flex items-center w-full text-2xl font-medium mb-7 div-flex-adjust-justify-between h-14 text-slate-700">
             <div
               className={"Typewriter"}
@@ -238,8 +236,7 @@ function InterFaceLogin({ registerTrue = false }) {
                 ? registerLogin
                 : registerTrue
                   ? registerUpdate
-                  : registerRegister)("InternalServerError")}
-            >
+                  : registerRegister)("InternalServerError")}>
               <p>
                 {errorsRegister.InternalServerError
                   ? errorsRegister.InternalServerError.message
@@ -255,15 +252,13 @@ function InterFaceLogin({ registerTrue = false }) {
 
             <div
               className="w-[10%] cursor-pointer"
-              onClick={() => setShowInterfaceLogin(false)}
-            >
+              onClick={() => setShowInterfaceLogin(false)}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth="2"
-                className="transition duration-200 size-7 hover:stroke-rose-600 stroke-teal-400 hover:duration-500 animate-pulse hover:size-8"
-              >
+                className="transition duration-200 size-7 hover:stroke-rose-600 stroke-teal-400 hover:duration-500 animate-pulse hover:size-8">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -280,8 +275,7 @@ function InterFaceLogin({ registerTrue = false }) {
                 : !addSVG[0]
                   ? handleSubmitLogin(submitLogin)
                   : handleSubmitRegister(submitRegister)
-            }
-          >
+            }>
             {!addSVG[0] ? (
               <>
                 <div className="w-full mb-6 inputBox">
@@ -330,11 +324,9 @@ function InterFaceLogin({ registerTrue = false }) {
               <>
                 <>
                   <div
-                    className={`${registerTrue ? "flex justify-between" : "flex flex-col"}`}
-                  >
+                    className={`${registerTrue ? "flex justify-between" : "flex flex-col"}`}>
                     <div
-                      className={`${registerTrue ? "w-[60%]" : "w-full"} mb-6 inputBox`}
-                    >
+                      className={`${registerTrue ? "w-[60%]" : "w-full"} mb-6 inputBox`}>
                       <input
                         className={`${errorsRegister.fullName ? "inputTagBug" : errorsUpdate.fullName ? "inputTagBug" : "inputTag"}`}
                         type="text"
@@ -368,8 +360,7 @@ function InterFaceLogin({ registerTrue = false }) {
                       </span>
                     </div>
                     <div
-                      className={`${registerTrue ? "w-[30%]" : "w-full"} mb-6 inputBox`}
-                    >
+                      className={`${registerTrue ? "w-[30%]" : "w-full"} mb-6 inputBox`}>
                       <input
                         className={`${errorsRegister.phone ? "inputTagBug" : errorsUpdate.phone ? "inputTagBug" : "inputTag"}`}
                         type="number"
@@ -481,13 +472,81 @@ function InterFaceLogin({ registerTrue = false }) {
                   </div>
                 </div>
 
+                <div className={`w-full mb-6 inputBox`}>
+                  <input
+                    className={`${errorsRegister.email ? "inputTagBug" : errorsUpdate.email ? "inputTagBug" : "inputTag"}`}
+                    type="text"
+                    defaultValue={user?.email}
+                    required
+                    {...(registerTrue ? registerUpdate : registerRegister)(
+                      "email",
+                      {
+                        required: "Your email",
+                        pattern: {
+                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                          message: "Email không hợp lệ",
+                        },
+                        validate: {
+                          completeDomain: (value) => {
+                            if (value.endsWith("@gmail.co")) {
+                              return "e.g. @gmail.com";
+                            }
+                            return true;
+                          },
+                        },
+                      }
+                    )}
+                  />
+                  <span className={`spanTag`}>
+                    {errorsRegister.email
+                      ? errorsRegister.email.message
+                      : errorsUpdate.email
+                        ? errorsUpdate.email.message
+                        : "Your Email"}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center gap-2 mb-6">
+                  <div className="w-[50%] inputBox">
+                    <input
+                      className="inputTag"
+                      type="text"
+                      placeholder="Mã xác minh"
+                      {...(registerTrue ? registerUpdate : registerRegister)(
+                        "verificationCode",
+                        {
+                          required: "Vui lòng nhập mã xác minh",
+                          minLength: {
+                            value: 6,
+                            message: "Mã xác minh phải có 6 ký tự",
+                          },
+                          maxLength: {
+                            value: 6,
+                            message: "Mã xác minh phải có 6 ký tự",
+                          },
+                        }
+                      )}
+                    />
+                    <span className="spanTag">Mã xác minh</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="w-[25%] p-2 border-teal-400 text-teal-400 transition-all duration-200 border rounded-md font-semibold hover:text-white hover:bg-teal-400">
+                    Kiểm tra
+                  </button>
+                  <button
+                    type="button"
+                    className="w-[25%] p-2 border-teal-400 text-teal-400 transition-all duration-200 border rounded-md font-semibold hover:text-white hover:bg-teal-400">
+                    Gửi lại
+                  </button>
+                </div>
+
                 {registerTrue && (
                   <button
                     className={`p-2 border-teal-400 text-teal-400 mb-6 transition-all duration-200 border rounded-md font-semibold hover:text-white`}
                     ref={refUpdate}
                     type="button"
-                    onClick={() => setShowChoosePassword(!showChoosePassword)}
-                  >
+                    onClick={() => setShowChoosePassword(!showChoosePassword)}>
                     <p className="flex justify-center uppercase">
                       Đổi mật khẩu
                     </p>
@@ -567,16 +626,15 @@ function InterFaceLogin({ registerTrue = false }) {
                   <button
                     className={`styleLogin flex justify-center`}
                     type="submit"
-                    ref={refUpdate}
-                  >
+                    ref={refUpdate}>
                     {mutationUpdate.isPending ? (
                       <>
                         <l-bouncy size="35" speed="1.75" color="white" />
                       </>
                     ) : (
                       <p className="uppercase">
-                        Cập nhật thông tin tài khoản &#160;
-                        {showChoosePassword ? <span>và đổi mật khẩu</span> : ""}
+                        Cập nhật thông tin tài khoản
+                        {showChoosePassword ? <span> & đổi mật khẩu</span> : ""}
                       </p>
                     )}
                   </button>
@@ -587,8 +645,7 @@ function InterFaceLogin({ registerTrue = false }) {
                     ref={refLogin}
                     className={`styleLogin`}
                     type="submit"
-                    onClick={() => handleSwapClasses("Log")}
-                  >
+                    onClick={() => handleSwapClasses("Log")}>
                     <p className="flex justify-center uppercase">
                       {addSVG[0] && (
                         <svg
@@ -597,8 +654,7 @@ function InterFaceLogin({ registerTrue = false }) {
                           viewBox="0 0 24 24"
                           strokeWidth="1.5"
                           stroke="currentColor"
-                          className="size-6 animate-bounce-hozi"
-                        >
+                          className="size-6 animate-bounce-hozi">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -617,8 +673,7 @@ function InterFaceLogin({ registerTrue = false }) {
                     ref={refRegister}
                     className={`styleRes`}
                     type="submit"
-                    onClick={() => handleSwapClasses("Res")}
-                  >
+                    onClick={() => handleSwapClasses("Res")}>
                     <p className="flex justify-center uppercase">
                       {mutationRegister.isPending ? (
                         <l-bouncy size="35" speed="1.75" color="white" />
@@ -633,8 +688,7 @@ function InterFaceLogin({ registerTrue = false }) {
                           viewBox="0 0 24 24"
                           strokeWidth="1.5"
                           stroke="currentColor"
-                          className="size-6 animate-bounce-hozi"
-                        >
+                          className="size-6 animate-bounce-hozi">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"

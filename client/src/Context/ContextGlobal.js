@@ -461,17 +461,17 @@ export const OrderProvider = ({ children }) => {
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
-  }
-  
+  };
+
   // ham chuyen VND sang USD
   const convertVNDtoUSD = (num) => {
     let cleanVND = num.replace(" VND", "").replace(/\./g, "");
     return (Number(cleanVND) / 23000).toFixed(2);
-  }
+  };
 
   // expired time payment
   const [isExpired, setIsExpired] = useState(false);
- 
+
   // state QR_VietQR
   const [QR_VietQR, setQR_VietQR] = useState(null);
   // time expired QR_VietQR
@@ -479,13 +479,27 @@ export const OrderProvider = ({ children }) => {
   // orderId truyen tu /Setting/HistoryTicket den Setting
   const [orderId_VietQR, setOrderId_VietQR] = useState(null);
 
+  // state savedSeatState component AdjustQuantityv2
+  const [savedSeatState, setSavedSeatState] = useState({
+    selectedSeats: new Set(),
+    selectedSeatsReturn: new Set(),
+    seats: [],
+    seatsReturn: [],
+  });
+
   return (
     <CONTEXT.Provider
       value={{
-        orderId_VietQR, setOrderId_VietQR,
-        timeExpired_VietQR, setTimeExpired_VietQR,
-        QR_VietQR, setQR_VietQR,
-        isExpired, setIsExpired,
+        savedSeatState,
+        setSavedSeatState,
+        orderId_VietQR,
+        setOrderId_VietQR,
+        timeExpired_VietQR,
+        setTimeExpired_VietQR,
+        QR_VietQR,
+        setQR_VietQR,
+        isExpired,
+        setIsExpired,
         convertVNDtoUSD,
         setNotification,
         notification,
@@ -538,8 +552,7 @@ export const OrderProvider = ({ children }) => {
         handleSetStateLogin_Logout,
         handleShowOptionSetting_LoginSuccess,
         isShowOptionSetting_LoginSuccess,
-      }}
-    >
+      }}>
       {children}
     </CONTEXT.Provider>
   );

@@ -12,9 +12,11 @@ import { TransactionMoMo, TransactionPaypal } from "../../API/Payment.js";
 import { useMutation } from "@tanstack/react-query";
 import { UpdatepdateStatus } from "../../API/DonHang.js";
 import { bouncy } from "ldrs";
+import useDeviceDetect from "../../hooks/useDeviceDetect";
 
 function ComponentHome() {
   bouncy.register();
+  const { isMobile, isTablet, isDesktop } = useDeviceDetect();
   const {
     isShowInterfaceLogin,
     isShowOptionSetting_LoginSuccess,
@@ -140,29 +142,27 @@ function ComponentHome() {
       </Helmet>
       {isShowInterfaceLogin && <InterFaceLogin />}
       {stateFlightShowCalendar && <FlightShowCalendar />}
+      {isShowChatbot && <FuncChatbot />}
+      {isShowOptionSetting_LoginSuccess && <LoginSuccess />}
 
-      <div onClick={handleOffOption} className="relative w-full h-full">
-        <Header />
-        {isShowChatbot && <FuncChatbot />}
-        {isShowOptionSetting_LoginSuccess && <LoginSuccess />}
-        <div className="relative px-[50px] py-5 w-full h-screen bg-[url('https://ik.imagekit.io/tvlk/image/imageResource/2023/09/27/1695776209619-17a750c3f514f7a8cccde2d0976c902a.png?tr=q-75')] bg-center bg-no-repeat bg-cover">
-          <h1 className="font-mono font-bold tracking-wider text-black absolute bottom-0 right-0 uppercase">
-            trang chu cua website travfruit
-          </h1>
-          {(mutationTransactionPaypal.isPending ||
-            mutationTransactionMoMo.isPending) && (
-            <div className="w-screen h-screen fixed z-[500]">
-              <div className="fixed z-[500] transform -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
-                <l-bouncy size="40" speed="1.75" color="white" />
-              </div>
-            </div>
-          )}
-
+      <Header />
+      {(mutationTransactionPaypal.isPending ||
+        mutationTransactionMoMo.isPending) && (
+        <div className="w-screen h-screen fixed z-[500] bg-black/50 opacity-30 inset-0">
+          <div className="opacity-100 fixed z-[500] transform -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
+            <l-bouncy size="40" speed="1.75" color="white" />
+          </div>
+        </div>
+      )}
+      <div onClick={handleOffOption} className="w-auto h-full">
+        <div
+          className={`p-5 w-full h-screen bg-[url('https://ik.imagekit.io/tvlk/image/imageResource/2023/09/27/1695776209619-17a750c3f514f7a8cccde2d0976c902a.png?tr=q-75')] bg-center bg-no-repeat bg-cover`}>
           <div
-            className="border-2 border-[#0194f3] min-h-[400px] rounded-md bg-[#4444] z-0 w-full"
-            onClick={() => handleShowAirports([0, 1, 2], [false, false, false])}
-          >
-            <div className="flex items-center mb-10 text-lg font-semibold text-white uppercase w-fit gap-x-6">
+            className={`overflow-hidden border-2 border-[#0194f3] min-h-[400px] rounded-md bg-[#4444] z-0 w-full`}
+            onClick={() =>
+              handleShowAirports([0, 1, 2], [false, false, false])
+            }>
+            <div className="flex items-center text-sm lg:text-lg md:text-base font-semibold text-white uppercase w-fit gap-x-6">
               <p className="p-2 bg-[#0194f3] rounded-br-md">
                 <span className={`${!bayMotChieu ? "opacity-70" : ""}`}>
                   Một chiều
@@ -175,14 +175,14 @@ function ComponentHome() {
             </div>
 
             <ComponentSearchFlight
-              div1="px-12 mb-16"
+              div1={`${isMobile ? "px-4" : "px-12"} mb-16`}
               span="text-[19px] text-white"
               svgStroke="stroke-[#0194f3] size-8"
               div2_1="w-fit"
               div2="w-fit"
               textDatePicker="text-center"
               styleLocationShowListAirline={{
-                left: "left-[412px]",
+                left: isMobile ? "left-[50%]" : "left-[412px]",
                 top: "top-[78px]",
               }}
               topChoosePassenger="top-[78px]"

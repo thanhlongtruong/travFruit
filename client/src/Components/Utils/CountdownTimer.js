@@ -1,25 +1,33 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { CONTEXT } from '../../Context/ContextGlobal';
-import { CheckPaidVietQR } from '../../API/Payment';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect, useContext } from "react";
+import { CONTEXT } from "../../Context/ContextGlobal";
+import { CheckPaidVietQR } from "../../API/Payment";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { UpdatepdateStatus } from "../../API/DonHang.js";
-import { useLocation } from 'react-router-dom';
+import { useLocation } from "react-router-dom";
 
 const CountdownTimer = ({ targetTime, orderId }) => {
   const queryClient = useQueryClient();
   const location = useLocation();
 
-   const { isExpired, setIsExpired, QR_VietQR,showNotification,setQR_VietQR,setTimeExpired_VietQR } = useContext(CONTEXT);
+  const {
+    isExpired,
+    setIsExpired,
+    QR_VietQR,
+    showNotification,
+    setQR_VietQR,
+    setTimeExpired_VietQR,
+  } = useContext(CONTEXT);
 
-   const mutationUpdateStatus = useMutation({
+  const mutationUpdateStatus = useMutation({
     mutationFn: UpdatepdateStatus,
     mutationKey: ["updateStatus"],
     onSuccess: (data) => {
       localStorage.removeItem("payment");
 
-      const currentUrl = location.pathname === "/XemDanhSachChuyenbBay/DatChoCuaToi/ThanhToan";
+      const currentUrl =
+        location.pathname === "/XemDanhSachChuyenbBay/ThanhToan";
 
-      if(currentUrl){
+      if (currentUrl) {
         window.location.href = `/`;
       }
       queryClient.invalidateQueries("updateStatus");
@@ -27,22 +35,20 @@ const CountdownTimer = ({ targetTime, orderId }) => {
       setIsExpired(true);
       setTimeExpired_VietQR(null);
       showNotification(data.data.message, "Success");
-     
     },
     onError: (error) => {
       showNotification(
-        error?.response?.data?.message ||
-          "Lỗi khi thanh toán với paypal",
+        error?.response?.data?.message || "Lỗi khi thanh toán với paypal",
         "Warn"
       );
-    }
+    },
   });
 
-const mutationCheckPaidVietQR = useMutation({
+  const mutationCheckPaidVietQR = useMutation({
     mutationFn: CheckPaidVietQR,
     onSuccess: (data) => {
       console.log(data);
-      if(data.data.message === 'SUCCESS'){
+      if (data.data.message === "SUCCESS") {
         mutationUpdateStatus.mutate({
           status: "200",
           orderID: data.data.data.orderId,
@@ -56,7 +62,7 @@ const mutationCheckPaidVietQR = useMutation({
           "Lỗi khi kiểm tra trạng thái thanh toán VietQR",
         "Warn"
       );
-    }
+    },
   });
 
   const [timeLeft, setTimeLeft] = useState({
@@ -83,7 +89,9 @@ const mutationCheckPaidVietQR = useMutation({
       }
 
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const hours = Math.floor(
+        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+      );
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
@@ -101,21 +109,26 @@ const mutationCheckPaidVietQR = useMutation({
       const newTimeLeft = calculateTimeLeft();
       setTimeLeft(newTimeLeft);
 
-      if (newTimeLeft.days === 0 && newTimeLeft.hours === 0 && newTimeLeft.minutes === 0 && newTimeLeft.seconds === 0) {
+      if (
+        newTimeLeft.days === 0 &&
+        newTimeLeft.hours === 0 &&
+        newTimeLeft.minutes === 0 &&
+        newTimeLeft.seconds === 0
+      ) {
         clearInterval(interval);
       }
     }, 1000);
 
     const checkPaidVietQR = setInterval(() => {
-      if(QR_VietQR && !isExpired){
-        mutationCheckPaidVietQR.mutate({orderId});
+      if (QR_VietQR && !isExpired) {
+        mutationCheckPaidVietQR.mutate({ orderId });
       }
     }, 3000);
 
     return () => {
       clearInterval(interval);
       clearInterval(checkPaidVietQR);
-    }
+    };
   }, [targetTime, QR_VietQR, isExpired]);
 
   return (
@@ -132,4 +145,3 @@ const mutationCheckPaidVietQR = useMutation({
 };
 
 export default CountdownTimer;
-
