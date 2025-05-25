@@ -6,11 +6,13 @@ const User = require("../models/User");
 const DonHang = require("../models/DonHang");
 const Flight = require("../models/Flight");
 const Ticket = require("../models/Ticket");
+const { apiLimiter, transporter } = require("../service/verifyEmail.js");
 const { mongoose } = require("mongoose");
 const { hashPass, comparePass } = require("../service/hashpass");
 const { checkBody, arrayError } = require("../service/checkBodyRegister");
 const { signToken, verifyToken } = require("../service/JWT");
 const { authorization } = require("../middleware/authorization");
+const EmailVerification = require("../models/EmailVerification.js");
 
 const router = express.Router();
 
@@ -19,25 +21,70 @@ router.post("/register", checkBody("register"), async (req, res) => {
     if (!arrayError(req, res).isEmpty()) {
       return res.status(400).send(arrayError(req, res).array());
     }
-    const { numberPhone, fullName, gender, birthday, password } = req.body;
+    const {
+      numberPhone,
+      fullName,
+      gender,
+      birthday,
+      password,
+      email,
+      code_verification_email,
+    } = req.body;
+    console.log(
+      numberPhone,
+      fullName,
+      gender,
+      birthday,
+      password,
+      email,
+      code_verification_email
+    );
+
     const existedNumberPhone = await User.findOne({ numberPhone });
     if (existedNumberPhone) {
-      res.status(409).send("This number phone invalid");
-    } else {
-      const newPass = await hashPass(password);
-
-      await User.create({
-        numberPhone,
-        fullName,
-        gender,
-        birthday,
-        password: newPass,
+      return res.status(409).json({
+        type: "phone",
+        message: "Số này đã được đăng ký",
       });
-
-      return res.status(200).json({ message: "Register Success" });
     }
+    const existedEmail = await User.findOne({ email });
+    if (existedEmail) {
+      return res.status(409).json({
+        type: "email",
+        message: "Email đã được đăng ký",
+      });
+    }
+    const checkVerificationEmail = await EmailVerification.findOne({ email });
+    if (
+      !checkVerificationEmail ||
+      checkVerificationEmail?.code !== code_verification_email
+    ) {
+      return res.status(400).json({
+        type: "code",
+        message: "không hợp lệ / đã hết hạn",
+      });
+    }
+    const newPass = await hashPass(password);
+
+    await User.create({
+      numberPhone,
+      fullName,
+      gender,
+      birthday,
+      password: newPass,
+      email,
+    });
+
+    return res.status(200).json({ message: "Đăng ký thành công" });
   } catch (error) {
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: {
+        name: error.name,
+        message: error.message || "Lỗi khi đăng ký tài khoản",
+        stack: error.stack,
+      },
+    });
   }
 });
 
@@ -53,17 +100,26 @@ router.post("/update", authorization, checkBody("update"), async (req, res) => {
     const oldUser = await User.findById(_id);
 
     if (!oldUser) {
-      return res.status(404).json({ message: "Id User not found" });
+      return res.status(404).json({ message: "Tài khoản không tồn tại" });
     }
 
-    const { numberPhone, fullName, gender, birthday, password, newPassword } =
-      req.body;
+    const {
+      numberPhone,
+      fullName,
+      gender,
+      birthday,
+      email,
+      code_verification_email,
+      password,
+      newPassword,
+    } = req.body;
 
     const userBody = {
       numberPhone: numberPhone,
       fullName: fullName,
       gender: gender,
       birthday: birthday,
+      email: email,
     };
 
     const userCurrent = {
@@ -71,11 +127,38 @@ router.post("/update", authorization, checkBody("update"), async (req, res) => {
       fullName: oldUser.fullName,
       gender: oldUser.gender,
       birthday: oldUser.birthday,
+      email: oldUser.email,
     };
 
     const areEqual = _.isEqual(userBody, userCurrent);
+
+    if (email !== oldUser.email) {
+      const existedEmail = await User.findOne({
+        email: req.body.email,
+        _id: { $ne: _id }, // Trừ _id hiện tại
+      });
+      if (existedEmail) {
+        return res.status(409).json({
+          type: "email",
+          message: "Email đã được đăng ký",
+        });
+      }
+      const checkVerificationEmail = await EmailVerification.findOne({
+        email,
+      });
+      if (
+        !checkVerificationEmail ||
+        checkVerificationEmail.code !== code_verification_email
+      ) {
+        return res.status(400).json({
+          type: "code",
+          message: "không hợp lệ / đã hết hạn",
+        });
+      }
+    }
+
     if (areEqual && !password && newPassword === "false") {
-      return res.status(200).json({ message: "Update_NotChange Success" });
+      return res.status(200).json({ message: "Cập nhật thành công" });
     }
 
     if (req.body.numberPhone) {
@@ -84,7 +167,10 @@ router.post("/update", authorization, checkBody("update"), async (req, res) => {
         _id: { $ne: _id }, // Trừ _id hiện tại
       });
       if (existedNumberPhone) {
-        return res.status(409).json({ message: "This phone already exists" });
+        return res.status(409).json({
+          type: "phone",
+          message: "Số này đã được đăng ký",
+        });
       }
     }
 
@@ -92,7 +178,10 @@ router.post("/update", authorization, checkBody("update"), async (req, res) => {
     if (password && newPassword !== "false") {
       const checkPass = await comparePass(password, oldUser.password);
       if (!checkPass) {
-        return res.status(400).json({ message: "Old password Fail" });
+        return res.status(400).json({
+          type: "password",
+          message: "Mật khẩu cũ sai",
+        });
       }
       passNewHash = await hashPass(newPassword);
     }
@@ -105,25 +194,37 @@ router.post("/update", authorization, checkBody("update"), async (req, res) => {
         gender,
         birthday,
         password: passNewHash || oldUser.password,
+        email,
       },
       { new: true }
     );
 
     if (!newUser) {
-      return res.status(409).josn({ message: "Update Fail" });
+      return res.status(400).josn({
+        type: "update_fail",
+        message: "Cập nhật thất bại",
+      });
     }
 
     return res.status(200).json({
-      message: "success",
+      message: "Cập nhật thành công",
       data: {
         numberPhone: newUser.numberPhone,
         fullName: newUser.fullName,
         gender: newUser.gender,
         birthday: newUser.birthday,
+        email: newUser.email,
       },
     });
   } catch (error) {
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: {
+        name: error.name,
+        message: error.message || "Lỗi khi cập nhật tài khoản",
+        stack: error.stack,
+      },
+    });
   }
 });
 
@@ -212,6 +313,7 @@ router.get("/get", authorization, async (req, res) => {
       fullName: user.fullName,
       gender: user.gender,
       birthday: user.birthday,
+      email: user.email,
     };
 
     return res.status(200).json(resUser);
@@ -295,7 +397,7 @@ router.get("/search/with/flight", authorization, async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { numberPhone, password } = req.body;
-
+    console.log(numberPhone, password);
     const user = await User.findOne({ numberPhone: numberPhone });
 
     if (!user) {
@@ -330,6 +432,7 @@ router.post("/login", async (req, res) => {
       refreshToken,
     });
   } catch (error) {
+    console.error("Login failed:", error);
     return res.status(500).json({
       message: "Lỗi khi dang nhap",
       error: {
@@ -434,6 +537,64 @@ router.get("/reservation", authorization, async (req, res) => {
       error: {
         name: error.name,
         message: error.message || "Lỗi khi tìm đơn hàng",
+        stack: error.stack,
+      },
+    });
+  }
+});
+
+router.post("/send-verification-code-email", async (req, res) => {
+  try {
+    const { email } = req.body;
+    const emailPattern = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+
+    if (!email || !emailPattern.test(email) || email.endsWith("@gmail.co")) {
+      return res.status(400).json({
+        message: "Email không hợp lệ",
+      });
+    }
+
+    const existedEmail = await EmailVerification.findOne({ email });
+    if (existedEmail) {
+      return res.status(400).json({
+        message: "Email đã được gửi mã xác nhận",
+      });
+    }
+    const code = Math.floor(100000 + Math.random() * 900000);
+    const mailOption = {
+      from: process.env.AUTH_EMAIL,
+      to: email,
+      subject: "Xác minh email",
+      html: `<p>Mã xác minh email của bạn là: ${code}. Mã này có tác dụng trong 5 phút</p>`,
+    };
+    const emailVerification = new EmailVerification({
+      code,
+      email,
+    });
+    await emailVerification.save().then(() => {
+      transporter.sendMail(mailOption, (error, info) => {
+        if (error) {
+          return res.status(500).json({
+            message: "Lỗi khi gửi mã xác nhận",
+            error: {
+              name: error.name,
+              message: error.message || "Lỗi khi gửi mã xác nhận",
+              stack: error.stack,
+            },
+          });
+        }
+        return res.status(200).json({
+          message: "Đã gửi mã xác nhận. Vui lòng kiểm tra email",
+          info,
+        });
+      });
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: {
+        name: error.name,
+        message: error.message || "Lỗi khi gửi mã xác minh email",
         stack: error.stack,
       },
     });

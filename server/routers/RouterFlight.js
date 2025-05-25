@@ -7,7 +7,9 @@ const Flight = require("../models/Flight.js");
 const { authorization } = require("../middleware/authorization");
 const { mongoose } = require("mongoose");
 const _ = require("lodash");
-const rateLimit = require("express-rate-limit");
+//unique string
+const { v4: uuidv4 } = require("uuid");
+const { apiLimiter, transporter } = require("../service/verifyEmail.js");
 const Payment = require("../models/Payment.js");
 const Ticket = require("../models/Ticket.js");
 const { convertDateToVN } = require("../service/convertDateToVN.js");
@@ -265,45 +267,6 @@ router.post("/create", authorization, checkAdmin, async (req, res) => {
   }
 });
 
-const nodemailer = require("nodemailer");
-
-//unique string
-const { v4: uuidv4 } = require("uuid");
-
-let transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  service: "gmail",
-  auth: {
-    user: process.env.AUTH_EMAIL,
-    pass: process.env.AUTH_EMAIL_PASSWORD,
-  },
-});
-
-//testing success
-transporter.verify((error, success) => {
-  if (error) {
-    console.log(error);
-  } else {
-    console.log("Server is ready to send emails");
-    console.log(success);
-  }
-});
-
-const apiLimiter = rateLimit({
-  windowMs: 24 * 60 * 60 * 1000,
-  max: 3,
-  keyGenerator: (req) => {
-    return req.headers["authorization"] || req.ip;
-  },
-  handler: (req, res) => {
-    res.status(429).json({
-      error: "Too many requests",
-      message: "Bạn đã vượt quá giới hạn request. Vui lòng thử lại sau 24h.",
-    });
-  },
-});
 //
 router.get(
   "/create/three-months/send-verify",
@@ -912,11 +875,17 @@ router.post("/get/soghe", async (req, res) => {
     });
 
     const maSoGhePhoThong = tickets
-      .filter((ticket) => ticket.hangVe === "Vé phổ thông")
+      .filter(
+        (ticket) =>
+          ticket.hangVe === "Vé phổ thông" && ticket.trangThaiVe !== "Đã hủy"
+      )
       .map((ticket) => ticket.maSoGhe);
 
     const maSoGheThuongGia = tickets
-      .filter((ticket) => ticket.hangVe === "Vé thương gia")
+      .filter(
+        (ticket) =>
+          ticket.hangVe === "Vé thương gia" && ticket.trangThaiVe !== "Đã hủy"
+      )
       .map((ticket) => ticket.maSoGhe);
 
     return res.status(200).json({

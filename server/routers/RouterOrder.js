@@ -17,19 +17,12 @@ router.post("/create", async (req, res) => {
     airportReturn,
     totalQuantityTickets,
     totalPriceTickets,
-    soGhePhoThongDeparture,
-    soGheThuongGiaDeparture,
-    soGhePhoThongReturn,
-    soGheThuongGiaReturn,
-    email,
   } = req.body;
-  console.log(email);
 
   const now = new Date();
   const fifteenMinutesLater = new Date(now.getTime() + 15 * 60 * 1000);
 
   let createOrder, createPayment, createTickets, createTicketsReturn;
-  let updateFlight, updateFlightReturn;
 
   try {
     // 1️⃣ Tạo đơn hàng trước
@@ -37,7 +30,7 @@ router.post("/create", async (req, res) => {
       userId: _id,
       soLuongVe: totalQuantityTickets,
       tongGia: totalPriceTickets,
-      email,
+      // email,
       expiredAt: fifteenMinutesLater,
     });
 
@@ -64,61 +57,6 @@ router.post("/create", async (req, res) => {
       ),
     ]);
 
-    const flightBeforeUpdate = await Flight.findById({
-      _id: new mongoose.Types.ObjectId(createTickets[0]?.maChuyenBay),
-    });
-    const flightBeforeUpdateReturn =
-      createTicketsReturn.length > 0
-        ? await Flight.findById({
-            _id: new mongoose.Types.ObjectId(
-              createTicketsReturn[0]?.maChuyenBay
-            ),
-          })
-        : null;
-
-    updateFlight = await Flight.findByIdAndUpdate(
-      createTickets[0]?.maChuyenBay,
-      {
-        $inc: {
-          soGhePhoThong: -soGhePhoThongDeparture,
-          soGheThuongGia: -soGheThuongGiaDeparture,
-        },
-      },
-      { new: true }
-    );
-
-    if (
-      (updateFlight && updateFlight?.soGhePhoThong < 0) ||
-      updateFlight?.soGheThuongGia < 0
-    ) {
-      throw new Error(
-        `Không đủ ghế chuyến bay đi, số ghế thường còn lại ${flightBeforeUpdate?.soGhePhoThong} và số ghế thương gia còn lại ${flightBeforeUpdate?.soGheThuongGia}`
-      );
-    }
-
-    updateFlightReturn =
-      createTicketsReturn.length > 0
-        ? await Flight.findByIdAndUpdate(
-            createTicketsReturn[0]?.maChuyenBay,
-            {
-              $inc: {
-                soGhePhoThong: -soGhePhoThongReturn,
-                soGheThuongGia: -soGheThuongGiaReturn,
-              },
-            },
-            { new: true }
-          )
-        : null;
-
-    if (
-      (updateFlightReturn && updateFlightReturn?.soGhePhoThong < 0) ||
-      updateFlightReturn?.soGheThuongGia < 0
-    ) {
-      throw new Error(
-        `Không đủ ghế chuyến bay khứ hồi, số ghế thường còn lại ${flightBeforeUpdateReturn?.soGhePhoThong} và số ghế thương gia còn lại ${flightBeforeUpdateReturn?.soGheThuongGia}`
-      );
-    }
-
     return res.status(200).json({
       idDH: createOrder._id,
       priceOrder: totalPriceTickets,
@@ -127,16 +65,7 @@ router.post("/create", async (req, res) => {
       dataTickets: [...createTickets, ...createTicketsReturn],
     });
   } catch (error) {
-    await rollbackCreateOrder(
-      createOrder?._id,
-      createPayment?._id,
-      updateFlight,
-      updateFlightReturn,
-      soGhePhoThongDeparture,
-      soGheThuongGiaDeparture,
-      soGhePhoThongReturn,
-      soGheThuongGiaReturn
-    );
+    await rollbackCreateOrder(createOrder?._id, createPayment?._id);
 
     return res.status(500).json({
       message: "Internal server error",
@@ -149,38 +78,13 @@ router.post("/create", async (req, res) => {
   }
 });
 
-async function rollbackCreateOrder(
-  orderId,
-  paymentId,
-  updateFlight,
-  updateFlightReturn,
-  soGhePhoThongDeparture,
-  soGheThuongGiaDeparture,
-  soGhePhoThongReturn,
-  soGheThuongGiaReturn
-) {
+async function rollbackCreateOrder(orderId, paymentId) {
   if (!orderId) return;
   await Promise.all([
     DonHang.findByIdAndDelete(orderId),
     paymentId ? Payment.findByIdAndDelete(paymentId) : null,
     Ticket.deleteMany({ maDon: orderId }),
   ]);
-  if (updateFlight) {
-    await Flight.findByIdAndUpdate(updateFlight?._id, {
-      $inc: {
-        soGhePhoThong: +soGhePhoThongDeparture,
-        soGheThuongGia: +soGheThuongGiaDeparture,
-      },
-    });
-  }
-  if (updateFlightReturn) {
-    await Flight.findByIdAndUpdate(updateFlightReturn?._id, {
-      $inc: {
-        soGhePhoThong: +soGhePhoThongReturn,
-        soGheThuongGia: +soGheThuongGiaReturn,
-      },
-    });
-  }
 }
 
 // router get all don hang

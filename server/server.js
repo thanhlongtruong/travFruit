@@ -48,6 +48,8 @@ const allowedOrigins = [
   "https://travfruitv3admin.vercel.app",
   "https://travfruitv3.netlify.app/",
   "https://travfruitv3.netlify.app",
+  "http://192.168.0.111:3000/",
+  "http://192.168.0.111:3000",
 ];
 
 app.use(
