@@ -111,6 +111,7 @@ function History() {
     updateUrl(page, types[index]);
     setOptionTypes(index + 1);
     stateOptionShow([index + 1]);
+    setOptionShow((pre) => [!pre[0], pre[1], pre[2], pre[3], pre[4]]);
   };
 
   const handlePageClick = (event) => {
@@ -182,54 +183,15 @@ function History() {
         </div>
       ) : (
         <>
-          <div className="relative flex items-center w-full h-[42px] my-5 text-xl font-semibold select-none overflow-hidden">
-            {/* <div
-              className={`flex h-[42px] justify-center w-fit items-center right-[12%] absolute ${optionShow[0] ? "opacity-0 pointer-events-none" : "opacity-100"}`}
-            >
-              {isSearch[0] && (
-                <input
-                  type="search"
-                  value={isSearch[1]}
-                  className={`w-[420px] h-full p-2 outline-none border-b font-normal text-lg transition ${isSearch[1] ? "border-b-[#0194f3]" : ""}`}
-                  placeholder="Ngày đặt đơn hàng hoặc mã đơn hàng"
-                  onChange={(event) =>
-                    setIsSearch((pre) => [pre[0], event.target.value])
-                  }
-                />
-              )}
-
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                className={`transition-transform duration-300 cursor-pointer size-7 stroke-[#0194f3] ${!isSearch[0] ? "-rotate-12" : "rotate-90"}`}
-                onClick={() => {
-                  setIsSearch((pre) => [!pre[0], pre[1]]);
-                }}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-                />
-              </svg>
-            </div> */}
-
-            <div
-              className={`absolute w-fit transform -translate-x-1/2 left-[50%] whitespace-nowrap transition-opacity duration-300 ${optionShow[0] || isSearch[0] ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
-              Lịch sử đơn hàng
-            </div>
-
-            {!isSearch[0] && (
-              <div
-                className={`flex h-[42px] w-fit items-center absolute left-[12%]`}>
+          <div className="w-full min-h-full inset-0 flex-1 flex flex-col p-3 md:p-0 overflow-hidden">
+            <div className="w-full h-full overflow-hidden">
+              <div className="md:px-5 gap-x-2 md:gap-x-5 border-b rounded-sm md:border-none md:rounded-none relative flex items-center w-full h-[40px] my-3 md:my-5 text-xl font-semibold select-none">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth="1.5"
-                  className="transition-transform duration-300 cursor-pointer size-7 stroke-[#0194f3]"
+                  className="transition-transform duration-300 cursor-pointer size-6 md:size-7 stroke-[#0194f3]"
                   style={!optionShow[0] ? { transform: "rotate(-90deg)" } : {}}
                   onClick={() =>
                     setOptionShow((pre) => [
@@ -246,83 +208,91 @@ function History() {
                     d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
                   />
                 </svg>
+                {!isSearch[0] && (
+                  <div
+                    className={`bg-zinc-900 rounded overflow-hidden top-0 z-10 font-mono md:font-sans absolute md:bg-transparent transition-opacity duration-300 ${optionShow[0] ? "opacity-100 w-fit md:w-[420px] h-fit md:h-[42px] md:gap-3 flex flex-col md:flex-row md:right-0 ml-10" : "opacity-0 pointer-events-none w-0 h-0"}`}>
+                    {Array.from({ length: 4 }, (_, i) => (
+                      <OptionShowHistoryOrder
+                        index={i}
+                        content={
+                          i === 0
+                            ? "Đã hủy"
+                            : i === 1
+                              ? "Đã thanh toán"
+                              : i === 2
+                                ? "Chưa thanh toán"
+                                : "All"
+                        }
+                        stateChoose={
+                          i === 0
+                            ? optionShow[1]
+                            : i === 1
+                              ? optionShow[2]
+                              : i === 2
+                                ? optionShow[3]
+                                : optionShow[4]
+                        }
+                        handleChooseOptionShow={handleChooseOptionShow}
+                      />
+                    ))}
+                  </div>
+                )}
 
                 <div
-                  className={`ml-3 gap-x-3 w-[420px] h-[42px] transition-opacity duration-300 flex ${optionShow[0] ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-                  {Array.from({ length: 4 }, (_, i) => (
-                    <OptionShowHistoryOrder
-                      index={i}
-                      content={
-                        i === 0
-                          ? "Đã hủy"
-                          : i === 1
-                            ? "Đã thanh toán"
-                            : i === 2
-                              ? "Chưa thanh toán"
-                              : "All"
-                      }
-                      stateChoose={
-                        i === 0
-                          ? optionShow[1]
-                          : i === 1
-                            ? optionShow[2]
-                            : i === 2
-                              ? optionShow[3]
-                              : optionShow[4]
-                      }
-                      handleChooseOptionShow={handleChooseOptionShow}
-                    />
-                  ))}
+                  className={`Typewriter transition-opacity duration-300 ${optionShow[0] || isSearch[0] ? "opacity-0 pointer-events-none w-0 h-0" : "opacity-100 h-fit w-fit whitespace-nowrap"}`}>
+                  <p className="text-neutral-900 font-medium text-sm md:text-lg truncate">
+                    Lịch sử đơn hàng
+                  </p>
                 </div>
               </div>
-            )}
-          </div>
 
-          <div className="px-5 pt-5 border-t">
-            {dataReservation?.length > 0 ? (
-              <HistoryDon
-                dataReservation={dataReservation}
-                isSearch={isSearch}
-                mutationUpdatepdateStatus={mutationUpdatepdateStatus}
-                mutationPay={mutationPay}
-                mutationUpdatePayUrl={mutationUpdatePayUrl}
-              />
-            ) : (
-              <div className="flex items-center select-none gap-11">
-                <img
-                  alt="nodata"
-                  src="https://ik.imagekit.io/tvlk/image/imageResource/2020/07/10/1594367281441-5ec1b573d106b7aec243b19efa02ac56.svg?tr=h-96,q-75,w-96"
-                />
-                <p className="text-center text-gray-500 h-fit">
-                  Không có đơn hàng nào.
-                </p>
+              <div className="md:px-5 md:pt-5 md:border-t">
+                {dataReservation?.length > 0 ? (
+                  <HistoryDon
+                    dataReservation={dataReservation}
+                    isSearch={isSearch}
+                    mutationUpdatepdateStatus={mutationUpdatepdateStatus}
+                    mutationPay={mutationPay}
+                    mutationUpdatePayUrl={mutationUpdatePayUrl}
+                  />
+                ) : (
+                  <div className="flex items-center select-none gap-11">
+                    <img
+                      alt="nodata"
+                      src="https://ik.imagekit.io/tvlk/image/imageResource/2020/07/10/1594367281441-5ec1b573d106b7aec243b19efa02ac56.svg?tr=h-96,q-75,w-96"
+                    />
+                    <p className="text-center text-gray-500 h-fit">
+                      Không có đơn hàng nào.
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
+              {dataReservation?.length > 0 && (
+                <ReactPaginate
+                  className="flex justify-center gap-x-4 rounded md:rounded-md text-base md:text-lg font-mono border p-2 md:p-4"
+                  nextLabel="next >"
+                  onPageChange={handlePageClick}
+                  pageRangeDisplayed={3}
+                  marginPagesDisplayed={2}
+                  pageCount={totalPage}
+                  previousLabel="< previous"
+                  pageClassName="page-item"
+                  pageLinkClassName="page-link"
+                  previousClassName="page-item"
+                  previousLinkClassName="page-link"
+                  nextClassName="page-item"
+                  nextLinkClassName="page-link"
+                  breakLabel="..."
+                  breakClassName="page-item"
+                  breakLinkClassName="page-link"
+                  containerClassName="pagination"
+                  activeClassName="bg-blue-500 text-white rounded-md w-7 h-full text-center"
+                  renderOnZeroPageCount={null}
+                  forcePage={currentPage}
+                />
+              )}
+            </div>
           </div>
-          {dataReservation?.length > 0 && (
-            <ReactPaginate
-              className="flex justify-center gap-x-4 text-lg font-mono border p-4"
-              nextLabel="next >"
-              onPageChange={handlePageClick}
-              pageRangeDisplayed={3}
-              marginPagesDisplayed={2}
-              pageCount={totalPage}
-              previousLabel="< previous"
-              pageClassName="page-item"
-              pageLinkClassName="page-link"
-              previousClassName="page-item"
-              previousLinkClassName="page-link"
-              nextClassName="page-item"
-              nextLinkClassName="page-link"
-              breakLabel="..."
-              breakClassName="page-item"
-              breakLinkClassName="page-link"
-              containerClassName="pagination"
-              activeClassName="bg-blue-500 text-white rounded-md w-7 h-full text-center"
-              renderOnZeroPageCount={null}
-              forcePage={currentPage}
-            />
-          )}
         </>
       )}
     </>
@@ -338,7 +308,7 @@ function OptionShowHistoryOrder({
   return (
     <button
       type="button"
-      className={`${stateChoose ? "bg-[#109AF4] text-white" : "text-[#109AF4]"} select-none flex font-medium p-2 text-base rounded-xl border border-[#109AF4] transition duration-0 hover:duration-700 hover:ease-in-out`}
+      className={`${stateChoose ? "text-[#109AF4]" : "md:text-zinc-700 text-white"} w-full justify-center whitespace-nowrap select-none flex font-medium p-2 text-base border-b md:border-none border-[#109AF4] transition duration-0 hover:duration-700 hover:ease-in-out`}
       onClick={() => handleChooseOptionShow(index)}>
       {content}
     </button>
@@ -519,63 +489,61 @@ function HistoryDon({
       {dataReservation?.map((order, index) => (
         <div
           key={order._id}
-          className={`w-full p-2 mb-5 hover:text-zinc-800 outline-slate-300 hover:duration-500 transition-all overflow-hidden duration-300 relative outline outline-1  rounded-lg select-none min-h-[110px]`}>
+          className={`rounded-md bg-white shadow-md overflow-hidden p-2 w-full mb-5 transition-all duration-300 border-b border-zinc-200 select-none min-h-[110px]`}>
           <div>
             <div
-              className="flex justify-between w-full cursor-pointer"
+              className="font-semibold w-full overflow-hidden cursor-pointer text-stone-800 font-sans"
               onClick={() => handleHistoryVe(index)}>
-              <div className="font-semibold w-full overflow-hidden">
-                <p className="line-clamp-1">
-                  Ngày đặt vé: {convertDateToVNDate(order.createdAt)}
-                </p>
-                <p className="line-clamp-1">Số lượng vé: {order.soLuongVe}</p>
-                <p className="line-clamp-1">
-                  Loại chuyến bay:
-                  {order.tickets.some(
-                    (ticket) =>
-                      ticket?.flights?.loaiChuyenBay === "Chuyến bay khứ hồi"
-                  )
-                    ? " Chuyến bay một chiều và khứ hồi"
-                    : " Chuyến bay một chiều"}
-                </p>
-                <p className="line-clamp-1">
-                  Tổng giá: {order.tongGia}{" "}
-                  {order?.phuongThuc === "Paypal" &&
-                    `~ ${convertVNDtoUSD(order.tongGia)} USD`}
-                </p>
-                <p className="line-clamp-1">
-                  Trạng thái:{" "}
-                  {order.trangThai === "Đã thanh toán" && (
-                    <span className="text-[#0bc175]">{order.trangThai}</span>
-                  )}
-                  {order.trangThai === "Chưa thanh toán" && (
-                    <span className="text-[#ffd000]">{order.trangThai}</span>
-                  )}
-                  {order.trangThai === "Đã hủy" && (
-                    <span className="text-red-600">{order.trangThai}</span>
-                  )}
-                  {order.trangThai ===
-                    "Chưa thanh toán chuyến đi (Đã hủy vé khứ hồi)" && (
-                    <span className="text-[#ffd000]">{order.trangThai}</span>
-                  )}
-                </p>
-                <p className="line-clamp-1">
-                  {(order.trangThai === "Chưa thanh toán" ||
-                    order.trangThai ===
-                      "Chưa thanh toán chuyến đi (Đã hủy vé khứ hồi)") && (
-                    <span className="text-red-500">
-                      • {convertDateToVNDate(order.expiredAt)} đơn hàng sẽ bị
-                      xóa nếu không thanh toán
-                    </span>
-                  )}
-                </p>
-                {order.trangThai === "Đã thanh toán" && order?.phuongThuc && (
-                  <p className="line-clamp-1">
-                    Phương thức thanh toán:{" "}
-                    <span className="text-[#0bc175]">{order?.phuongThuc}</span>
-                  </p>
+              <p className="line-clamp-1">
+                Ngày đặt vé: {convertDateToVNDate(order.createdAt)}
+              </p>
+              <p className="line-clamp-1">Số lượng vé: {order.soLuongVe}</p>
+              <p className="line-clamp-1">
+                Loại chuyến bay:
+                {order.tickets.some(
+                  (ticket) =>
+                    ticket?.flights?.loaiChuyenBay === "Chuyến bay khứ hồi"
+                )
+                  ? " Chuyến bay một chiều và khứ hồi"
+                  : " Chuyến bay một chiều"}
+              </p>
+              <p className="line-clamp-1">
+                Tổng giá: {order.tongGia}{" "}
+                {order?.phuongThuc === "Paypal" &&
+                  `~ ${convertVNDtoUSD(order.tongGia)} USD`}
+              </p>
+              <p className="line-clamp-1">
+                Trạng thái:{" "}
+                {order.trangThai === "Đã thanh toán" && (
+                  <span className="text-[#0bc175]">{order.trangThai}</span>
                 )}
-              </div>
+                {order.trangThai === "Chưa thanh toán" && (
+                  <span className="text-[#ffd000]">{order.trangThai}</span>
+                )}
+                {order.trangThai === "Đã hủy" && (
+                  <span className="text-red-600">{order.trangThai}</span>
+                )}
+                {order.trangThai ===
+                  "Chưa thanh toán chuyến đi (Đã hủy vé khứ hồi)" && (
+                  <span className="text-[#ffd000]">{order.trangThai}</span>
+                )}
+              </p>
+              <p className="line-clamp-1">
+                {(order.trangThai === "Chưa thanh toán" ||
+                  order.trangThai ===
+                    "Chưa thanh toán chuyến đi (Đã hủy vé khứ hồi)") && (
+                  <span className="text-red-500">
+                    • {convertDateToVNDate(order.expiredAt)} đơn hàng sẽ bị xóa
+                    nếu không thanh toán
+                  </span>
+                )}
+              </p>
+              {order.trangThai === "Đã thanh toán" && order?.phuongThuc && (
+                <p className="line-clamp-1">
+                  Phương thức thanh toán:{" "}
+                  <span className="text-[#0bc175]">{order?.phuongThuc}</span>
+                </p>
+              )}
             </div>
 
             {historyVe === index && (
@@ -630,42 +598,30 @@ function HistoryDon({
 }
 
 function HistoryVe({ order }) {
-  const [indexChooseTicket, setIndexChooseTicket] = useState(null);
-
-  const hanldeChooseTicket = useCallback(
-    (index) => {
-      setIndexChooseTicket(indexChooseTicket === index ? null : index);
-    },
-    [indexChooseTicket]
-  );
-
   return (
-    <div className="flex w-full p-2 overflow-x-scroll gap-x-3">
+    <div className="flex w-full p-2 overflow-x-auto gap-x-3">
       {order.tickets &&
         order.tickets.map((ticket, index) => (
-          <div className={`flex w-fit h-fit}`}>
-            <div
-              className={`w-fit h-fit`}
-              onClick={() => hanldeChooseTicket(index)}>
-              <InfoTicket
-                airport={{
-                  loaiChuyenBay: ticket.flights.loaiChuyenBay,
-                  diemBay: ticket.flights.diemBay,
-                  diemDen: ticket.flights.diemDen,
-                  gioBay: ticket.flights.gioBay,
-                  gioDen: ticket.flights.gioDen,
-                  ngayBay: ticket.flights.ngayBay,
-                  ngayDen: ticket.flights.ngayDen,
-                  hangBay: ticket.flights.hangBay,
-                  loaiTuoi: ticket.loaiTuoi,
-                  hangVe: ticket.hangVe,
-                  giaVe: ticket.giaVe,
-                  Ten: ticket.Ten,
-                  ngaySinh: ticket.ngaySinh,
-                  trangThaiVe: ticket.trangThaiVe,
-                }}
-              />
-            </div>
+          <div className={`min-w-fit h-fit`}>
+            <InfoTicket
+              airport={{
+                loaiChuyenBay: ticket.flights.loaiChuyenBay,
+                diemBay: ticket.flights.diemBay,
+                diemDen: ticket.flights.diemDen,
+                gioBay: ticket.flights.gioBay,
+                gioDen: ticket.flights.gioDen,
+                ngayBay: ticket.flights.ngayBay,
+                ngayDen: ticket.flights.ngayDen,
+                hangBay: ticket.flights.hangBay,
+                loaiTuoi: ticket.loaiTuoi,
+                hangVe: ticket.hangVe,
+                giaVe: ticket.giaVe,
+                maSoGhe: ticket.maSoGhe,
+                Ten: ticket.Ten,
+                ngaySinh: ticket.ngaySinh,
+                trangThaiVe: ticket.trangThaiVe,
+              }}
+            />
           </div>
         ))}
     </div>

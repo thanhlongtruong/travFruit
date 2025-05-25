@@ -140,7 +140,6 @@ function ComponentHome() {
         <title>Trang chu travfruit</title>
         <meta name="description" content="Trang chu travfruit" />
       </Helmet>
-      {isShowInterfaceLogin && <InterFaceLogin />}
       {stateFlightShowCalendar && <FlightShowCalendar />}
       {isShowChatbot && <FuncChatbot />}
       {isShowOptionSetting_LoginSuccess && <LoginSuccess />}
@@ -154,9 +153,13 @@ function ComponentHome() {
           </div>
         </div>
       )}
-      <div onClick={handleOffOption} className="w-auto h-full">
+
+      <div
+        onClick={handleOffOption}
+        className={`w-auto h-full ${isShowInterfaceLogin ? "overflow-hidden" : ""}`}>
+        {isShowInterfaceLogin && <InterFaceLogin />}
         <div
-          className={`p-5 w-full h-screen bg-[url('https://ik.imagekit.io/tvlk/image/imageResource/2023/09/27/1695776209619-17a750c3f514f7a8cccde2d0976c902a.png?tr=q-75')] bg-center bg-no-repeat bg-cover`}>
+          className={`p-5 w-full min-h-screen bg-[url('https://ik.imagekit.io/tvlk/image/imageResource/2023/09/27/1695776209619-17a750c3f514f7a8cccde2d0976c902a.png?tr=q-75')] bg-center bg-no-repeat bg-cover`}>
           <div
             className={`overflow-hidden border-2 border-[#0194f3] min-h-[400px] rounded-md bg-[#4444] z-0 w-full`}
             onClick={() =>
@@ -174,19 +177,7 @@ function ComponentHome() {
               </p>
             </div>
 
-            <ComponentSearchFlight
-              div1={`${isMobile ? "px-4" : "px-12"} mb-16`}
-              span="text-[19px] text-white"
-              svgStroke="stroke-[#0194f3] size-8"
-              div2_1="w-fit"
-              div2="w-fit"
-              textDatePicker="text-center"
-              styleLocationShowListAirline={{
-                left: isMobile ? "left-[50%]" : "left-[412px]",
-                top: "top-[78px]",
-              }}
-              topChoosePassenger="top-[78px]"
-            />
+            <ComponentSearchFlight />
           </div>
         </div>
       </div>

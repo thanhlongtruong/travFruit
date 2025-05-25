@@ -1,24 +1,16 @@
 import { CONTEXT } from "../../Context/ContextGlobal.js";
 import { useNavigate } from "react-router-dom";
 import { useContext, useState } from "react";
-import { InstructionSheet } from "../Utils/InstructionSheet.js";
 import { Lunar } from "lunar-javascript";
+import { Info } from "lucide-react";
 import DatePicker from "react-datepicker";
 import vi from "date-fns/locale/vi";
 import "react-datepicker/dist/react-datepicker.css";
+import { NotifySheet } from "./AdjustQuantityv2.js";
 import { registerLocale } from "react-datepicker";
 registerLocale("vi", vi);
 
-export default function ComponentSearchFlight({
-  div1,
-  span,
-  svgStroke,
-  div2_1,
-  div2,
-  textDatePicker,
-  styleLocationShowListAirline,
-  topChoosePassenger,
-}) {
+export default function ComponentSearchFlight() {
   const {
     handleShowAirports,
     showAirports,
@@ -190,15 +182,16 @@ export default function ComponentSearchFlight({
   return (
     <>
       <div
-        className={`flex flex-col md:flex-row gap-4 w-full h-fit p-5 items-start`}>
+        className={`flex flex-col lg:flex-row flex-wrap md:gap-y-4 gap-y-1 w-full h-fit p-5 items-start lg:items-center justify-center`}>
         <div className="flex-1 relative w-fit">
           <div className="flex items-center gap-x-5 w-fit">
             <span
               className={`font-semibold uppercase text-sm tracking-wider text-white md:text-base lg:text-lg`}>
               Nơi đi
             </span>
-            <InstructionSheet
-              content={`Có thể tìm kiếm theo: Tên thành phố, Tên sân bay, mã IATA. Vui lòng chọn địa điểm từ danh sách đề xuất`}
+            <NotifySheet
+              content={`Có thể tìm kiếm theo: thành phố, sân bay, IATA. Vui lòng chọn địa điểm từ danh sách đề xuất`}
+              icon={<Info size={17} stroke="#0194F3" />}
             />
           </div>
           <div
@@ -252,7 +245,6 @@ export default function ComponentSearchFlight({
               AirportsVN={AirportsVN}
               AirportFrom={AirportFrom}
               AirportTo={AirportTo}
-              styleLocationShowListAirline={styleLocationShowListAirline}
             />
           )}
         </div>
@@ -277,8 +269,9 @@ export default function ComponentSearchFlight({
               className={`font-semibold uppercase text-sm tracking-wider text-white md:text-base lg:text-lg`}>
               Nơi đến
             </span>
-            <InstructionSheet
-              content={`Có thể tìm kiếm theo: Tên thành phố, Tên sân bay, mã IATA. Vui lòng chọn địa điểm từ danh sách đề xuất`}
+            <NotifySheet
+              content={`Có thể tìm kiếm theo: thành phố, sân bay, IATA. Vui lòng chọn địa điểm từ danh sách đề xuất`}
+              icon={<Info size={17} stroke="#0194F3" />}
             />
           </div>
           <div
@@ -329,185 +322,53 @@ export default function ComponentSearchFlight({
               AirportsVN={AirportsVN}
               AirportFrom={AirportFrom}
               AirportTo={AirportTo}
-              styleLocationShowListAirline={styleLocationShowListAirline}
             />
           )}
         </div>
       </div>
 
-      <div className={`flex h-full w-full ${div1} items-center`}>
-        <div className={`flex items-end ${div2} gap-x-10 h-fit`}>
-          <div className="relative flex flex-col h-fit w-fit">
-            <span className={`select-none uppercase font-semibold ${span}`}>
-              Hành khách
-            </span>
-            <div
-              onClick={() => {
-                setChoosePassenger(!choosePassenger);
-                handleShowAirports([0, 1, 2], [false, false, false]);
-              }}
-              className="flex items-center p-2 text-white border-b cursor-pointer gap-x-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                className={`${svgStroke} cursor-pointer`}>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"
-                />
-              </svg>
-
-              <span
-                className={`w-full h-full ${span}} font-semibold text-white bg-transparent outline-none -tracking-tighter whitespace-nowrap`}>
-                {editQuantityPassenger[0]} Người lớn, {editQuantityPassenger[1]}{" "}
-                Trẻ em, {editQuantityPassenger[2]} Em bé
-              </span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="size-6">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m19.5 8.25-7.5 7.5-7.5-7.5"
-                />
-              </svg>
-            </div>
-
-            {choosePassenger && (
-              <ul
-                className={`absolute p-3 bg-white ${topChoosePassenger} w-fit`}
-                onClick={(e) => e.stopPropagation()}>
-                <li className="flex text-[#0194f3] font-semibold justify-between mb-2 items-center">
-                  <span className="select-none whitespace-nowrap">
-                    Người lớn (Trên 12 tuổi)
-                  </span>
-                  <div className="flex w-[145px] justify-evenly">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.5"
-                      stroke="currentColor"
-                      className="cursor-pointer size-7"
-                      onClick={() => handleEditQuantityPassenger(0, "Reduce")}>
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                      />
-                    </svg>
-                    <span className="select-none">
-                      {editQuantityPassenger[0]}
-                    </span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.5"
-                      stroke="currentColor"
-                      className="cursor-pointer size-7"
-                      onClick={() =>
-                        handleEditQuantityPassenger(0, "Increase")
-                      }>
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                      />
-                    </svg>
-                  </div>
-                </li>
-                <li className="flex text-[#0194f3] font-semibold justify-between mb-2">
-                  <span className="select-none">Trẻ em (Dưới 12 tuổi)</span>
-                  <div className="flex w-[145px] justify-evenly">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.5"
-                      stroke="currentColor"
-                      className="cursor-pointer size-7"
-                      onClick={() => handleEditQuantityPassenger(1, "Reduce")}>
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                      />
-                    </svg>
-                    <span className="select-none">
-                      {editQuantityPassenger[1]}
-                    </span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.5"
-                      stroke="currentColor"
-                      className="cursor-pointer size-7"
-                      onClick={() =>
-                        handleEditQuantityPassenger(1, "Increase")
-                      }>
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                      />
-                    </svg>
-                  </div>
-                </li>
-                <li className="flex text-[#0194f3] font-semibold justify-between">
-                  <span className="select-none">Em bé (Dưới 2 tuổi)</span>
-                  <div className="flex w-[145px] justify-evenly">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.5"
-                      stroke="currentColor"
-                      className="cursor-pointer size-7"
-                      onClick={() => handleEditQuantityPassenger(2, "Reduce")}>
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                      />
-                    </svg>
-                    <span className="select-none">
-                      {editQuantityPassenger[2]}
-                    </span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.5"
-                      stroke="currentColor"
-                      className="cursor-pointer size-7"
-                      onClick={() =>
-                        handleEditQuantityPassenger(2, "Increase")
-                      }>
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                      />
-                    </svg>
-                  </div>
-                </li>
-              </ul>
-            )}
-          </div>
-
+      <div className="p-5 w-full flex flex-col justify-end items-center h-fit">
+        <button
+          className="w-fit font-semibold uppercase text-sm tracking-wider text-white md:text-base lg:text-lg flex items-center gap-x-2"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOneWayTicket(!oneWayTicket);
+          }}>
+          {oneWayTicket ? (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="2.5"
+              className="stroke-[#0194f3] size-4 md:size-5 lg:size-6 cursor-pointer">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636"
+              />
+            </svg>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="2.5"
+              className="stroke-[#0194f3] size-4 md:size-5 lg:size-6 cursor-pointer">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+              />
+            </svg>
+          )}
+          khứ hồi
+        </button>
+        <div
+          className={`flex flex-col md:flex-row md:flex-wrap w-full h-fit items-start gap-5`}>
           <div
-            className={`flex flex-col border-[#cdd0d1] border-b ${div2_1} gap-x-3 justify-center`}>
+            className={`flex flex-col border-[#cdd0d1] border-b gap-x-3 justify-center md:mr-20`}>
             <span
-              className={`select-none uppercase font-semibold ${span} whitespace-nowrap`}>
+              className={`font-semibold uppercase text-sm tracking-wider text-white md:text-base lg:text-lg`}>
               Ngày đi
             </span>
             <div style={{ position: "relative" }}>
@@ -527,96 +388,223 @@ export default function ComponentSearchFlight({
                   return (
                     <span>
                       {day} <br />
-                      <small style={{ fontSize: "0.7em" }}>
+                      <small className="" style={{ fontSize: "0.7em" }}>
                         {lunarDate.getDay()}/{lunarDate.getMonth()}
                       </small>
                     </span>
                   );
                 }}
-                className={`flex ${span} font-semibold bg-transparent outline-none -tracking-tighter ${textDatePicker} whitespace-nowrap`}
+                className={`text-center text-base text-white lg:text-lg bg-transparent outline-none -tracking-tighter`}
                 portalId="date-picker-portal"
               />
             </div>
           </div>
 
           <div
-            className={`flex flex-col h-fit ${div2_1}  gap-y-1 overflow-hidden`}>
-            <button
-              className="gap-x-3 w-fit flex items-center text-white font-semibold uppercase whitespace-nowrap"
-              onClick={(e) => {
-                e.stopPropagation();
-                setOneWayTicket(!oneWayTicket);
-              }}>
-              {oneWayTicket ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2.5"
-                  className="size-6 stroke-white">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2.5"
-                  className="size-6 stroke-white">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                  />
-                </svg>
-              )}
-              khứ hồi
-            </button>
-
-            <div
-              className={`flex flex-col text-[25px] justify-center border-[#cdd0d1] border-b w-fit gap-x-3 ${oneWayTicket ? "opacity-0 select-none pointer-events-none" : ""}`}>
-              <span
-                className={`select-none uppercase font-semibold ${span} whitespace-nowrap`}>
-                Ngày về
-              </span>
-              <div style={{ position: "relative" }}>
-                <DatePicker
-                  selected={Departure_Return_Date[1]}
-                  onChange={(date) => handlePickDeparture_Return_Date(date, 1)}
-                  dateFormat={"dd/MM/yyyy"}
-                  minDate={
-                    new Date(
-                      Departure_Return_Date[0].getTime() +
-                        2 * 24 * 60 * 60 * 1000
-                    )
-                  }
-                  maxDate={new Date("2030-01-01")}
-                  locale={"vi"}
-                  renderDayContents={(day, date) => {
-                    const lunarDate = Lunar.fromDate(date);
-                    return (
-                      <span>
-                        {day} <br />
-                        <small style={{ fontSize: "0.7em" }}>
-                          {lunarDate.getDay()}/{lunarDate.getMonth()}
-                        </small>
-                      </span>
-                    );
-                  }}
-                  className={`flex font-semibold ${span} bg-transparent outline-none -tracking-tighter ${textDatePicker} whitespace-nowrap w-fit`}
-                  portalId="date-picker-portal"
-                />
-              </div>
+            className={`flex flex-col border-[#cdd0d1] border-b gap-x-3 justify-center transition-all duration-700 ease-linear ${oneWayTicket ? "opacity-0 select-none pointer-events-none h-0 w-0" : ""}`}>
+            <span
+              className={`font-semibold uppercase text-sm tracking-wider text-white md:text-base lg:text-lg`}>
+              Ngày về
+            </span>
+            <div style={{ position: "relative" }}>
+              <DatePicker
+                selected={Departure_Return_Date[1]}
+                onChange={(date) => handlePickDeparture_Return_Date(date, 1)}
+                dateFormat={"dd/MM/yyyy"}
+                minDate={
+                  new Date(
+                    Departure_Return_Date[0].getTime() + 2 * 24 * 60 * 60 * 1000
+                  )
+                }
+                maxDate={new Date("2030-01-01")}
+                locale={"vi"}
+                renderDayContents={(day, date) => {
+                  const lunarDate = Lunar.fromDate(date);
+                  return (
+                    <span>
+                      {day} <br />
+                      <small style={{ fontSize: "0.7em" }}>
+                        {lunarDate.getDay()}/{lunarDate.getMonth()}
+                      </small>
+                    </span>
+                  );
+                }}
+                className={`text-center text-base text-white lg:text-lg bg-transparent outline-none -tracking-tighter`}
+                portalId="date-picker-portal"
+              />
             </div>
           </div>
         </div>
+      </div>
+
+      <div
+        className={`flex gap-5 h-fit w-full p-5 md:items-center flex-wrap justify-between`}>
+        <div className={`relative flex items-end gap-x-10 h-fit gap-5`}>
+          <div className="flex flex-col h-fit w-fit">
+            <span
+              className={`font-semibold uppercase text-sm tracking-wider text-white md:text-base lg:text-lg`}>
+              Hành khách
+            </span>
+            <div
+              onClick={() => {
+                setChoosePassenger(!choosePassenger);
+                handleShowAirports([0, 1, 2], [false, false, false]);
+              }}
+              className="flex items-center text-white border-b cursor-pointer gap-x-3">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                className={`stroke-[#0194f3] size-6 lg:size-8 cursor-pointer`}>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"
+                />
+              </svg>
+
+              <span
+                className={`h-full text-base text-white lg:text-lg bg-transparent outline-none -tracking-tighter whitespace-normal`}>
+                {editQuantityPassenger[0]} Người lớn, {editQuantityPassenger[1]}{" "}
+                Trẻ em, {editQuantityPassenger[2]} Em bé
+              </span>
+
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                stroke="currentColor"
+                className="size-6">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                />
+              </svg>
+            </div>
+          </div>
+          {choosePassenger && (
+            <ul
+              className={`absolute p-2 bg-white bottom-full w-fit rounded`}
+              onClick={(e) => e.stopPropagation()}>
+              <li className="flex text-[#0194f3] gap-x-1 flex-col text-sm lg:text-base md:flex-row font-semibold justify-center md:justify-between mb-2 items-center">
+                <span className="select-none whitespace-nowrap">
+                  Người lớn (Trên 12 tuổi)
+                </span>
+                <div className="flex w-fit gap-x-1 items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    className="cursor-pointer size-6 lg:size-7"
+                    onClick={() => handleEditQuantityPassenger(0, "Reduce")}>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                    />
+                  </svg>
+                  <span className="select-none h-fit text-center w-6">
+                    {editQuantityPassenger[0]}
+                  </span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    className="cursor-pointer size-6 lg:size-7"
+                    onClick={() => handleEditQuantityPassenger(0, "Increase")}>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                    />
+                  </svg>
+                </div>
+              </li>
+              <li className="items-center gap-x-1 flex text-[#0194f3] text-sm lg:text-base font-semibold flex-col md:flex-row justify-center md:justify-between mb-2">
+                <span className="select-none">Trẻ em (Dưới 12 tuổi)</span>
+                <div className="flex w-fit gap-x-1 items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    className="cursor-pointer size-6 lg:size-7"
+                    onClick={() => handleEditQuantityPassenger(1, "Reduce")}>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                    />
+                  </svg>
+                  <span className="select-none h-fit text-center w-6">
+                    {editQuantityPassenger[1]}
+                  </span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    className="cursor-pointer size-6 lg:size-7"
+                    onClick={() => handleEditQuantityPassenger(1, "Increase")}>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                    />
+                  </svg>
+                </div>
+              </li>
+              <li className="items-center gap-x-1 flex text-[#0194f3] text-sm lg:text-base font-semibold flex-col md:flex-row justify-center md:justify-between">
+                <span className="select-none">Em bé (Dưới 2 tuổi)</span>
+                <div className="flex w-fit gap-x-1 items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    className="cursor-pointer size-6 lg:size-7"
+                    onClick={() => handleEditQuantityPassenger(2, "Reduce")}>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                    />
+                  </svg>
+                  <span className="select-none h-fit text-center w-6">
+                    {editQuantityPassenger[2]}
+                  </span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    className="cursor-pointer size-6 lg:size-7"
+                    onClick={() => handleEditQuantityPassenger(2, "Increase")}>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                    />
+                  </svg>
+                </div>
+              </li>
+            </ul>
+          )}
+        </div>
 
         <button
-          className={`${invalid_AirportFrom_AirportTo[0].status || invalid_AirportFrom_AirportTo[1].status ? "bg-slate-500 cursor-not-allowed" : "bg-[#ff5e1f] cursor-pointer"} p-5 rounded-2xl border-4 border-[rgba(205,208,209,0.50)] w-fit h-fit`}
+          className={`${invalid_AirportFrom_AirportTo[0].status || invalid_AirportFrom_AirportTo[1].status ? "bg-slate-500 cursor-not-allowed" : "bg-[#ff5e1f] cursor-pointer"} p-3 md:p-5 m-auto rounded-2xl border-4 border-[rgba(205,208,209,0.50)] w-fit h-fit`}
           type="button"
           onClick={handleSearch}>
           <svg
@@ -644,7 +632,6 @@ const FilterAirport = ({
   type,
   AirportFrom,
   AirportTo,
-  styleLocationShowListAirline,
 }) => {
   const removeAccents = (str) => {
     return str
@@ -655,7 +642,7 @@ const FilterAirport = ({
   return (
     <>
       <ul
-        className={`${showAirports[0] && filteredAirports.length !== 0 ? "min-h-0 max-h-60 overflow-y-auto w-full" : "w-0 h-0 overflow-hidden p-0"} absolute z-10 font-semibold bg-white w-fit tracking-wider transition-all duration-1000`}>
+        className={`${showAirports[0] && filteredAirports.length !== 0 ? "min-h-0 max-h-60 overflow-y-auto w-full" : "w-0 h-0 overflow-hidden p-0"} absolute z-10 font-semibold bg-white w-fit tracking-wider transition-all duration-700 ease-linear rounded-b-[4px] rounded-bl-[4px]`}>
         {filteredAirports
           .filter((item) => {
             const searchAirport =
@@ -686,168 +673,5 @@ const FilterAirport = ({
           ))}
       </ul>
     </>
-  );
-};
-
-const FlightSearchInput = ({
-  AirportsVN,
-  AirportFrom,
-  AirportTo,
-  handleChooseAirport,
-  handleSwapPlaceAirport,
-}) => {
-  const [showFromList, setShowFromList] = useState(false);
-  const [showToList, setShowToList] = useState(false);
-  const [searchFrom, setSearchFrom] = useState("");
-  const [searchTo, setSearchTo] = useState("");
-
-  const handleFromClick = () => {
-    setShowFromList(true);
-    setShowToList(false);
-  };
-
-  const handleToClick = () => {
-    setShowToList(true);
-    setShowFromList(false);
-  };
-
-  const handleFromSelect = (airport) => {
-    handleChooseAirport(airport, "Origin");
-    setShowFromList(false);
-    setSearchFrom("");
-  };
-
-  const handleToSelect = (airport) => {
-    handleChooseAirport(airport, "Destination");
-    setShowToList(false);
-    setSearchTo("");
-  };
-
-  const filteredFromAirports = AirportsVN.filter((airport) => {
-    const searchTerm = searchFrom.toLowerCase();
-    return (
-      airport.city.toLowerCase().includes(searchTerm) ||
-      airport.airport.toLowerCase().includes(searchTerm) ||
-      airport.IATA.toLowerCase().includes(searchTerm)
-    );
-  });
-
-  const filteredToAirports = AirportsVN.filter((airport) => {
-    const searchTerm = searchTo.toLowerCase();
-    return (
-      airport.city.toLowerCase().includes(searchTerm) ||
-      airport.airport.toLowerCase().includes(searchTerm) ||
-      airport.IATA.toLowerCase().includes(searchTerm)
-    );
-  });
-
-  return (
-    <div className="flex flex-col gap-4 w-full max-w-2xl mx-auto p-4">
-      <div className="flex items-center gap-4">
-        <div className="flex-1 relative">
-          <div className="flex items-center border rounded-lg p-2 bg-white">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6 text-blue-500 mr-2">
-              <path
-                d="M3 21H21"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M12 9L15.1924 7.93585C17.317 7.22767 19.6563 7.95843 21 9.75L7.44513 14.0629C5.86627 14.5653 4.1791 13.6926 3.67674 12.1137C3.66772 12.0854 3.65912 12.0569 3.65094 12.0283L3 9.75L5.25 10.875L9 9.75L4.5 3H5.25L12 9Z"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <input
-              type="text"
-              placeholder="Nơi đi"
-              value={searchFrom}
-              onChange={(e) => setSearchFrom(e.target.value)}
-              onClick={handleFromClick}
-              className="w-full outline-none"
-            />
-          </div>
-          {showFromList && (
-            <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {filteredFromAirports.map((airport) => (
-                <div
-                  key={airport.IATA}
-                  onClick={() => handleFromSelect(airport)}
-                  className="p-2 hover:bg-gray-100 cursor-pointer">
-                  {airport.city} ({airport.IATA}) - {airport.airport}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={handleSwapPlaceAirport}
-          className="p-2 rounded-full hover:bg-gray-100">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="1.5"
-            className="w-6 h-6 text-blue-500">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
-            />
-          </svg>
-        </button>
-
-        <div className="flex-1 relative">
-          <div className="flex items-center border rounded-lg p-2 bg-white">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6 text-blue-500 mr-2"
-              transform="rotate(180)">
-              <path
-                d="M3 21H21"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M12 9L15.1924 7.93585C17.317 7.22767 19.6563 7.95843 21 9.75L7.44513 14.0629C5.86627 14.5653 4.1791 13.6926 3.67674 12.1137C3.66772 12.0854 3.65912 12.0569 3.65094 12.0283L3 9.75L5.25 10.875L9 9.75L4.5 3H5.25L12 9Z"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <input
-              type="text"
-              placeholder="Nơi đến"
-              value={searchTo}
-              onChange={(e) => setSearchTo(e.target.value)}
-              onClick={handleToClick}
-              className="w-full outline-none"
-            />
-          </div>
-          {showToList && (
-            <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {filteredToAirports.map((airport) => (
-                <div
-                  key={airport.IATA}
-                  onClick={() => handleToSelect(airport)}
-                  className="p-2 hover:bg-gray-100 cursor-pointer">
-                  {airport.city} ({airport.IATA}) - {airport.airport}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
   );
 };

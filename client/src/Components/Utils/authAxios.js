@@ -6,9 +6,19 @@ const instance = axios.create({
   // baseURL: "https://travfruitv3-server.vercel.app",
   baseURL: "http://localhost:4001",
   timeout: 1000 * 60 * 5,
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
 });
 
-const EXCLUDED_ENDPOINTS = ["/user/login", "/user/register", "/user/logout"];
+const EXCLUDED_ENDPOINTS = [
+  "/user/login",
+  "/user/register",
+  "/user/logout",
+  "/user/send-verification-code-email",
+];
 
 instance.interceptors.request.use(
   function (config) {

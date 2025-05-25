@@ -45,23 +45,20 @@ export function OptionSetting() {
   return (
     <>
       <p
-        className={`select-none flex items-center border-b px-5 py-7 justify-start h-[20%] w-full text-xl font-bold rounded-t-lg rounded-tr-lg ${isTextBg}`}
-      >
+        className={`select-none flex items-center border-b px-5 py-7 justify-start h-[20%] w-full text-xl font-bold rounded-t-lg rounded-tr-lg ${isTextBg}`}>
         Tài khoản của tôi
       </p>
       <div className={`h-fit w-full`} ref={ref}>
         <Link
           className="flex items-center justify-start px-5 py-7 optionWhenLoginSuccess"
-          onClick={() => naviReload(-1)}
-        >
+          onClick={() => naviReload(-1)}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth="1.5"
             stroke="#0369a1"
-            className="w-6 h-6 mr-3 size-6"
-          >
+            className="w-6 h-6 mr-3 size-6">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -73,21 +70,14 @@ export function OptionSetting() {
 
         <Link
           to="/Setting/InfoAccount"
-          onClick={() => {
-            setShowOptionSetting_LoginSuccess(
-              !isShowOptionSetting_LoginSuccess
-            );
-          }}
-          className="flex items-center justify-start px-5 py-7 optionWhenLoginSuccess"
-        >
+          className="flex items-center justify-start px-5 py-7 optionWhenLoginSuccess">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth="1.5"
             stroke="#0369a1"
-            className="w-6 h-6 mr-3 size-6"
-          >
+            className="w-6 h-6 mr-3 size-6">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -99,21 +89,14 @@ export function OptionSetting() {
 
         <Link
           to="/Setting/HistoryTicket"
-          onClick={() => {
-            setShowOptionSetting_LoginSuccess(
-              !isShowOptionSetting_LoginSuccess
-            );
-          }}
-          className="flex items-center justify-start px-5 py-7 optionWhenLoginSuccess"
-        >
+          className="flex items-center justify-start px-5 py-7 optionWhenLoginSuccess">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth="1.5"
             stroke="#0369a1"
-            className="w-6 h-6 mr-3"
-          >
+            className="w-6 h-6 mr-3">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -125,16 +108,14 @@ export function OptionSetting() {
 
         <button
           onClick={handleSetStateLogin_Logout}
-          className="flex items-center justify-start px-5 py-7 optionWhenLoginSuccess"
-        >
+          className="flex items-center justify-start px-5 py-7 optionWhenLoginSuccess">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth="1.5"
             stroke="#0369a1"
-            className="w-6 h-6 mr-3"
-          >
+            className="w-6 h-6 mr-3">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"

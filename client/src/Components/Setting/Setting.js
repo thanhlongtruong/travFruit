@@ -11,15 +11,19 @@ import { useContext } from "react";
 import { CONTEXT } from "../../Context/ContextGlobal";
 import { Helmet } from "react-helmet-async";
 import useDeviceDetect from "../../hooks/useDeviceDetect";
+import { LoginSuccess } from "./StateLoginSucces";
 
 function Setting() {
-  const { isMobile, isTablet, isDesktop } = useDeviceDetect();
   const location = useLocation();
   const isInfoAccount = location.pathname === "/Setting/InfoAccount";
-  console.log(isMobile, isTablet, isDesktop);
 
-  const { QR_VietQR, setQR_VietQR, timeExpired_VietQR, orderId_VietQR } =
-    useContext(CONTEXT);
+  const {
+    QR_VietQR,
+    setQR_VietQR,
+    timeExpired_VietQR,
+    orderId_VietQR,
+    isShowOptionSetting_LoginSuccess,
+  } = useContext(CONTEXT);
 
   return (
     <>
@@ -41,23 +45,19 @@ function Setting() {
           </div>
         </div>
       )}
-      <div className={`w-full h-full bg-slate-100 ${isMobile ? "" : " p-5"}`}>
-        <div
-          className={`${isMobile ? "w-full" : "w-[80%]"} h-full flex gap-x-3 m-auto justify-between`}>
-          {(isTablet || isDesktop) && (
-            <div className="w-0 h-0 lg:w-[30%] lg:h-fit overflow-hidden rounded-lg border bg-white border-[#0194F3] shadow-2xl shadow-blue-500/50">
-              <OptionSetting />
-            </div>
-          )}
-          <div className="w-full lg:w-[65%] h-fit rounded-scrollbar border bg-white shadow-2xl shadow-blue-500/50 border-[#0194F3]">
-            {isInfoAccount ? (
-              <InterFaceLogin registerTrue={true} />
-            ) : (
-              <History />
-            )}
-          </div>
+      {isShowOptionSetting_LoginSuccess && <LoginSuccess />}
+
+      <div
+        className={`md:p-5 md:w-full lg:w-[85%] overflow-hidden min-h-screen md:flex md:gap-x-3 md:m-auto md:justify-between`}>
+        <div className="w-0 h-0 md:w-[33%] md:h-fit overflow-hidden rounded-lg border bg-white border-[#0194F3] shadow-2xl shadow-blue-500/50">
+          <OptionSetting />
+        </div>
+
+        <div className="w-full md:w-[65%] h-fit rounded-scrollbar md:border md:bg-white md:shadow-2xl md:shadow-blue-500/50 md:border-[#0194F3]">
+          {isInfoAccount ? <InterFaceLogin registerTrue={true} /> : <History />}
         </div>
       </div>
+
       <Footer />
     </>
   );

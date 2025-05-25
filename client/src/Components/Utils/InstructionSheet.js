@@ -10,8 +10,7 @@ export function InstructionSheet({ content }) {
               viewBox="0 0 24 24"
               strokeWidth="1.5"
               stroke="#0194F3"
-              className="size-5"
-            >
+              className="size-5">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -20,8 +19,7 @@ export function InstructionSheet({ content }) {
             </svg>
           </div>
           <div
-            className={`absolute font-semibold overflow-hidden whitespace-nowrap left-[50px] z-10 w-0 text-sm text-white bg-gray-700 rounded transition-opacity duration-300 opacity-0 hover-note`}
-          >
+            className={`absolute font-semibold overflow-hidden left-[50px] z-10 w-0 text-sm text-white bg-gray-700 rounded transition-opacity duration-300 opacity-0 hover-note`}>
             <p>{content}</p>
 
             <div className="absolute top-[10px] z-50 w-0 h-0 border-t-8 border-l-8 border-r-8 -left-[10px] border-l-transparent border-r-transparent border-t-gray-700 rotate-90"></div>

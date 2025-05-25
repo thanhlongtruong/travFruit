@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef } from "react";
 import { CONTEXT } from "../Context/ContextGlobal";
 import { Link } from "react-router-dom";
+import { Menu, Minimize } from "lucide-react";
 
 function Header() {
   const {
@@ -8,6 +9,7 @@ function Header() {
     handleShowOptionSetting_LoginSuccess,
     setShowChatbot,
     isShowChatbot,
+    isShowOptionSetting_LoginSuccess,
   } = useContext(CONTEXT);
 
   const url = window.location.href;
@@ -50,21 +52,21 @@ function Header() {
         <span className="uppercase">travfruit</span>
       </Link>
 
-      <ul className="text-base font-semibold uppercase transition-all div-flex-adjust-justify-between w-fit gap-x-10 duration-0 text-[#444444]">
+      <ul className="text-base font-semibold uppercase transition-all div-flex-adjust-justify-between w-fit gap-x-3 md:gap-x-10 duration-0 text-[#444444]">
         {!url.includes("/XemDanhSachChuyenBay") &&
           !url.includes("/XemDanhSachChuyenBay/ThanhToan") && (
             <>
               <li>
                 <Link
                   to="/about"
-                  className="relative flex items-center justify-center p-2 cursor-pointer">
-                  Thông tin về TravFruit
+                  className="font-semibold uppercase text-xs tracking-wider md:text-base lg:text-lg cursor-pointer">
+                  About
                 </Link>
               </li>
               {existUser && !url.includes("/about") && (
                 <>
                   <li
-                    className="relative flex items-center justify-center p-2 cursor-pointer"
+                    className="font-semibold uppercase text-xs tracking-wider md:text-base lg:text-lg cursor-pointer"
                     onClick={() => setShowChatbot(!isShowChatbot)}>
                     Trợ lý
                   </li>
@@ -93,18 +95,26 @@ function Header() {
                   />
                 </svg>
                 <p className="font-mono tracking-tight text-sky-500 drop-shadow-md shadow-black">
-                  Đăng nhập/ Đăng ký
+                  Đăng nhập
                 </p>
               </button>
             </li>
           </>
         )}
         {existUser && !url.includes("/about") && (
-          <button
-            className="rounded-md bg-[#0194f3] p-2 text-white"
-            onClick={handleShowOptionSetting_LoginSuccess}>
-            {existUser.fullName}
-          </button>
+          <>
+            {isShowOptionSetting_LoginSuccess ? (
+              <Minimize
+                className="cursor-pointer stroke-red-400 size-5 md:size-6"
+                onClick={handleShowOptionSetting_LoginSuccess}
+              />
+            ) : (
+              <Menu
+                className="cursor-pointer stroke-teal-400"
+                onClick={handleShowOptionSetting_LoginSuccess}
+              />
+            )}
+          </>
         )}
       </ul>
     </header>

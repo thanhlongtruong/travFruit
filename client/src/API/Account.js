@@ -20,6 +20,8 @@ export const Register = async (data) => {
     gender: data.gender,
     birthday: data.birthday,
     password: data.password,
+    email: data.email,
+    code_verification_email: Number(data.verificationCode),
   });
 };
 
@@ -38,4 +40,8 @@ export const useReservations = (page, type) => {
     queryFn: GetReservaton,
     refetchOnWindowFocus: false,
   });
+};
+
+export const SendVerificationCodeEmail = async (email) => {
+  return await axios.post("/user/send-verification-code-email", { email });
 };

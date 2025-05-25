@@ -1,14 +1,21 @@
-import { memo, useContext, useRef, useState } from "react";
+import { memo, useContext, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { CONTEXT } from "../../Context/ContextGlobal";
-import { Get, Login, Register, Update } from "../../API/Account.js";
+import {
+  Get,
+  Login,
+  Register,
+  SendVerificationCodeEmail,
+  Update,
+} from "../../API/Account.js";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { bouncy } from "ldrs";
+import { bouncy, squircle } from "ldrs";
 
 function InterFaceLogin({ registerTrue = false }) {
   const queryClient = useQueryClient();
 
   bouncy.register();
+  squircle.register();
   const { setShowInterfaceLogin, showNotification } = useContext(CONTEXT);
 
   const user = JSON.parse(localStorage.getItem("user"));
@@ -25,12 +32,14 @@ function InterFaceLogin({ registerTrue = false }) {
     handleSubmit: handleSubmitRegister,
     reset: resetRegister,
     setError: setErrorRegister,
+    watch: watchRegister,
     formState: { errors: errorsRegister },
   } = useForm();
   const {
     register: registerUpdate,
     handleSubmit: handleSubmitUpdate,
     setError: setErrorUpdate,
+    watch: watchUpdate,
     formState: { errors: errorsUpdate },
   } = useForm();
 
@@ -128,23 +137,33 @@ function InterFaceLogin({ registerTrue = false }) {
     mutationFn: Register,
     onSuccess: (response) => {
       setShowInterfaceLogin(false);
-      showNotification("Đăng kí thành công", "Success");
+      showNotification(response?.data?.message, "Success");
     },
     onError: (error) => {
       if (error.response) {
+        if (error?.response?.data?.type === "code") {
+          setErrorRegister("verificationCode", {
+            message: error?.response?.data?.message,
+          });
+        }
         if (error.response.status === 400) {
           setErrorRegister("InternalServerError", {
             message: "Kiểm tra lại thông tin",
           });
         }
-        if (error.response.status === 409) {
+        if (error?.response?.data?.type === "email") {
+          setErrorRegister("email", {
+            message: error?.response?.data?.message,
+          });
+        }
+        if (error?.response?.data?.type === "phone") {
           setErrorRegister("phone", {
-            message: "Số điện thoại đã tồn tại",
+            message: error?.response?.data?.message,
           });
         }
         if (error.response.status === 500) {
           setErrorRegister("InternalServerError", {
-            message: "ServerError",
+            message: error?.response?.data?.message,
           });
         }
       } else {
@@ -166,9 +185,7 @@ function InterFaceLogin({ registerTrue = false }) {
   };
 
   const submitRegister = async (data) => {
-    const response = await mutationRegister.mutateAsync(data);
-    if (response.status === 200) {
-    }
+    await mutationRegister.mutate(data);
   };
 
   const mutationUpdate = useMutation({
@@ -178,30 +195,38 @@ function InterFaceLogin({ registerTrue = false }) {
         localStorage.setItem("user", JSON.stringify(response.data.data));
         queryClient.invalidateQueries("user");
       }
-      showNotification("Cập nhật thông tin thành công", "Success");
+      showNotification(response?.data?.message, "Success");
     },
     onError: (error) => {
       if (error.response) {
         if (error.response.status === 404) {
           setErrorUpdate("InternalServerError", {
-            message: "Tài khoản không tồn tại",
+            message: error?.response?.data?.message,
           });
         }
-        if (error.response.status === 409) {
+        if (error?.response?.data?.type === "code") {
+          setErrorUpdate("verificationCode", {
+            message: error?.response?.data?.message,
+          });
+        }
+        if (error?.response?.data?.type === "phone") {
           setErrorUpdate("phone", {
-            message: "đã tồn tại",
+            message: error?.response?.data?.message,
           });
         }
-        if (error.response.status === 400) {
-          if (error.response.data.message === "Old password Fail") {
-            setErrorUpdate("password", {
-              message: "mật khẩu cũ sai",
-            });
-          }
+        if (error?.response?.data?.type === "email") {
+          setErrorUpdate("email", {
+            message: error?.response?.data?.message,
+          });
         }
-        if (error.response.status === 409) {
+        if (error?.response?.data?.type === "password") {
+          setErrorUpdate("password", {
+            message: error?.response?.data?.message,
+          });
+        }
+        if (error?.response?.data?.type === "update_fail") {
           setErrorUpdate("InternalServerError", {
-            message: "Update Fail",
+            message: error?.response?.data?.message,
           });
         }
       } else {
@@ -217,27 +242,80 @@ function InterFaceLogin({ registerTrue = false }) {
       fullName: data.fullName,
       gender: data.gender,
       birthday: data.birthday,
+      email: data.email,
+      code_verification_email: Number(data.verificationCode),
       password: showChoosePassword && data.password,
       newPassword: showChoosePassword && data.newPassword,
     };
     await mutationUpdate.mutateAsync(payload);
   };
 
+  const [showMessageVerificationCode, setShowMessageVerificationCode] =
+    useState("");
+
+  const mutationSendVerificationCodeEmail = useMutation({
+    mutationFn: SendVerificationCodeEmail,
+    onSuccess: (response) => {
+      setShowMessageVerificationCode(response.data.message);
+    },
+    onError: (error) => {
+      setShowMessageVerificationCode(error.response.data.message);
+    },
+  });
+
+  const handleSendVerificationCode = async () => {
+    const email = registerTrue ? watchUpdate("email") : watchRegister("email");
+    const emailPattern = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+
+    if (!email) {
+      setErrorRegister("email", {
+        message: "Vui lòng nhập email",
+      });
+      return;
+    }
+
+    if (!emailPattern.test(email)) {
+      setErrorRegister("email", {
+        message: "Email không hợp lệ",
+      });
+      return;
+    }
+
+    if (email.endsWith("@gmail.co")) {
+      setErrorRegister("email", {
+        message: "e.g. @gmail.com",
+      });
+      return;
+    }
+    await mutationSendVerificationCodeEmail.mutate(email);
+  };
+
+  const [showInputVerificationCode, setShowInputVerificationCode] =
+    useState(false);
+
+  useEffect(() => {
+    setShowInputVerificationCode(false);
+
+    if (user?.email !== watchUpdate("email")) {
+      setShowInputVerificationCode(true);
+    }
+  }, [watchUpdate("email")]);
+
   return (
     <>
       <div
-        className={`${!registerTrue ? "fixed items-center h-full inset-0" : ` items-start h-fit`} flex justify-center w-full`}>
+        className={`${!registerTrue ? "fixed items-center h-full inset-0 z-[999] p-5 bg-zinc-800/50" : `items-start h-fit p-5 md:p-0`} flex justify-center w-full overflow-hidden`}>
         <div
-          className={`h-fit ${!registerTrue ? "w-[450px] m-auto" : "w-full"}  rounded-lg bg-[#444] p-4`}>
-          <div className="flex items-center w-full text-2xl font-medium mb-7 div-flex-adjust-justify-between h-14 text-slate-700">
+          className={`${!addSVG[0] ? "h-fit" : "h-full"} ${!registerTrue ? "w-full m-auto md:w-[370px]" : "w-full"} overflow-y-auto rounded-md scroll-smooth bg-[#444] no-scrollbar`}>
+          <div className="flex items-start justify-between w-full font-medium h-fit text-slate-700">
             <div
-              className={"Typewriter"}
+              className={"Typewriter p-5 text-white"}
               {...(!addSVG[0]
                 ? registerLogin
                 : registerTrue
                   ? registerUpdate
                   : registerRegister)("InternalServerError")}>
-              <p>
+              <p className="text-base truncate">
                 {errorsRegister.InternalServerError
                   ? errorsRegister.InternalServerError.message
                   : errorsLogin.InternalServerError
@@ -250,24 +328,28 @@ function InterFaceLogin({ registerTrue = false }) {
               </p>
             </div>
 
-            <div
-              className="w-[10%] cursor-pointer"
-              onClick={() => setShowInterfaceLogin(false)}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="2"
-                className="transition duration-200 size-7 hover:stroke-rose-600 stroke-teal-400 hover:duration-500 animate-pulse hover:size-8">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18 18 6M6 6l12 12"
-                />
-              </svg>
-            </div>
+            {!registerTrue && (
+              <div
+                className="w-fit cursor-pointer bg-white rounded-bl-lg"
+                onClick={() => setShowInterfaceLogin(false)}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  className="size-7 stroke-rose-600">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18 18 6M6 6l12 12"
+                  />
+                </svg>
+              </div>
+            )}
           </div>
+
           <form
+            className="p-4"
             onKeyDown={handleKeyDown}
             onSubmit={
               registerTrue
@@ -324,9 +406,9 @@ function InterFaceLogin({ registerTrue = false }) {
               <>
                 <>
                   <div
-                    className={`${registerTrue ? "flex justify-between" : "flex flex-col"}`}>
+                    className={`flex justify-between  ${registerTrue ? "md:flex-row flex-col" : "flex-col"}`}>
                     <div
-                      className={`${registerTrue ? "w-[60%]" : "w-full"} mb-6 inputBox`}>
+                      className={`mb-6 inputBox ${registerTrue ? "md:w-[50%] w-full" : "w-full"}`}>
                       <input
                         className={`${errorsRegister.fullName ? "inputTagBug" : errorsUpdate.fullName ? "inputTagBug" : "inputTag"}`}
                         type="text"
@@ -360,7 +442,7 @@ function InterFaceLogin({ registerTrue = false }) {
                       </span>
                     </div>
                     <div
-                      className={`${registerTrue ? "w-[30%]" : "w-full"} mb-6 inputBox`}>
+                      className={`mb-6 inputBox ${registerTrue ? "md:w-[40%] w-full" : "w-full"}`}>
                       <input
                         className={`${errorsRegister.phone ? "inputTagBug" : errorsUpdate.phone ? "inputTagBug" : "inputTag"}`}
                         type="number"
@@ -393,8 +475,10 @@ function InterFaceLogin({ registerTrue = false }) {
                   </div>
                 </>
 
-                <div className="flex justify-between">
-                  <div className="mb-6 inputBox w-[50%]">
+                <div
+                  className={`flex justify-between  ${registerTrue ? "md:flex-row flex-col" : "flex-col"}`}>
+                  <div
+                    className={`mb-6 inputBox ${registerTrue ? "md:w-[40%] w-full" : "w-full"}`}>
                     <input
                       className={`${errorsRegister.gender ? "inputTagBug" : errorsUpdate.gender ? "inputTagBug" : "inputTag"}`}
                       type="text"
@@ -432,11 +516,14 @@ function InterFaceLogin({ registerTrue = false }) {
                           : "Giới tính"}
                     </span>
                   </div>
-                  <div className="mb-6 inputBox w-[40%]">
+                  <div
+                    className={`mb-6 inputBox ${registerTrue ? "md:w-[50%] w-full" : "w-full"}`}>
                     <input
-                      className={`${errorsRegister.birthday ? "inputTagBug" : errorsUpdate.birthday ? "inputTagBug" : "inputExist"}`}
+                      className={`w-full ${errorsRegister.birthday ? "inputTagBug" : errorsUpdate.birthday ? "inputTagBug" : "inputExist"}`}
                       type="date"
-                      defaultValue={user?.birthday}
+                      defaultValue={
+                        user?.birthday || new Date().toISOString().split("T")[0]
+                      }
                       required
                       {...(registerTrue ? registerUpdate : registerRegister)(
                         "birthday",
@@ -446,16 +533,20 @@ function InterFaceLogin({ registerTrue = false }) {
                             validAge: (value) => {
                               const today = new Date();
                               const birthDate = new Date(value);
-                              const age =
+                              let age =
                                 today.getFullYear() - birthDate.getFullYear();
                               const isBirthdayPassed =
                                 today.getMonth() > birthDate.getMonth() ||
                                 (today.getMonth() === birthDate.getMonth() &&
                                   today.getDate() >= birthDate.getDate());
 
+                              if (!isBirthdayPassed) {
+                                age--;
+                              }
+
                               return (
-                                (age >= 12 && age <= 80 && isBirthdayPassed) ||
-                                "12 đến 80 tuổi"
+                                (age >= 12 && age <= 80) ||
+                                "Tuổi phải từ 12 đến 80"
                               );
                             },
                           },
@@ -506,44 +597,70 @@ function InterFaceLogin({ registerTrue = false }) {
                   </span>
                 </div>
 
-                <div className="flex justify-between items-center gap-2 mb-6">
-                  <div className="w-[50%] inputBox">
-                    <input
-                      className="inputTag"
-                      type="text"
-                      placeholder="Mã xác minh"
-                      {...(registerTrue ? registerUpdate : registerRegister)(
-                        "verificationCode",
-                        {
-                          required: "Vui lòng nhập mã xác minh",
-                          minLength: {
-                            value: 6,
-                            message: "Mã xác minh phải có 6 ký tự",
-                          },
-                          maxLength: {
-                            value: 6,
-                            message: "Mã xác minh phải có 6 ký tự",
-                          },
+                {(!registerTrue || showInputVerificationCode) && (
+                  <div
+                    className={`flex justify-between items-start mb-6 flex-col`}>
+                    <div
+                      className={`w-full inputBox ${registerTrue ? "w-full" : "w-full"}`}>
+                      <input
+                        className={`${errorsRegister.verificationCode ? "inputTagBug" : errorsUpdate.verificationCode ? "inputTagBug" : "inputTag"}`}
+                        type="number"
+                        required
+                        {...(registerTrue ? registerUpdate : registerRegister)(
+                          "verificationCode",
+                          {
+                            required: "mã xác minh",
+                            minLength: {
+                              value: 6,
+                              message: "Mã xác minh có 6 ký tự",
+                            },
+                            maxLength: {
+                              value: 6,
+                              message: "Mã xác minh có 6 ký tự",
+                            },
+                          }
+                        )}
+                      />
+                      <span className="spanTag">
+                        {errorsRegister.verificationCode
+                          ? errorsRegister.verificationCode.message
+                          : errorsUpdate.verificationCode
+                            ? errorsUpdate.verificationCode.message
+                            : "mã xác minh email"}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (mutationSendVerificationCodeEmail.isPending) {
+                          return;
                         }
+                        handleSendVerificationCode();
+                      }}
+                      className="w-fit p-1 border-teal-400 hover:border-teal-500 hover:text-teal-500 font-medium font-mono text-white flex items-center gap-2">
+                      Gửi mã tới email
+                      {mutationSendVerificationCodeEmail.isPending && (
+                        <l-squircle
+                          size="20"
+                          stroke="4"
+                          stroke-length="0.15"
+                          bg-opacity="0.2"
+                          speed="0.9"
+                          color="#14b8a6"
+                        />
                       )}
-                    />
-                    <span className="spanTag">Mã xác minh</span>
+                    </button>
+                    <p
+                      className={`text-xs ${mutationSendVerificationCodeEmail.status === "success" ? "text-teal-500" : mutationSendVerificationCodeEmail.status === "error" ? "text-red-500" : ""}`}>
+                      {showMessageVerificationCode}
+                    </p>
                   </div>
-                  <button
-                    type="button"
-                    className="w-[25%] p-2 border-teal-400 text-teal-400 transition-all duration-200 border rounded-md font-semibold hover:text-white hover:bg-teal-400">
-                    Kiểm tra
-                  </button>
-                  <button
-                    type="button"
-                    className="w-[25%] p-2 border-teal-400 text-teal-400 transition-all duration-200 border rounded-md font-semibold hover:text-white hover:bg-teal-400">
-                    Gửi lại
-                  </button>
-                </div>
+                )}
 
                 {registerTrue && (
                   <button
-                    className={`p-2 border-teal-400 text-teal-400 mb-6 transition-all duration-200 border rounded-md font-semibold hover:text-white`}
+                    className={`p-2 text-xs md:text-base border-teal-400 text-teal-400 mb-6 transition-all duration-200 border rounded-md font-semibold hover:text-white`}
                     ref={refUpdate}
                     type="button"
                     onClick={() => setShowChoosePassword(!showChoosePassword)}>
@@ -624,15 +741,15 @@ function InterFaceLogin({ registerTrue = false }) {
               {registerTrue ? (
                 <>
                   <button
-                    className={`styleLogin flex justify-center`}
+                    className={`styleLogin flex justify-center p-2`}
                     type="submit"
                     ref={refUpdate}>
                     {mutationUpdate.isPending ? (
                       <>
-                        <l-bouncy size="35" speed="1.75" color="white" />
+                        <l-bouncy size="30" speed="1.75" color="white" />
                       </>
                     ) : (
-                      <p className="uppercase">
+                      <p className="uppercase text-xs whitespace-normal md:text-base">
                         Cập nhật thông tin tài khoản
                         {showChoosePassword ? <span> & đổi mật khẩu</span> : ""}
                       </p>
@@ -646,7 +763,7 @@ function InterFaceLogin({ registerTrue = false }) {
                     className={`styleLogin`}
                     type="submit"
                     onClick={() => handleSwapClasses("Log")}>
-                    <p className="flex justify-center uppercase">
+                    <p className="h-fit p-2 text-xs md:text-base flex justify-center items-center uppercase">
                       {addSVG[0] && (
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -654,7 +771,7 @@ function InterFaceLogin({ registerTrue = false }) {
                           viewBox="0 0 24 24"
                           strokeWidth="1.5"
                           stroke="currentColor"
-                          className="size-6 animate-bounce-hozi">
+                          className="size-4 md:size-6 animate-bounce-hozi">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -663,7 +780,7 @@ function InterFaceLogin({ registerTrue = false }) {
                         </svg>
                       )}
                       {mutationLogin.isPending || mutationGet.isPending ? (
-                        <l-bouncy size="35" speed="1.75" color="white" />
+                        <l-bouncy size="30" speed="1.75" color="white" />
                       ) : (
                         "Đăng nhập"
                       )}
@@ -674,7 +791,7 @@ function InterFaceLogin({ registerTrue = false }) {
                     className={`styleRes`}
                     type="submit"
                     onClick={() => handleSwapClasses("Res")}>
-                    <p className="flex justify-center uppercase">
+                    <p className="h-fit p-2 text-xs md:text-base flex justify-center items-center uppercase">
                       {mutationRegister.isPending ? (
                         <l-bouncy size="35" speed="1.75" color="white" />
                       ) : (
@@ -688,7 +805,7 @@ function InterFaceLogin({ registerTrue = false }) {
                           viewBox="0 0 24 24"
                           strokeWidth="1.5"
                           stroke="currentColor"
-                          className="size-6 animate-bounce-hozi">
+                          className="size-4 md:size-6 animate-bounce-hozi">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"

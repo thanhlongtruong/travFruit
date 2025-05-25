@@ -85,7 +85,11 @@ header {
   position: sticky;
   top: 0;
   width: 100%;
-  height: 80px;
+  height: 70px;
+
+  @media screen and (max-width: 768px) {
+    height: fit-content;
+  }
   background: #ffffff;
   padding: 8px;
   transition: 0.5s;
@@ -136,9 +140,11 @@ header ul li button {
 .logo-header {
   position: relative;
   font-size: 1.8em;
+  @media screen and (max-width: 768px) {
+    font-size: 1em;
+  }
   font-weight: bold;
   color: #333;
-  padding: 5px 0;
   justify-content: center;
   overflow: hidden;
 }
@@ -153,7 +159,12 @@ header ul li button {
 }
 
 .icon .logo-header img {
-  transform: translateY(-10px);
+  @media screen and (max-width: 767px) {
+    transform: translateY(-22px);
+  }
+  @media screen and (min-width: 768px) {
+    transform: translateY(-11px);
+  }
 }
 .icon .logo-header span {
   transform: translateY(37px);
@@ -161,19 +172,16 @@ header ul li button {
 
 .Typewriter {
   display: inline-block;
+  width: 100%;
 }
 .Typewriter p {
   text-transform: uppercase;
-  font-size: 1em;
-  letter-spacing: 10px;
+  letter-spacing: 7px;
   font-family: monospace;
   border-right: 5px solid;
   width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  color: rgb(255, 255, 255);
   animation:
-    typing 3s steps(9),
+    typing 3s steps(10),
     cursor 0.5s step-end infinite alternate;
 }
 .Typewriterr {
@@ -213,17 +221,17 @@ header ul li button {
 
 @layer utilities {
   .boxLogRes {
-    @apply relative tracking-[3px] flex w-full h-10 font-semibold gap-x-5 whitespace-nowrap;
+    @apply relative tracking-[3px] flex w-full h-fit font-semibold gap-x-5 whitespace-nowrap;
   }
 
   .boxLogRes .styleLogin:active {
     @apply border-cyan-500 bg-orange-300;
   }
   .boxLogRes .styleLogin {
-    @apply w-full p-2 text-center text-white transition-all duration-200 bg-orange-500 border rounded-md;
+    @apply w-full h-fit text-center text-white transition-all duration-200 bg-orange-500 border rounded-md;
   }
   .boxLogRes .styleRes {
-    @apply bg-black border flex w-fit p-2 text-center text-white rounded-md;
+    @apply bg-black border flex w-fit h-fit text-center text-white rounded-md;
   }
 }
 
@@ -293,7 +301,6 @@ header ul li button {
 .rounded-scrollbar {
   overflow-y: auto;
   border-radius: 8px; /* Bo tròn góc phần tử */
-  background: #fff; /* Đảm bảo nền rõ ràng */
   scrollbar-width: thin; /* Firefox: thanh cuộn mỏng */
   scrollbar-color: #888 #f1f1f1; /* Firefox: màu thumb và track */
 }

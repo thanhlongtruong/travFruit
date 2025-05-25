@@ -1530,7 +1530,7 @@ function ThongTinHanhKhach({
   );
 }
 
-function NotifySheet({ content, icon }) {
+export function NotifySheet({ content, icon }) {
   return (
     <>
       <div className="relative">
@@ -1550,7 +1550,7 @@ function NotifySheet({ content, icon }) {
             {icon}
           </div>
           <div
-            className="absolute font-medium overflow-hidden -top-24 left-1/2 -translate-x-1/2 z-10 max-w-48 min-w-28 text-sm text-white bg-gray-800/95 rounded-lg shadow-lg transition-all duration-200 opacity-0 scale-95 pointer-events-none"
+            className="absolute font-medium overflow-hidden -top-10 left-1/2 -translate-x-1/2 z-10 max-w-48 min-w-28 text-sm text-white bg-gray-800/95 rounded-lg shadow-lg transition-all duration-200 opacity-0 scale-95 pointer-events-none"
             style={{ transform: "translate(-50%, 0) scale(0.95)" }}>
             <div className="p-1">
               <p className="text-center">{content}</p>
