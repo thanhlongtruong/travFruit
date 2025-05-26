@@ -1,6 +1,6 @@
 import { CONTEXT } from "../../Context/ContextGlobal.js";
 import { useNavigate } from "react-router-dom";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Lunar } from "lunar-javascript";
 import { Info } from "lucide-react";
 import DatePicker from "react-datepicker";
@@ -38,6 +38,10 @@ export default function ComponentSearchFlight() {
 
   // State để lưu trạng thái chuyến bay một chiều hay không, để hiển thị lên UI
   const [oneWayTicket, setOneWayTicket] = useState(bayMotChieu);
+
+  useEffect(() => {
+    setOneWayTicket(bayMotChieu);
+  }, [bayMotChieu]);
 
   const handleCheckAllInformationBeforeSearch = ({
     departure,
@@ -131,7 +135,6 @@ export default function ComponentSearchFlight() {
     }).toString();
 
     navigate(`/XemDanhSachChuyenBay?${params}`, { replace: true });
-    navigate(0);
   };
 
   const compareDateSkipTime = (date) => {

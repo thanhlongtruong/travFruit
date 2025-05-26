@@ -11,7 +11,6 @@ import Box from "@mui/material/Box";
 import Slider from "@mui/material/Slider";
 import "react-slideshow-image/dist/styles.css";
 import "react-datepicker/dist/react-datepicker.css";
-import AdjustQuantity from "./AdjustQuantity.js";
 import { CONTEXT } from "../../Context/ContextGlobal.js";
 import Header from "../Header.js";
 import ItemFlight from "./ItemFlight.js";
@@ -93,20 +92,24 @@ function XemDanhSachChuyenBay() {
         dateReturn = new Date(
           dateDeparFormat.getTime() + 2 * 24 * 60 * 60 * 1000
         );
-        setBayMotChieu(true);
       } else {
         if (!returnDate) {
           throw new Error("Return date is required for round trip");
         }
         dateReturn = parseDate(returnDate);
-        setBayMotChieu(false);
       }
+      setBayMotChieu(oneWayTicket_ === "true");
 
       setDeparture_Return_Date([dateDeparFormat, dateReturn]);
     } catch (error) {
       console.error("Error processing search parameters:", error);
     }
   }, []);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    setBayMotChieu(searchParams.get("oneWayTicket") === "true");
+  }, [location.search]);
 
   const { data, isLoading, error } = useSearchFlights({
     searchParams: searchParams.toString(),
@@ -133,12 +136,6 @@ function XemDanhSachChuyenBay() {
       );
     }
   }, [error]);
-
-  const handleDefaultFilter = () => {
-    setFilterPrice(Number(500000).toLocaleString("vi-VN"));
-    setFilterTakeoffTime(["00:00", "24:00"]);
-    setFilterLandingTime(["00:00", "24:00"]);
-  };
 
   const [filterPrice, setFilterPrice] = useState(
     Number(0).toLocaleString("vi-VN")
@@ -430,9 +427,9 @@ function XemDanhSachChuyenBay() {
           </div>
         </div>
 
-        <div className="bg-black rounded lg:rounded-md flex flex-col items-center w-full md:w-[57%] lg:w-[60%] h-[10000px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+        <div className="rounded lg:rounded-md flex flex-col items-center w-full md:w-[57%] lg:w-[60%] h-fit scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           <div
-            className="hidden sticky top-[20px] md:flex items-center shadow-lg shadow-blue-500/30 h-[55px] gap-x-2 w-full rounded-xl p-2 bg-white mb-4"
+            className="hidden sticky md:top-11 lg:top-[80px] z-20 md:flex items-center shadow-lg shadow-blue-500/30 h-fit gap-x-2 w-full rounded lg:rounded-md p-2 bg-white mb-4"
             id="one-way-ticket">
             <button
               type="button"
@@ -540,6 +537,7 @@ function XemDanhSachChuyenBay() {
               }
               setHideDetailItemFlight={setHideDetailItemFlight}
               mutateGheMaSoGhe={mutateGheMaSoGhe}
+              bayMotChieu={bayMotChieu}
             />
           )}
         </div>
@@ -567,9 +565,8 @@ function ShowFlight({
   setStateButtonSelectDepartureAirport,
   setHideDetailItemFlight,
   mutateGheMaSoGhe,
+  bayMotChieu,
 }) {
-  const { convertDateToVNDate, bayMotChieu } = useContext(CONTEXT);
-
   const calculateDuration = (start, end) => {
     const startDate = parse(start, "HH:mm", new Date());
     const endDate = parse(end, "HH:mm", new Date());
@@ -597,14 +594,16 @@ function ShowFlight({
   return (
     <div className="flex flex-col h-fit w-full mt-[2%]">
       {Array.from({ length: bayMotChieu ? 1 : 2 }).map((_, index) => {
-        return index === 0 && oneWayTicket.length === 0 ? (
-          <span
-            key={index}
-            id="one-way-ticket"
-            className="p-5 text-lg font-semibold w-[80%] m-auto text-rose-500 text-center border-dashed">
-            Không còn chuyến bay một chiều nào trong ngày{" "}
-            {convertDateToVNDate(Departure_Return_Date[0]).split(" ")[1]}
-          </span>
+        return index === 0 && oneWayTicket?.length === 0 ? (
+          <div className="flex items-center select-none gap-11">
+            <img
+              alt="nodata"
+              src="https://ik.imagekit.io/tvlk/image/imageResource/2020/07/10/1594367281441-5ec1b573d106b7aec243b19efa02ac56.svg?tr=h-96,q-75,w-96"
+            />
+            <p key={index} className="text-center text-gray-500 h-fit">
+              Không có chuyến bay đi nào.
+            </p>
+          </div>
         ) : (
           <>
             {bayMotChieu === false && index === 1 && (
@@ -617,18 +616,20 @@ function ShowFlight({
                   <span className="mx-4 text-[#444] uppercase">khứ hồi</span>
                   <div className="border-t border-gray-400 flex-grow border-dashed"></div>
                 </div>
-                {bayMotChieu === false && roundtripTicket.length === 0 && (
-                  <span
-                    id="one-way-ticket"
-                    className="p-5 text-lg font-semibold w-[80%] m-auto text-rose-500 text-center border-dashed">
-                    Không có chuyến bay khứ hồi nào trong ngày{" "}
-                    {
-                      convertDateToVNDate(Departure_Return_Date[1]).split(
-                        " "
-                      )[1]
-                    }
-                  </span>
-                )}
+                {!bayMotChieu &&
+                  (!roundtripTicket || roundtripTicket?.length === 0) && (
+                    <div className="flex items-center select-none gap-11">
+                      <img
+                        alt="nodata"
+                        src="https://ik.imagekit.io/tvlk/image/imageResource/2020/07/10/1594367281441-5ec1b573d106b7aec243b19efa02ac56.svg?tr=h-96,q-75,w-96"
+                      />
+                      <p
+                        key={index}
+                        className="text-center text-gray-500 h-fit">
+                        Không có chuyến bay khứ hồi nào.
+                      </p>
+                    </div>
+                  )}
               </>
             )}
             {(index === 0
