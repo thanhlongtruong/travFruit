@@ -656,7 +656,9 @@ router.get("/search", authorization, async (req, res) => {
         diemDen: decodedArrival,
         ngayBay: departureDate,
         loaiChuyenBay: "Chuyến bay đi",
-      }),
+      }).select(
+        "_id diemBay diemDen ngayBay gioBay ngayDen gioDen hangBay loaiChuyenBay gia soGhePhoThong soGheThuongGia"
+      ),
     ];
 
     if (oneWayTicket === "false") {
@@ -666,13 +668,39 @@ router.get("/search", authorization, async (req, res) => {
           diemDen: decodedDeparture,
           ngayBay: returnDate,
           loaiChuyenBay: "Chuyến bay khứ hồi",
-        })
+        }).select(
+          "_id diemBay diemDen ngayBay gioBay ngayDen gioDen hangBay loaiChuyenBay gia soGhePhoThong soGheThuongGia"
+        )
       );
     }
 
     let [departureFlights, returnFlights = []] = await Promise.all(
       flightQueries
     );
+
+    await Promise.all(
+      departureFlights.map(async (flight) => {
+        const { maSoGhePhoThong, maSoGheThuongGia } = await getGheByFlightId(
+          flight._id
+        );
+        flight.soGhePhoThong = flight.soGhePhoThong - maSoGhePhoThong.length;
+        flight.soGheThuongGia = flight.soGheThuongGia - maSoGheThuongGia.length;
+      })
+    );
+
+    // Thêm thông tin số ghế còn lại cho chuyến bay về (nếu có)
+    await Promise.all(
+      returnFlights.map(async (flight) => {
+        const { maSoGhePhoThong, maSoGheThuongGia } = await getGheByFlightId(
+          flight._id
+        );
+        flight.soGhePhoThong = flight.soGhePhoThong - maSoGhePhoThong.length;
+        flight.soGheThuongGia = flight.soGheThuongGia - maSoGheThuongGia.length;
+      })
+    );
+
+    // Bây giờ có thể log ra để kiểm tra
+    console.log(departureFlights, returnFlights);
 
     if (!departureFlights.length && !returnFlights.length) {
       return res.status(404).json({
@@ -697,57 +725,6 @@ router.get("/search", authorization, async (req, res) => {
     const findPaymentsRe = await Payment.find({
       cbIdRe: { $in: returnFlights_id },
     });
-
-    const findTickets = await Ticket.find({
-      maChuyenBay: { $in: findPayments.map((payment) => payment.cbId) },
-      maDon: { $in: findPayments.map((payment) => payment.orderId) },
-    });
-
-    const findTicketsRe =
-      findPaymentsRe.length > 0
-        ? await Ticket.find({
-            maChuyenBay: { $in: findPayments.map((payment) => payment.cbIdRe) },
-            maDon: { $in: findPaymentsRe.map((payment) => payment.orderId) },
-          })
-        : [];
-
-    const countTicketDepar = findPayments.map((payment) => {
-      return findTickets.filter(
-        (ticket) =>
-          ticket.hangVe === "Vé phổ thông" &&
-          ticket.maChuyenBay === payment.cbId
-      ).length;
-    });
-
-    const countTicketDeparBus = findPayments.map((payment) => {
-      return findTickets.filter(
-        (ticket) =>
-          ticket.hangVe === "Vé thương gia" &&
-          ticket.maChuyenBay === payment.cbId
-      ).length;
-    });
-
-    const countTicketRe =
-      findPaymentsRe.length > 0
-        ? findPaymentsRe.map((payment) => {
-            return findTicketsRe.filter(
-              (ticket) =>
-                ticket.hangVe === "Vé phổ thông" &&
-                ticket.maChuyenBay === payment.cbIdRe
-            ).length;
-          })
-        : [];
-
-    const countTicketReBus =
-      findPaymentsRe.length > 0
-        ? findPaymentsRe.map((payment) => {
-            return findTicketsRe.filter(
-              (ticket) =>
-                ticket.hangVe === "Vé thương gia" &&
-                ticket.maChuyenBay === payment.cbIdRe
-            ).length;
-          })
-        : [];
 
     const paymentExpiredDepar = findPayments.filter(
       (payment) =>
@@ -776,32 +753,6 @@ router.get("/search", authorization, async (req, res) => {
             $in: paymentExpired_concat.map((payment) => payment.orderId),
           },
         }),
-        Flight.bulkWrite(
-          paymentExpiredDepar.map((p, i) => ({
-            updateOne: {
-              filter: { _id: new mongoose.Types.ObjectId(p.cbId) },
-              update: {
-                $inc: {
-                  soGhePhoThong: countTicketDepar[i] || 0,
-                  soGheThuongGia: countTicketDeparBus[i] || 0,
-                },
-              },
-            },
-          }))
-        ),
-        Flight.bulkWrite(
-          paymentExpiredRe.map((p, i) => ({
-            updateOne: {
-              filter: { _id: new mongoose.Types.ObjectId(p.cbIdRe) },
-              update: {
-                $inc: {
-                  soGhePhoThong: countTicketRe[i] || 0,
-                  soGheThuongGia: countTicketReBus[i] || 0,
-                },
-              },
-            },
-          }))
-        ),
       ]);
 
       departureFlights = await Flight.find({
@@ -866,10 +817,8 @@ router.get("/search", authorization, async (req, res) => {
   }
 });
 
-router.post("/get/soghe", async (req, res) => {
+async function getGheByFlightId(idFlight) {
   try {
-    const { idFlight } = req.body;
-
     const tickets = await Ticket.find({
       maChuyenBay: idFlight,
     });
@@ -887,6 +836,26 @@ router.post("/get/soghe", async (req, res) => {
           ticket.hangVe === "Vé thương gia" && ticket.trangThaiVe !== "Đã hủy"
       )
       .map((ticket) => ticket.maSoGhe);
+
+    return { maSoGhePhoThong, maSoGheThuongGia };
+  } catch (error) {
+    throw new Error(`Lỗi khi lấy số ghế: ${error.message}`);
+  }
+}
+
+router.post("/get/soghe", async (req, res) => {
+  try {
+    const { idFlight } = req.body;
+
+    if (!idFlight) {
+      return res.status(400).json({
+        message: "_id chuyến bay null",
+      });
+    }
+
+    const { maSoGhePhoThong, maSoGheThuongGia } = await getGheByFlightId(
+      idFlight
+    );
 
     return res.status(200).json({
       message: "Lấy số ghế thành công",
