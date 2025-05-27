@@ -84,6 +84,7 @@
     "autoprefixer": "^10.4.21",
     "craco": "^0.0.3",
     "cross-env": "^7.0.3",
+    "daisyui": "^5.0.38",
     "postcss": "^8.5.3",
     "prerender-spa-plugin": "^3.4.0",
     "prettier": "^3.3.2",

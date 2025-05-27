@@ -24,6 +24,7 @@ import { Helmet } from "react-helmet-async";
 import AdjustQuantityv2 from "./AdjustQuantityv2.js";
 import { useMutation } from "@tanstack/react-query";
 import Footer from "../Footer.js";
+import { calculateDuration } from "../Utils/tinhThoiGianBay.js";
 
 function XemDanhSachChuyenBay() {
   const {
@@ -568,15 +569,6 @@ function ShowFlight({
   bayMotChieu,
 }) {
   const { showNotification } = useContext(CONTEXT);
-
-  const calculateDuration = (start, end) => {
-    const startDate = parse(start, "HH:mm", new Date());
-    const endDate = parse(end, "HH:mm", new Date());
-    const diffInMinutes = differenceInMinutes(endDate, startDate);
-    const hours = Math.floor(diffInMinutes / 60);
-    const minutes = diffInMinutes % 60;
-    return `${hours} giờ ${minutes} phút`;
-  };
 
   const toMinutes = (time) => {
     const [hours, minutes] = time.split(":").map(Number);
