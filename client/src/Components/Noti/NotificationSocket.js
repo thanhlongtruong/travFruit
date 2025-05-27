@@ -8,16 +8,14 @@ function NotificationSocket() {
 
   return (
     <div
-      className={`fixed items-start h-2/3 overflow-hidden z-50 flex justify-center w-1/3 bg-white right-3 top-24 rounded-md`}
-    >
+      className={`fixed items-start h-2/3 overflow-hidden z-50 flex justify-center w-1/3 bg-white right-3 top-24 rounded-md`}>
       <div className="flex flex-col border-b w-full p-4">
         <h1 className="uppercase font-semibold text-lg tracking-wider">
           Thông báo
         </h1>
         <div className="flex items-center gap-x-3">
           <div
-            className={`${operatingStatus === "Online" ? "bg-green-500" : "bg-red-600"} rounded-full w-3 h-3 text-center text-white text-xs font-semibold`}
-          ></div>
+            className={`${operatingStatus === "Online" ? "bg-green-500" : "bg-red-600"} rounded-full w-3 h-3 text-center text-white text-xs font-semibold`}></div>
           <h4 className="text-sm">{operatingStatus}</h4>
         </div>
       </div>
@@ -97,31 +95,29 @@ export function Notification() {
     <div
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`h-20 w-80 overflow-hidden fixed top-24 right-[50px] z-[999] duration-700 transition-all cursor-pointer flex items-center bg-white shadow-lg border rounded-md ${
+      className={`min-h-12 md:h-16 lg:h-20 min-w-fit max-w-60 md:w-80 overflow-hidden fixed top-12 lg:top-[5.3rem] right-5 md:right-[50px] z-[999] duration-700 transition-all cursor-pointer flex items-center bg-white shadow-lg border rounded-md ${
         type === "Warn"
           ? "border-yellow-400"
           : type === "Success"
             ? "border-green-400"
             : "border-red-400"
-      }`}
-    >
+      }`}>
       <div className="flex items-center w-full p-1">
         {type === "Warn" ? (
-          <TriangleAlert className="stroke-yellow-400 size-6 flex-shrink-0" />
+          <TriangleAlert className="stroke-yellow-400 size-5 md:size-6 flex-shrink-0" />
         ) : type === "Success" ? (
-          <CircleCheckBig className="stroke-green-400 size-6 flex-shrink-0" />
+          <CircleCheckBig className="stroke-green-400 size-5 md:size-6 flex-shrink-0" />
         ) : (
-          <CloudAlert className="stroke-red-400 size-6 flex-shrink-0" />
+          <CloudAlert className="stroke-red-400 size-5 md:size-6 flex-shrink-0" />
         )}
         <p
-          className={`ml-3 font-normal font-mono ${
+          className={`ml-3 font-normal text-sm md:text-base font-mono ${
             type === "Warn"
               ? "text-yellow-400"
               : type === "Success"
                 ? "text-green-400"
                 : "text-red-400"
-          }`}
-        >
+          }`}>
           {message}
         </p>
       </div>

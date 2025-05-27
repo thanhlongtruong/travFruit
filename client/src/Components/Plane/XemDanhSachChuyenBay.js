@@ -567,6 +567,8 @@ function ShowFlight({
   mutateGheMaSoGhe,
   bayMotChieu,
 }) {
+  const { showNotification } = useContext(CONTEXT);
+
   const calculateDuration = (start, end) => {
     const startDate = parse(start, "HH:mm", new Date());
     const endDate = parse(end, "HH:mm", new Date());
@@ -682,8 +684,8 @@ function ShowFlight({
                         diemDen={flight.diemDen}
                         ngayDen={flight.ngayDen}
                         gia={flight.gia}
-                        ThuongGia={flight.soGheThuongGia}
-                        PhoThong={flight.soGhePhoThong}
+                        soGheThuongGia={flight.soGheThuongGia}
+                        soGhePhoThong={flight.soGhePhoThong}
                         trangThaiChuyenBay={flight.trangThaiChuyenBay}
                         //
                         thoigianBay={calculateDuration(
@@ -701,7 +703,7 @@ function ShowFlight({
                         <button
                           id={flight._id}
                           ref={(el) => (itemRefs.current[indexF] = el)}
-                          className="bg-[#0194F3] right-3 absolute bottom-6 text-white w-fit h-fit px-[8px] py-[4px] md:px-[20px] md:py-[7px] mt-[30px] rounded-lg"
+                          className="bg-[#0194F3] tracking-wider right-3 absolute bottom-6 font-mono text-white w-fit h-fit px-[8px] py-[4px] md:px-[20px] md:py-[7px] mt-[30px] rounded-md lg:rounded-lg text-sm md:text-base"
                           onMouseEnter={() =>
                             setStateButtonSelectDepartureAirport(true)
                           }
@@ -722,7 +724,7 @@ function ShowFlight({
                         selectedDepartureAirport[0]?._id === flight._id ? (
                         <button
                           ref={(el) => (itemRefs.current[indexF] = el)}
-                          className="bg-red-600 right-3 absolute bottom-6 text-white w-fit h-fit px-[8px] py-[4px] md:px-[20px] md:py-[7px] mt-[30px] rounded-lg"
+                          className="bg-red-600 tracking-wider right-3 absolute bottom-6 font-mono text-white w-fit h-fit px-[8px] py-[4px] md:px-[20px] md:py-[7px] mt-[30px] rounded-md lg:rounded-lg text-sm md:text-base"
                           onMouseLeave={() =>
                             setStateButtonSelectDepartureAirport(false)
                           }
@@ -737,9 +739,16 @@ function ShowFlight({
                       ) : (
                         <button
                           ref={(el) => (itemRefs.current[indexF] = el)}
-                          className={`${passengerChooseDeparture ? "opacity-50" : ""} bg-[#0194F3] right-3 absolute bottom-6 text-white w-fit h-fit px-[8px] py-[4px] md:px-[20px] md:py-[7px] mt-[30px] rounded-lg`}
+                          className={`${passengerChooseDeparture ? "opacity-50" : ""} bg-[#0194F3] tracking-wider right-3 absolute bottom-6 font-mono text-white w-fit h-fit px-[8px] py-[4px] md:px-[20px] md:py-[7px] mt-[30px] rounded-md lg:rounded-lg text-sm md:text-base`}
                           onClick={() => {
                             if (mutateGheMaSoGhe.isPending) {
+                              return;
+                            }
+                            if (passengerChooseDeparture) {
+                              showNotification(
+                                "Bạn đã chọn chuyến bay khác",
+                                "Warn"
+                              );
                               return;
                             }
                             hanldeOpenAdjustQuantity_SelectedAirport(
@@ -749,8 +758,6 @@ function ShowFlight({
                           }}>
                           {mutateGheMaSoGhe.isPending ? (
                             <l-bouncy size="30" speed="1.75" color="white" />
-                          ) : passengerChooseDeparture ? (
-                            "Bạn đã chọn chuyến bay khác"
                           ) : (
                             "Chọn"
                           )}
@@ -760,9 +767,16 @@ function ShowFlight({
                     {index === 1 && !bayMotChieu && (
                       <button
                         ref={(el) => (itemRefs.current[indexF] = el)}
-                        className={`${!passengerChooseDeparture ? "bg-slate-600" : "bg-[#0194F3]"} right-3 absolute bottom-6 text-white w-fit h-fit px-[8px] py-[4px] md:px-[20px] md:py-[7px] mt-[30px] rounded-lg`}
+                        className={`${!passengerChooseDeparture ? "bg-slate-600" : "bg-[#0194F3]"} tracking-wider right-3 absolute bottom-6 font-mono text-white w-fit h-fit px-[8px] py-[4px] md:px-[20px] md:py-[7px] mt-[30px] rounded-md lg:rounded-lg text-sm md:text-base`}
                         onClick={() => {
                           if (mutateGheMaSoGhe.isPending) {
+                            return;
+                          }
+                          if (!passengerChooseDeparture) {
+                            showNotification(
+                              "Bạn chưa chọn chuyến bay đi",
+                              "Warn"
+                            );
                             return;
                           }
                           hanldeOpenAdjustQuantity_SelectedAirport(
@@ -772,8 +786,6 @@ function ShowFlight({
                         }}>
                         {mutateGheMaSoGhe.isPending ? (
                           <l-bouncy size="30" speed="1.75" color="white" />
-                        ) : !passengerChooseDeparture ? (
-                          "Bạn chưa chọn chuyến bay đi"
                         ) : (
                           "Chọn"
                         )}

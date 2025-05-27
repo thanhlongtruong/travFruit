@@ -670,7 +670,7 @@ function AdjustQuantityv2({
   };
 
   return (
-    <div className="font-mono overflow-hidden fixed inset-0 z-[101] grid grid-cols-1 md:grid-cols-6 p-5 gap-5 w-full h-full bg-white/10 backdrop-brightness-75">
+    <div className="font-mono overflow-hidden fixed inset-0 z-[101] flex flex-wrap lg:grid grid-cols-6 p-5 gap-5 w-full h-full bg-white/10 backdrop-brightness-75">
       <AnimatePresence>
         {showPassengerInfo && (
           <motion.div
@@ -749,12 +749,16 @@ function AdjustQuantityv2({
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
                   onClick={() => {
                     setOpenAdjustQuantity(false);
                     setHideDetailItemFlight(true);
                   }}
                   className="absolute right-5 top-0 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
-                  <SquareX size={24} className="text-gray-600" />
+                  <SquareX
+                    size={24}
+                    className="text-gray-600 hover:stroke-red-500"
+                  />
                 </motion.button>
                 {Array.from({ length: objReturn ? 2 : 1 }, (_, i) => (
                   <>

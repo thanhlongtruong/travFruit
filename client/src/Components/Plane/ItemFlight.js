@@ -1,6 +1,7 @@
 import { memo, useContext } from "react";
 import { CONTEXT } from "../../Context/ContextGlobal";
 import ItemDetailFlight from "./ItemDetailFlight.js";
+import { NotifySheet } from "./AdjustQuantityv2";
 
 const ItemFlight = (isFlight) => {
   const { hideDetailItemFlight, openAdjustQuantity } = useContext(CONTEXT);
@@ -9,7 +10,7 @@ const ItemFlight = (isFlight) => {
     <>
       <button
         type="button"
-        className="h-[130px] flex-wrap w-full bg-white p-3 flex justify-between items-center">
+        className="h-[130px] flex-wrap w-full bg-white p-2 md:p-3 flex justify-start items-center gap-x-2">
         <div className="flex items-center font-semibold sm:text-2xl gap-x-3 w-fit h-fit">
           <div className="flex flex-col items-center gap-y-1">
             <span className="text-sm font-semibold text-[#687176]">
@@ -23,10 +24,12 @@ const ItemFlight = (isFlight) => {
             <p className="text-sm font-semibold text-[#687176]">
               {isFlight.thoigianBay}
             </p>
-            <div className="flex flex-row items-center w-full">
-              <div className="w-[12px] md:w-[20px] h-[12px] md:h-[20px] border-2 border-[#687172] rounded-full"></div>
-              <div className="w-full h-fit border-[1px] border-[#687172]"></div>
-              <div className="w-[12px] md:w-[20px] h-[12px] md:h-[20px] border-2 border-[#687172] bg-[#687172] rounded-full"></div>
+            <div className="flex items-center w-full">
+              <div className="w-[12px] md:size-4 h-[12px] border-2 border-[#687172] rounded-full"></div>
+              <div className="relative flex-1 h-[2px] bg-[#687172] mx-1 overflow-hidden">
+                <div className="absolute top-0 left-0 h-full w-3 bg-gradient-to-r from-green-500 to-green-300 animate-progress"></div>
+              </div>
+              <div className="w-[12px] md:size-4 h-[12px] border-2 border-[#687172] bg-[#687172] rounded-full"></div>
             </div>
             <p className="text-sm font-semibold text-[#687176]">
               {isFlight.loaiChuyenBay}
@@ -82,17 +85,42 @@ const ItemFlight = (isFlight) => {
             /khách
           </span>
         </div>
+
+        <NotifySheet
+          content={`Số ghế phổ thông còn lại: ${isFlight.soGhePhoThong} - Số ghế thương gia còn lại: ${isFlight.soGheThuongGia}`}
+          icon={
+            <div className="flex items-center gap-x-1">
+              <p className="text-sm font-semibold text-[#687176]">
+                PT:{" "}
+                <span
+                  className={`${
+                    isFlight.soGhePhoThong > 0
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}>
+                  {isFlight.soGhePhoThong}
+                </span>
+              </p>
+              <p className="text-sm font-semibold text-[#687176]">
+                TG:{" "}
+                <span
+                  className={`${
+                    isFlight.soGheThuongGia > 0
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}>
+                  {isFlight.soGheThuongGia}
+                </span>
+              </p>
+            </div>
+          }
+        />
       </button>
       {hideDetailItemFlight && (
         <ItemDetailFlight
           hangBay={isFlight.hangBay}
-          loaiChuyenBay={isFlight.loaiChuyenBay}
-          ThuongGia={isFlight.ThuongGia}
-          PhoThong={isFlight.PhoThong}
-          thoigianBay={isFlight.thoigianBay}
           ngayBay={isFlight.ngayBay}
           ngayDen={isFlight.ngayDen}
-          trangThaiChuyenBay={isFlight.trangThaiChuyenBay}
         />
       )}
     </>

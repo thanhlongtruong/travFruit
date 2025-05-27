@@ -14,6 +14,15 @@ module.exports = {
           "50%": { transform: "translateX(-25%)" },
         },
       },
+      animation: {
+        progress: "progressMove 2s linear infinite",
+      },
+      keyframes: {
+        progressMove: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(calc(100% + 60px))" },
+        },
+      },
     },
   },
   plugins: [
