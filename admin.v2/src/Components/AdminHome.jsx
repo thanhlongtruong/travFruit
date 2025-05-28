@@ -35,8 +35,7 @@ export default function AdminHome({ type }) {
             <div className="flex items-center justify-between p-4">
               <Link
                 to="/home/chuyenbay"
-                className="hover:opacity-80 whitespace-nowrap"
-              >
+                className="hover:opacity-80 whitespace-nowrap">
                 Chuyến bay
               </Link>
 
@@ -56,14 +55,12 @@ export default function AdminHome({ type }) {
               <div className="flex flex-col gap-y-3">
                 <Link
                   to="/home/chuyenbay/add"
-                  className="hover:opacity-80 whitespace-nowrap ml-8 text-sm"
-                >
+                  className="hover:opacity-80 whitespace-nowrap ml-8 text-sm">
                   Thêm chuyến bay
                 </Link>
                 <Link
                   to="/home/chuyenbay/create3month"
-                  className="hover:opacity-80 whitespace-nowrap ml-8 text-sm"
-                >
+                  className="hover:opacity-80 whitespace-nowrap ml-8 text-sm">
                   Tạo cho 3 tháng
                 </Link>
               </div>
@@ -75,21 +72,18 @@ export default function AdminHome({ type }) {
           </Link>
 
           <Link
-            to="https://travfruitv3.vercel.app/"
-            className="p-4 hover:opacity-80"
-          >
+            to="https://travfruitv4.vercel.app/"
+            className="p-4 hover:opacity-80">
             Go to client
           </Link>
           <Link
-            to="https://github.com/thanhlongtruong/vercel-travrel"
-            className="p-4 hover:opacity-80"
-          >
+            to="https://github.com/thanhlongtruong/travFruit"
+            className="p-4 hover:opacity-80">
             Go to Github
           </Link>
           <button
             onClick={mututionLogout.mutate}
-            className="p-4 hover:opacity-80 text-left"
-          >
+            className="p-4 hover:opacity-80 text-left">
             {mututionLogout.isPending ? (
               <l-bouncy size="30" speed="1.75" color="white" />
             ) : (
