@@ -23,7 +23,7 @@ function App() {
         <Helmet>
           <link
             rel="canonical"
-            href={`https://travfruitv3.vercel.app${location.pathname === "/" ? "" : location.pathname}`}
+            href={`https://travfruitv4.vercel.app${location.pathname === "/" ? "" : location.pathname}`}
           />
         </Helmet>
       )}
