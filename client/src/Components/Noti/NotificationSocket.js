@@ -95,7 +95,7 @@ export function Notification() {
     <div
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`min-h-12 md:h-16 lg:h-20 min-w-fit max-w-60 md:w-80 overflow-hidden fixed top-12 lg:top-[5.3rem] right-5 md:right-[50px] z-[999] duration-700 transition-all cursor-pointer flex items-center bg-white shadow-lg border rounded-md ${
+      className={`h-fit w-64 md:w-80 overflow-hidden fixed top-12 lg:top-[5.3rem] right-5 md:right-[50px] z-[999] duration-700 transition-all cursor-pointer flex items-center bg-white shadow-lg border rounded-md ${
         type === "Warn"
           ? "border-yellow-400"
           : type === "Success"

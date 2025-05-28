@@ -25,6 +25,7 @@ import AdjustQuantityv2 from "./AdjustQuantityv2.js";
 import { useMutation } from "@tanstack/react-query";
 import Footer from "../Footer.js";
 import { calculateDuration } from "../Utils/tinhThoiGianBay.js";
+import FuncChatbot from "../Chatbot/FuncChatbot.js";
 
 function XemDanhSachChuyenBay() {
   const {
@@ -47,6 +48,8 @@ function XemDanhSachChuyenBay() {
     handleReplacePriceAirport,
     showNotification,
     setSavedSeatState,
+    isShowChatbot,
+    setShowChatbot,
   } = useContext(CONTEXT);
 
   bouncy.register();
@@ -129,6 +132,7 @@ function XemDanhSachChuyenBay() {
 
   useEffect(() => {
     if (error) {
+      console.log(error);
       showNotification(
         error?.response?.data?.error ||
           error?.response?.data?.message ||
@@ -371,7 +375,7 @@ function XemDanhSachChuyenBay() {
         <meta name="robots" content="noindex" />
       </Helmet>
       <Header />
-
+      {isShowChatbot && <FuncChatbot />}
       {openAdjustQuantity && (
         <AdjustQuantityv2
           objDeparture={selectedDepartureAirport}
@@ -383,7 +387,10 @@ function XemDanhSachChuyenBay() {
         />
       )}
       <div
-        onClick={() => setShowOptionSetting_LoginSuccess(false)}
+        onClick={() => {
+          setShowOptionSetting_LoginSuccess(false);
+          setShowChatbot(false);
+        }}
         className={`min-h-full scrollbar-thin flex md:flex-row gap-y-2 flex-col justify-between w-full p-2 md:p-5`}>
         {isShowOptionSetting_LoginSuccess && <LoginSuccess />}
 

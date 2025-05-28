@@ -9,6 +9,8 @@ import { useContext } from "react";
 import { CONTEXT } from "../Context/ContextGlobal.js";
 import CountdownTimer from "../Components/Utils/CountdownTimer.js";
 import { Helmet } from "react-helmet-async";
+import Footer from "./Footer";
+import { LoginSuccess } from "./Setting/StateLoginSucces";
 
 function TrangThanhToan() {
   bouncy.register();
@@ -23,6 +25,7 @@ function TrangThanhToan() {
     isExpired,
     QR_VietQR,
     setQR_VietQR,
+    isShowOptionSetting_LoginSuccess,
   } = useContext(CONTEXT);
   const payment = localStorage.getItem("payment");
 
@@ -43,7 +46,20 @@ function TrangThanhToan() {
     }
   }, [isExpired]);
 
-  const pay = ["MoMo", "Paypal", "VietQR"];
+  const pay = [
+    {
+      name: "MoMo",
+      state: true,
+    },
+    {
+      name: "Paypal",
+      state: false,
+    },
+    {
+      name: "VietQR",
+      state: false,
+    },
+  ];
   const [isCheckPickPay, setCheckPickPay] = useState([false, false, false]);
 
   function formatNumber(num) {
@@ -165,6 +181,8 @@ function TrangThanhToan() {
       </Helmet>
       <Header />
       <div className="w-full h-full bg-slate-50 relative">
+        {isShowOptionSetting_LoginSuccess && <LoginSuccess />}
+
         {notiMinues && (
           <NotiMinutes
             setNotiMinues={setNotiMinues}
@@ -174,8 +192,7 @@ function TrangThanhToan() {
         {QR_VietQR && (
           <div
             className="w-full h-full bg-white/50 backdrop-brightness-75 fixed z-[100]"
-            onClick={() => setQR_VietQR(null)}
-          >
+            onClick={() => setQR_VietQR(null)}>
             <div className="w-96 h-96 absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <img src={QR_VietQR} alt="QR-VietQR" />
               <CountdownTimer
@@ -185,192 +202,198 @@ function TrangThanhToan() {
             </div>
           </div>
         )}
-        <div className="pt-[50px] pb-[50px] bg-slate-50 h-full flex justify-center">
-          <div className="flex w-[70%] max-w-screen-xl gap-7 h-full">
-            <div className="lg:w-[70%]">
-              <div className="justify-center w-full p-5 font-medium text-center text-white bg-blue-600 rounded-t-xl">
-                Đừng lo lắng, giá vẫn giữ nguyên. Hoàn tất thanh toán của bạn
-                bằng{" "}
-              </div>
-              <div className="pt-[24px] pb-[24px] bg-white rounded-b-xl">
-                <div className="flex justify-between p-4">
-                  <h1 className="text-xl font-bold ">
-                    Bạn muốn thanh toán thế nào ?
-                  </h1>
-                </div>
 
+        <div className="flex w-full gap-7 h-full items-start md:flex-row flex-col md:p-5 p-3 md:justify-center">
+          <div className="flex flex-col gap-5">
+            <div className="justify-center w-full font-semibold text-center text-sm md:text-base shadow-md rounded-md h-fit overflow-hidden shadow-blue-400">
+              <p className="bg-blue-600 text-white p-3">
+                Đừng lo lắng, giá vẫn giữ nguyên. Hoàn tất thanh toán của bạn
+                bằng
+              </p>
+              <div className="bg-white rounded-b-md w-full flex flex-col">
                 {Array.from({ length: pay.length }, (_, i) => (
                   <button
                     key={i}
-                    className={`w-full text-lg text-center font-semibold cursor-pointer p-4 ${isCheckPickPay[i] ? "text-gray-700" : "text-[#b8b2b2]"}`}
-                    onClick={() =>
-                      setCheckPickPay((prev) => prev.map((_, j) => j === i))
-                    }
-                  >
-                    Thanh toán bằng {pay[i]}
+                    className={`${pay[i].state ? "" : "line-through text-neutral-400"} text-center cursor-pointer p-3 ${isCheckPickPay[i] ? "text-orange-400" : "text-neutral-600"}`}
+                    onClick={() => {
+                      if (pay[i].state) {
+                        setCheckPickPay((prev) => prev.map((_, j) => j === i));
+                      }
+                    }}>
+                    Thanh toán bằng {pay[i].name}
                   </button>
                 ))}
               </div>
+            </div>
 
-              {(isCheckPickPay[0] ||
-                isCheckPickPay[1] ||
-                isCheckPickPay[2]) && (
-                <div className="flex-col p-4 mt-8 bg-white rounded-xl">
-                  <div className="flex">
-                    <h1 className="text-xl font-medium">
-                      Tổng số tiền cần thanh toán
-                    </h1>
-                    <h1 className="ml-auto text-xl font-semibold text-blue-600">
-                      {isCheckPickPay[1]
-                        ? convertVNDtoUSD(data.data.objectOrder.priceOrder) +
-                          " USD"
-                        : data.data.objectOrder.priceOrder}
-                    </h1>
-                  </div>
-
-                  {/* //! thanh toán */}
-
-                  <div
-                    className={`flex  p-3 ${isCheckPickPay[0] || isCheckPickPay[1] || isCheckPickPay[2] ? "bg-orange-500 hover:bg-orange-400 cursor-pointer" : "bg-[#b8b2b2] select-none  cursor-not-allowed"}  rounded-md mt-4 items-center justify-center `}
-                    onClick={
-                      isCheckPickPay[0]
-                        ? handleReqPayMoMo
-                        : isCheckPickPay[1]
-                          ? handleReqPaypal
-                          : isCheckPickPay[2]
-                            ? handleReqPayVietQR
-                            : undefined
-                    }
-                  >
-                    {mutationMoMo.isError ||
-                    mutationPaypal.isError ||
-                    mutationUpdatePayUrl.isError ? (
-                      <h1 className="text-white font-bold text-xl">
-                        Có lỗi khi thanh toán, vui lòng thử lại
-                      </h1>
-                    ) : mutationMoMo.isPending ||
-                      mutationPaypal.isPending ||
-                      mutationUpdatePayUrl.isPending ? (
-                      <l-bouncy size="35" speed="1.75" color="white" />
-                    ) : (
-                      <h1 className={`font-bold text-white text-xl`}>
-                        {isCheckPickPay[0]
-                          ? `Thanh toán bằng ${pay[0]}`
-                          : isCheckPickPay[1]
-                            ? `Thanh toán bằng ${pay[1]}`
-                            : isCheckPickPay[2]
-                              ? `Thanh toán bằng ${pay[2]}`
-                              : ""}
-                      </h1>
-                    )}
-                  </div>
+            {(isCheckPickPay[0] || isCheckPickPay[1] || isCheckPickPay[2]) && (
+              <div className="flex-col p-3 bg-white rounded-md shadow-blue-400 shadow-md">
+                <div className="flex flex-wrap justify-between items-start">
+                  <h1 className="text-base md:text-lg font-semibold w-fit">
+                    Tổng số tiền cần thanh toán
+                  </h1>
+                  <h1 className="text-base md:text-lg font-semibold text-blue-600 w-fit">
+                    {isCheckPickPay[1]
+                      ? convertVNDtoUSD(data.data.objectOrder.priceOrder) +
+                        " USD"
+                      : data.data.objectOrder.priceOrder}
+                  </h1>
                 </div>
-              )}
-            </div>
 
-            {/* //! ticket */}
-            <div className="flex flex-col">
-              {Array.from(
-                { length: data?.data?.objectOrder?.dataTickets?.length },
-                (_, i) => (
-                  <InfoTicket
-                    key={i}
-                    airport={{
-                      loaiChuyenBay:
-                        data.data.airportDeparture._id ===
-                        data.data.objectOrder.dataTickets[i].maChuyenBay
-                          ? data.data.airportDeparture.loaiChuyenBay
-                          : data.data.airportReturn?._id ===
-                              data.data.objectOrder.dataTickets[i].maChuyenBay
-                            ? data.data.airportReturn.loaiChuyenBay
-                            : "",
-                      diemBay:
-                        data.data.airportDeparture._id ===
-                        data.data.objectOrder.dataTickets[i].maChuyenBay
-                          ? data.data.airportDeparture.diemBay
-                          : data.data.airportReturn?._id ===
-                              data.data.objectOrder.dataTickets[i].maChuyenBay
-                            ? data.data.airportReturn.diemBay
-                            : "",
-                      diemDen:
-                        data.data.airportDeparture._id ===
-                        data.data.objectOrder.dataTickets[i].maChuyenBay
-                          ? data.data.airportDeparture.diemDen
-                          : data.data.airportReturn?._id ===
-                              data.data.objectOrder.dataTickets[i].maChuyenBay
-                            ? data.data.airportReturn.diemDen
-                            : "",
-                      gioBay:
-                        data.data.airportDeparture._id ===
-                        data.data.objectOrder.dataTickets[i].maChuyenBay
-                          ? data.data.airportDeparture.gioBay
-                          : data.data.airportReturn?._id ===
-                              data.data.objectOrder.dataTickets[i].maChuyenBay
-                            ? data.data.airportReturn.gioBay
-                            : "",
-                      gioDen:
-                        data.data.airportDeparture._id ===
-                        data.data.objectOrder.dataTickets[i].maChuyenBay
-                          ? data.data.airportDeparture.gioDen
-                          : data.data.airportReturn?._id ===
-                              data.data.objectOrder.dataTickets[i].maChuyenBay
-                            ? data.data.airportReturn.gioDen
-                            : "",
-                      ngayBay:
-                        data.data.airportDeparture._id ===
-                        data.data.objectOrder.dataTickets[i].maChuyenBay
-                          ? data.data.airportDeparture.ngayBay
-                          : data.data.airportReturn?._id ===
-                              data.data.objectOrder.dataTickets[i].maChuyenBay
-                            ? data.data.airportReturn.ngayBay
-                            : "",
-                      ngayDen:
-                        data.data.airportDeparture._id ===
-                        data.data.objectOrder.dataTickets[i].maChuyenBay
-                          ? data.data.airportDeparture.ngayDen
-                          : data.data.airportReturn?._id ===
-                              data.data.objectOrder.dataTickets[i].maChuyenBay
-                            ? data.data.airportReturn.ngayDen
-                            : "",
-                      hangBay:
-                        data.data.airportDeparture._id ===
-                        data.data.objectOrder.dataTickets[i].maChuyenBay
-                          ? data.data.airportDeparture.hangBay
-                          : data.data.airportReturn?._id ===
-                              data.data.objectOrder.dataTickets[i].maChuyenBay
-                            ? data.data.airportReturn.hangBay
-                            : "",
-                      loaiTuoi: data.data.objectOrder.dataTickets[i].loaiTuoi,
-                      hangVe: data.data.objectOrder.dataTickets[i].hangVe,
-                      giaVe: data.data.objectOrder.dataTickets[i].giaVe,
-                      Ten: data.data.objectOrder.dataTickets[i].Ten,
-                      ngaySinh: data.data.objectOrder.dataTickets[i].ngaySinh,
-                    }}
-                  />
-                )
-              )}
-            </div>
+                {/* //! thanh toán */}
+
+                <div
+                  className={`flex p-3 ${isCheckPickPay[0] || isCheckPickPay[1] || isCheckPickPay[2] ? "bg-orange-500 hover:bg-orange-400 cursor-pointer" : "bg-[#b8b2b2] select-none  cursor-not-allowed"}  rounded-md mt-4 items-center justify-center `}
+                  onClick={
+                    isCheckPickPay[0]
+                      ? handleReqPayMoMo
+                      : isCheckPickPay[1]
+                        ? handleReqPaypal
+                        : isCheckPickPay[2]
+                          ? handleReqPayVietQR
+                          : undefined
+                  }>
+                  {mutationMoMo.isError ||
+                  mutationPaypal.isError ||
+                  mutationUpdatePayUrl.isError ? (
+                    <h1 className="text-white font-semibold text-sm md:text-base">
+                      Có lỗi khi thanh toán, vui lòng thử lại
+                    </h1>
+                  ) : mutationMoMo.isPending ||
+                    mutationPaypal.isPending ||
+                    mutationUpdatePayUrl.isPending ? (
+                    <l-bouncy size="35" speed="1.75" color="white" />
+                  ) : (
+                    <h1
+                      className={`text-white font-semibold text-sm md:text-base`}>
+                      {isCheckPickPay[0]
+                        ? `Thanh toán bằng ${pay[0].name}`
+                        : isCheckPickPay[1]
+                          ? `Thanh toán bằng ${pay[1].name}`
+                          : isCheckPickPay[2]
+                            ? `Thanh toán bằng ${pay[2].name}`
+                            : ""}
+                    </h1>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* //! ticket */}
+          <div className="flex flex-col">
+            {Array.from(
+              { length: data?.data?.objectOrder?.dataTickets?.length },
+              (_, i) => (
+                <InfoTicket
+                  key={i}
+                  airport={{
+                    loaiChuyenBay:
+                      data?.data?.airportDeparture?._id ===
+                      data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                        ? data?.data?.airportDeparture?.loaiChuyenBay
+                        : data?.data?.airportReturn?._id ===
+                            data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                          ? data?.data?.airportReturn?.loaiChuyenBay
+                          : "",
+                    diemBay:
+                      data?.data?.airportDeparture?._id ===
+                      data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                        ? data?.data?.airportDeparture?.diemBay
+                        : data?.data?.airportReturn?._id ===
+                            data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                          ? data?.data?.airportReturn?.diemBay
+                          : "",
+                    diemDen:
+                      data?.data?.airportDeparture?._id ===
+                      data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                        ? data?.data?.airportDeparture?.diemDen
+                        : data?.data?.airportReturn?._id ===
+                            data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                          ? data?.data?.airportReturn?.diemDen
+                          : "",
+                    gioBay:
+                      data?.data?.airportDeparture?._id ===
+                      data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                        ? data?.data?.airportDeparture?.gioBay
+                        : data?.data?.airportReturn?._id ===
+                            data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                          ? data?.data?.airportReturn?.gioBay
+                          : "",
+                    gioDen:
+                      data?.data?.airportDeparture?._id ===
+                      data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                        ? data?.data?.airportDeparture?.gioDen
+                        : data?.data?.airportReturn?._id ===
+                            data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                          ? data?.data?.airportReturn?.gioDen
+                          : "",
+                    ngayBay:
+                      data?.data?.airportDeparture?._id ===
+                      data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                        ? data?.data?.airportDeparture?.ngayBay
+                        : data?.data?.airportReturn?._id ===
+                            data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                          ? data?.data?.airportReturn?.ngayBay
+                          : "",
+                    ngayDen:
+                      data?.data?.airportDeparture?._id ===
+                      data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                        ? data?.data?.airportDeparture?.ngayDen
+                        : data?.data?.airportReturn?._id ===
+                            data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                          ? data?.data?.airportReturn?.ngayDen
+                          : "",
+                    hangBay:
+                      data?.data?.airportDeparture?._id ===
+                      data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                        ? data?.data?.airportDeparture?.hangBay
+                        : data?.data?.airportReturn?._id ===
+                            data?.data?.objectOrder?.dataTickets[i]?.maChuyenBay
+                          ? data?.data?.airportReturn?.hangBay
+                          : "",
+                    loaiTuoi: data?.data?.objectOrder?.dataTickets[i]?.loaiTuoi,
+                    hangVe: data?.data?.objectOrder?.dataTickets[i]?.hangVe,
+                    giaVe: data?.data?.objectOrder?.dataTickets[i]?.giaVe,
+                    Ten: data?.data?.objectOrder?.dataTickets[i]?.Ten,
+                    ngaySinh: data?.data?.objectOrder?.dataTickets[i]?.ngaySinh,
+                    maSoGhe: data?.data?.objectOrder?.dataTickets[i]?.maSoGhe,
+                  }}
+                />
+              )
+            )}
           </div>
         </div>
       </div>
+      <Footer />
     </>
   );
 }
 
 function NotiMinutes({ setNotiMinues, time }) {
   return (
-    <div className="w-screen h-screen fixed z-[100] bg-white/5 backdrop-brightness-75">
-      <div className="fixed z-[100] gap-y-4 transform -translate-x-1/2 flex flex-col justify-center -translate-y-1/2 top-1/2 left-1/2">
-        <p className="font-semibold bg-[#0194f3] text-white rounded-lg p-4 text-lg">
+    <div className="w-full h-full overflow-hidden fixed inset-0 z-[100] bg-white/5 backdrop-brightness-75">
+      <div className="fixed z-[100] transform bg-[#0194f3] -translate-x-1/2 rounded-md flex items-start justify-between -translate-y-1/2 top-1/3 left-1/2 w-fit h-fit">
+        <p className="subpixel-antialiased font-semibold text-white text-sm md:text-base md:p-3 p-2">
           {`Nếu bạn không thanh toán trước ${time} hệ thống sẽ tự
-          động xóa đơn hàng của bạn. Xin cảm ơn!`}
+          động xóa đơn đặt vé của bạn.`}
         </p>
-        <button
-          className="font-semibold text-[#0194f3] bg-white w-[50%] mx-auto rounded-lg p-4 text-lg"
-          onClick={() => setNotiMinues(false)}
-        >
-          OK
-        </button>
+        <div
+          className="w-fit cursor-pointer bg-white rounded-bl-lg"
+          onClick={() => setNotiMinues(false)}>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="2"
+            className="size-7 stroke-rose-600">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18 18 6M6 6l12 12"
+            />
+          </svg>
+        </div>
       </div>
     </div>
   );

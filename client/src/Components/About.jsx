@@ -56,7 +56,6 @@ function About() {
                     <ul className="list-disc list-inside">
                       <li>
                         UI trang web TravFruit được xây dựng theo Traveloka
-                        (https://www.traveloka.com/vi-vn)
                       </li>
                       <li>
                         TravFruit là một website mô tả về quá trình đặt vé
@@ -76,7 +75,7 @@ function About() {
                       </li>
                       <li>
                         Hiện chuyến bay chỉ được điều chỉnh thông tin tại page
-                        Admin của TravFruit.
+                        Admin.
                       </li>
                     </ul>
                   </li>
@@ -119,28 +118,24 @@ function About() {
                   </li>
                 </ul>
               )}
-              {topic.id === 2 && (
-                <ul className="list-disc list-inside">
-                  <li>
-                    TravFruit nhầm phục vụ vào chương trình học tại trường,
-                    không có mục đích kinh doanh hay giả mạo.
-                  </li>
-                  <li>
-                    Dự án đầu tiên và được áp dụng ReactJS (Create React App) để
-                    tạo client.
-                  </li>
-                </ul>
-              )}
               {topic.id === 3 && (
                 <ul className="list-decimal list-inside">
                   <li>
                     Client
                     <ul className="list-disc list-inside">
-                      <li>Web TravFruit sử dụng ReactJS, TailwindCSS, </li>
-                      <li>
-                        Thanh toán: MoMo, Paypal, VietQR - đối với VietQR được
-                        thanh toán bằng tiền thật{" "}
-                      </li>
+                      <li>ReactJS (Create React App), TailwindCSS.</li>
+                    </ul>
+                  </li>
+                  <li>
+                    Admin
+                    <ul className="list-disc list-inside">
+                      <li>Vite, TailwindCSS.</li>
+                    </ul>
+                  </li>
+                  <li>
+                    Backend
+                    <ul className="list-disc list-inside">
+                      <li>NodeJS, ExpressJS, MongoDB.</li>
                     </ul>
                   </li>
                 </ul>
@@ -148,7 +143,7 @@ function About() {
               {topic.id === 4 && (
                 <ul className="list-decimal list-inside">
                   <li>
-                    https://github.com/thanhlongtruong/travFruit/tree/travFruit.v3
+                    Email: travfruit@gmail.com
                   </li>
                 </ul>
               )}

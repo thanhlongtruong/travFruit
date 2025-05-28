@@ -489,7 +489,7 @@ function HistoryDon({
       {dataReservation?.map((order, index) => (
         <div
           key={order._id}
-          className={`rounded-md bg-white shadow-md overflow-hidden p-2 w-full mb-5 transition-all duration-300 border-b border-zinc-200 select-none min-h-[110px]`}>
+          className={`rounded-md bg-white relative shadow-md overflow-hidden p-2 w-full mb-5 transition-all duration-300 border-b border-zinc-200 select-none min-h-[110px]`}>
           <div>
             <div
               className="font-semibold w-full overflow-hidden cursor-pointer text-stone-800 font-sans"
@@ -499,7 +499,7 @@ function HistoryDon({
               </p>
               <p className="line-clamp-1">Số lượng vé: {order.soLuongVe}</p>
               <p className="line-clamp-1">
-                Loại chuyến bay:
+                Loại CB:
                 {order.tickets.some(
                   (ticket) =>
                     ticket?.flights?.loaiChuyenBay === "Chuyến bay khứ hồi"
@@ -554,9 +554,9 @@ function HistoryDon({
           </div>
 
           {dataReservation[index].trangThai.includes("Chưa thanh toán") && (
-            <div className="absolute z-10 flex top-2 right-2 gap-x-3">
+            <div className="absolute z-10 flex top-2 right-2 gap-3 flex-col text-sm">
               <button
-                className={`font-semibold line-clamp-1 rounded-md text-[14px] p-2 self-center text-white transition ease-in-out active:bg-slate-200 ${order.trangThai === "Đã hủy" || order.trangThai === "Đã thanh toán" ? "bg-slate-500 cursor-not-allowed" : "cursor-pointer bg-red-500"}`}
+                className={`font-semibold line-clamp-1 rounded md:rounded-md p-2 self-center text-white transition ease-in-out active:bg-slate-200 ${order.trangThai === "Đã hủy" || order.trangThai === "Đã thanh toán" ? "bg-slate-500 cursor-not-allowed" : "cursor-pointer bg-red-500"}`}
                 onClick={() => huyOrder(dataReservation[index])}>
                 {mutationUpdatepdateStatus.isPending ? (
                   <l-bouncy size="30" speed="1.75" color="white" />
@@ -570,18 +570,18 @@ function HistoryDon({
                   ticket.trangThaiVe !== "Đã hủy"
               ) && (
                 <button
-                  className={`font-semibold line-clamp-1 rounded-md text-[14px] p-2 self-center text-white transition ease-in-out active:bg-slate-200 ${order.trangThai === "Đã hủy" || order.trangThai === "Đã thanh toán" ? "bg-slate-500 cursor-not-allowed" : "cursor-pointer bg-red-500"}`}
+                  className={`font-semibold line-clamp-1 rounded md:rounded-md p-2 self-center text-white transition ease-in-out active:bg-slate-200 ${order.trangThai === "Đã hủy" || order.trangThai === "Đã thanh toán" ? "bg-slate-500 cursor-not-allowed" : "cursor-pointer bg-red-500"}`}
                   onClick={() => huyVeKhuHoi(dataReservation[index])}>
                   {mutationUpdatepdateStatus.isPending ? (
                     <l-bouncy size="30" speed="1.75" color="white" />
                   ) : (
-                    "Hủy vé khứ hồi"
+                    "Hủy khứ hồi"
                   )}
                 </button>
               )}
 
               <button
-                className={`transition-all duration-500 font-semibold line-clamp-1 rounded-md text-[14px] p-2 self-center text-white ease-in-out active:bg-slate-200 bg-[#109AF4]`}
+                className={`transition-all duration-500 font-semibold line-clamp-1 rounded md:rounded-md p-2 self-center text-white ease-in-out active:bg-slate-200 bg-[#109AF4]`}
                 onClick={() => thanhToan(dataReservation[index])}>
                 {mutationPay.isPending ? (
                   <l-bouncy size="30" speed="1.75" color="white" />

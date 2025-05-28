@@ -63,7 +63,13 @@ function Header() {
                   About
                 </Link>
               </li>
-              {existUser && !url.includes("/about") && (
+            </>
+          )}
+        {!url.includes("/XemDanhSachChuyenBay/ThanhToan") &&
+          !url.includes("/Setting/") &&
+          !url.includes("/about") && (
+            <>
+              {existUser && (
                 <>
                   <li
                     className="font-semibold uppercase text-xs tracking-wider md:text-base lg:text-lg cursor-pointer"

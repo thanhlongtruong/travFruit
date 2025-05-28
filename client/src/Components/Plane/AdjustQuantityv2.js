@@ -622,8 +622,6 @@ function AdjustQuantityv2({
         setSelectedSeatsReturnInfo(returnSeatsInfo);
       }
 
-      setBayMotChieu(true);
-
       // Nếu đã chọn đủ số ghế, hiển thị form nhập thông tin
       setShowPassengerInfo(!showPassengerInfo);
     }
@@ -738,7 +736,7 @@ function AdjustQuantityv2({
         </div>
       </div>
 
-      <div className="font-mono overflow-x-auto fixed inset-0 z-[101] flex stroke-blue-500 p-5 gap-5 w-full h-full bg-white/10 backdrop-brightness-75">
+      <div className="font-mono overflow-x-auto fixed inset-0 z-[101] flex stroke-blue-500 lg:justify-start justify-between p-3 md:p-5 gap-5 w-full h-full bg-white/10 backdrop-brightness-75">
         <AnimatePresence>
           {showPassengerInfo && (
             <motion.div
@@ -747,7 +745,7 @@ function AdjustQuantityv2({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.3 }}
-              className="overflow-hidden bg-white rounded-lg min-w-fit">
+              className="overflow-hidden bg-white rounded-md min-w-fit">
               <div className="rounded-scrollbar h-full">
                 <div className="p-5 text-center  ">
                   <h2 className="text-xl font-bold uppercase">
@@ -771,7 +769,7 @@ function AdjustQuantityv2({
         </AnimatePresence>
 
         <div
-          className="h-full min-w-fit lg:w-full bg-white overflow-hidden rounded-lg"
+          className="h-full min-w-fit bg-white overflow-hidden rounded-md"
           id="box-choose-seat">
           <div className="rounded-scrollbar h-full flex-col flex">
             {objReturn && (
@@ -1108,7 +1106,7 @@ function AdjustQuantityv2({
         </div>
 
         <div
-          className="overflow-hidden min-w-96 lg:w-full h-full bg-white rounded-lg"
+          className="overflow-hidden min-w-96 lg:max-w-md h-full bg-white rounded-md"
           id="box-information-booking">
           <div className="rounded-scrollbar h-full w-fit">
             {Array.from({ length: objReturn ? 2 : 1 }, (_, i) => (
@@ -1124,15 +1122,15 @@ function AdjustQuantityv2({
 
                   <div className="h-fit bg-transparent rounded-2xl shadow-md w-full overflow-hidden">
                     <ItemFlight
-                      loaiMayBay={`${(i === 0 ? objDeparture : objReturn)[0]?.loaiMayBay}`}
-                      gioBay={`${(i === 0 ? objDeparture : objReturn)[0]?.gioBay}`}
-                      gioDen={`${(i === 0 ? objDeparture : objReturn)[0]?.gioDen}`}
-                      gia={`${(i === 0 ? objDeparture : objReturn)[0]?.gia}`}
-                      soGheThuongGia={`${(i === 0 ? objDeparture : objReturn)[0]?.soGheThuongGia}`}
-                      soGhePhoThong={`${(i === 0 ? objDeparture : objReturn)[0]?.soGhePhoThong}`}
+                      loaiMayBay={`${(i === 0 ? objDeparture : objReturn)?.[0]?.loaiMayBay}`}
+                      gioBay={`${(i === 0 ? objDeparture : objReturn)?.[0]?.gioBay}`}
+                      gioDen={`${(i === 0 ? objDeparture : objReturn)?.[0]?.gioDen}`}
+                      gia={`${(i === 0 ? objDeparture : objReturn)?.[0]?.gia}`}
+                      soGheThuongGia={`${(i === 0 ? objDeparture : objReturn)?.[0]?.soGheThuongGia}`}
+                      soGhePhoThong={`${(i === 0 ? objDeparture : objReturn)?.[0]?.soGhePhoThong}`}
                       thoigianBay={calculateDuration(
-                        (i === 0 ? objDeparture : objReturn)[0]?.gioBay,
-                        (i === 0 ? objDeparture : objReturn)[0]?.gioDen
+                        (i === 0 ? objDeparture : objReturn)?.[0]?.gioBay,
+                        (i === 0 ? objDeparture : objReturn)?.[0]?.gioDen
                       )}
                     />
                   </div>
@@ -1283,6 +1281,7 @@ const ComponentInputInformationPassenger = ({
   naviReload,
   handleReplacePriceAirport,
 }) => {
+  const { showNotification } = useContext(CONTEXT);
   const {
     register,
     handleSubmit,
@@ -1357,6 +1356,16 @@ const ComponentInputInformationPassenger = ({
         },
       });
     },
+    onError: (error) => {
+      const payment = error?.response?.data?.payment || null;
+      if (payment) {
+        localStorage.setItem("payment", JSON.stringify(payment));
+      }
+      showNotification(
+        error?.response?.data?.message || "Lỗi khi đặt vé",
+        "Warn"
+      );
+    },
   });
 
   const submitFormInfo = async (data) => {
@@ -1408,7 +1417,7 @@ const ComponentInputInformationPassenger = ({
           </div>
         ))}
 
-        {!oneWayFlight && (
+        {!oneWayFlight && fieldsB.length > 0 && (
           <>
             <h1 className="pt-1 text-center w-full text-base uppercase  return-flight">
               -------Chuyến bay khứ hồi-------

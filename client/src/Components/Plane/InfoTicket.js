@@ -72,7 +72,7 @@ function InfoTicket({ airport, enableUpdateTIcket }) {
           <>
             <h4>• Tên khách hàng: {airport?.Ten}</h4>
             <h4>• Ngày sinh: {airport?.ngaySinh}</h4>
-            <h4>• CCCD: {airport?.cccd}</h4>
+            {/* <h4>• CCCD: {airport?.cccd}</h4> */}
           </>
         )}
       </div>

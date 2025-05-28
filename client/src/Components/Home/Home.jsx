@@ -26,9 +26,11 @@ function ComponentHome() {
     stateFlightShowCalendar,
     isShowChatbot,
     showNotification,
+    setShowChatbot,
   } = useContext(CONTEXT);
 
   const handleOffOption = () => {
+    setShowChatbot(false);
     if (isShowOptionSetting_LoginSuccess) {
       setShowOptionSetting_LoginSuccess(false);
     }

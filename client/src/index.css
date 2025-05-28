@@ -350,3 +350,12 @@ header ul li button {
 .react-datepicker__input-container {
   position: static !important;
 }
+
+.react-chatbot-kit-chat-container {
+  @apply w-80 !important;
+}
+@media (max-width: 767px) {
+  .react-chatbot-kit-chat-container {
+    @apply w-72 !important;
+  }
+}

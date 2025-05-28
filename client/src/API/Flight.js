@@ -7,7 +7,7 @@ export const SearchFlights = async ({ queryKey }) => {
   const response = await axios.get(`/flights/search?${searchParams}`);
   if (response.status === 200) {
     if (response?.data?.payment !== null) {
-      const payment = response.data.payment.split(" ");
+      const payment = response?.data?.payment?.split(" ");
       localStorage.setItem(
         "payment",
         JSON.stringify(`${payment[0]} ${payment[1]}`)
