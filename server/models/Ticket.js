@@ -38,6 +38,12 @@ const TicketSchema = mongoose.Schema({
     required: true,
   },
   createdAt: { type: Date, default: Date.now },
+  expiredAt: {
+    type: Date,
+    default: () => new Date(Date.now() + 15 * 60 * 1000),
+  },
 });
+
+TicketSchema.index({ expiredAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model("Ticket", TicketSchema);

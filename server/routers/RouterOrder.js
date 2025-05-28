@@ -4,41 +4,62 @@ const Ticket = require("../models/Ticket.js");
 const Account = require("../models/User.js");
 const Payment = require("../models/Payment.js");
 const Flight = require("../models/Flight.js");
+const { transporter } = require("../service/verifyEmail.js");
 const { mongoose } = require("mongoose");
 
 const router = express.Router();
 
 // router create order, ticker and update flight
 router.post("/create", async (req, res) => {
-  const accessTokenDecoded = req.jwtDecoded;
-  const _id = accessTokenDecoded._id;
-  const {
-    airportDeparture,
-    airportReturn,
-    totalQuantityTickets,
-    totalPriceTickets,
-  } = req.body;
-
-  const now = new Date();
-  const fifteenMinutesLater = new Date(now.getTime() + 15 * 60 * 1000);
-
-  let createOrder, createPayment, createTickets, createTicketsReturn;
-
   try {
-    // 1️⃣ Tạo đơn hàng trước
+    const accessTokenDecoded = req?.jwtDecoded;
+    const _id = accessTokenDecoded?._id;
+    const {
+      airportDeparture,
+      airportReturn,
+      totalQuantityTickets,
+      totalPriceTickets,
+    } = req.body;
+
+    let payment = null;
+
+    const checkPayment_user = await Payment.find({
+      userId: _id,
+    });
+
+    if (checkPayment_user) {
+      let checkPayment_userStillValid = checkPayment_user.filter(
+        (payment) =>
+          new Date(payment.createdAt.getTime() + 15 * 60 * 1000) > new Date()
+      );
+
+      if (checkPayment_userStillValid.length > 0) {
+        payment = `${
+          checkPayment_user[0].orderId
+        } ${checkPayment_user[0].createdAt.toISOString()}`;
+        return res.status(400).json({
+          message:
+            "Bạn đã đặt vé trước đó, vui lòng kiểm tra trong lịch sử đơn hàng",
+          payment,
+        });
+      }
+      await Payment.deleteMany({ userId: _id });
+    }
+
+    const now = new Date();
+    const fifteenMinutesLater = new Date(now.getTime() + 15 * 60 * 1000);
+
+    let createOrder, createPayment, createTickets, createTicketsReturn;
+
     createOrder = await DonHang.create({
       userId: _id,
       soLuongVe: totalQuantityTickets,
       tongGia: totalPriceTickets,
-      // email,
-      expiredAt: fifteenMinutesLater,
     });
 
     createPayment = await Payment.create({
       orderId: createOrder._id,
       userId: _id,
-      cbId: airportDeparture[0]?.maChuyenBay,
-      cbIdRe: airportReturn[0]?.maChuyenBay || null,
       payUrl: "NO payURL",
     });
 
@@ -56,6 +77,35 @@ router.post("/create", async (req, res) => {
         }))
       ),
     ]);
+
+    const user = await Account.findById(_id);
+
+    const urlHistory = `${process.env.BASE_URL}/Setting/HistoryTicket?page=1&type=All`;
+    const countFlight_Return =
+      airportReturn?.length > 0
+        ? " và " + airportReturn?.length + " chuyến bay khứ hồi"
+        : "";
+
+    const mailOption = {
+      from: process.env.AUTH_EMAIL,
+      to: user?.email,
+      subject: "Đặt vé máy bay - website TravFruit",
+      html: `<p>Bạn vừa đặt thành công ${airportDeparture?.length} chuyến bay đi
+      ${countFlight_Return}. Bạn muốn thanh toán hoặc hủy vui lòng truy cập <a href="${urlHistory}">HERE</a>. Vé sẽ tự động hủy sau 15 phút nếu bạn không thanh toán. Cảm ơn đã sử dụng website TravFruit.</p>`,
+    };
+
+    await transporter.sendMail(mailOption, (error, info) => {
+      if (error) {
+        return res.status(500).json({
+          message: "Lỗi khi gửi email",
+          error: {
+            name: error.name,
+            message: error.message || "Lỗi khi gửi email",
+            stack: error.stack,
+          },
+        });
+      }
+    });
 
     return res.status(200).json({
       idDH: createOrder._id,
@@ -225,7 +275,7 @@ router.post("/update_status", async (req, res) => {
         const bulkOps = ticketsUpdate.map((ticket) => ({
           updateOne: {
             filter: { _id: ticket._id },
-            update: { $set: { trangThaiVe: "Đã thanh toán" } },
+            update: { $set: { trangThaiVe: "Đã thanh toán", expiredAt: null } },
           },
         }));
 
@@ -250,29 +300,12 @@ router.post("/update_status", async (req, res) => {
         const bulkOps = ticketsUpdate.map((ticket) => ({
           updateOne: {
             filter: { _id: ticket._id },
-            update: { $set: { trangThaiVe: "Đã hủy" } },
+            update: { $set: { trangThaiVe: "Đã hủy", expiredAt: null } },
           },
         }));
 
         await Ticket.bulkWrite(bulkOps);
       }
-
-      updateFlight = await Flight.findByIdAndUpdate(flight?.idDeparture, {
-        $inc: {
-          soGhePhoThong: +flight?.countTicketNormal,
-          soGheThuongGia: +flight?.countTicketBusiness,
-        },
-      });
-
-      updateFlightReturn =
-        flight.countTicketNormalReturn + flight?.countTicketBusinessReturn > 0
-          ? await Flight.findByIdAndUpdate(flight?.idReturn, {
-              $inc: {
-                soGhePhoThong: +flight?.countTicketNormalReturn,
-                soGheThuongGia: +flight?.countTicketBusinessReturn,
-              },
-            })
-          : null;
 
       delPayment = await Payment.findOneAndDelete({ orderId: orderID });
 
@@ -289,15 +322,9 @@ router.post("/update_status", async (req, res) => {
       if (tickets.length > 0) {
         const result = await Ticket.updateMany(
           { maDon: orderID, maChuyenBay: flight.id },
-          { trangThaiVe: "Đã hủy" }
+          { trangThaiVe: "Đã hủy", expiredAt: null }
         );
       }
-      updateFlight = await Flight.findByIdAndUpdate(flight.id, {
-        $inc: {
-          soGhePhoThong: +flight.countTicketNormal,
-          soGheThuongGia: +flight.countTicketBusiness,
-        },
-      });
       return res.status(200).json({
         message: "Hủy vé khứ hồi thành công.",
       });

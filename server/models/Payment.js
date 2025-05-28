@@ -9,14 +9,6 @@ const PaymentSchema = mongoose.Schema({
     type: String,
     required: true,
   },
-  cbId: {
-    type: String,
-    required: true,
-  },
-  cbIdRe: {
-    type: String,
-    default: null
-  },
   payUrl: {
     type: String,
     required: true,

@@ -699,78 +699,11 @@ router.get("/search", authorization, async (req, res) => {
       })
     );
 
-    // Bây giờ có thể log ra để kiểm tra
-    console.log(departureFlights, returnFlights);
-
     if (!departureFlights.length && !returnFlights.length) {
       return res.status(404).json({
         message: "Không tìm thấy chuyến bay nào",
         flights: { departureFlights, returnFlights },
       });
-    }
-
-    const departureFlights_id = departureFlights.map((flight) =>
-      flight._id.toString()
-    );
-
-    const findPayments = await Payment.find({
-      cbId: { $in: departureFlights_id },
-    });
-
-    const returnFlights_id =
-      findPayments.length > 0
-        ? findPayments.map((payment) => payment.cbIdRe)
-        : [];
-
-    const findPaymentsRe = await Payment.find({
-      cbIdRe: { $in: returnFlights_id },
-    });
-
-    const paymentExpiredDepar = findPayments.filter(
-      (payment) =>
-        new Date(payment.createdAt.getTime() + 15 * 60 * 1000) < new Date()
-    );
-    const paymentExpiredRe =
-      findPaymentsRe.length > 0
-        ? findPaymentsRe.filter(
-            (payment) =>
-              new Date(payment.createdAt.getTime() + 15 * 60 * 1000) <
-              new Date()
-          )
-        : [];
-
-    const paymentExpired_concat = paymentExpiredDepar.concat(paymentExpiredRe);
-
-    if (paymentExpired_concat.length > 0) {
-      await Promise.all([
-        Ticket.deleteMany({
-          maDon: {
-            $in: paymentExpired_concat.map((payment) => payment.orderId),
-          },
-        }),
-        Payment.deleteMany({
-          orderId: {
-            $in: paymentExpired_concat.map((payment) => payment.orderId),
-          },
-        }),
-      ]);
-
-      departureFlights = await Flight.find({
-        diemBay: decodedDeparture,
-        diemDen: decodedArrival,
-        ngayBay: departureDate,
-        loaiChuyenBay: "Chuyến bay đi",
-      });
-
-      returnFlights =
-        oneWayTicket === "false"
-          ? await Flight.find({
-              diemBay: decodedArrival,
-              diemDen: decodedDeparture,
-              ngayBay: returnDate,
-              loaiChuyenBay: "Chuyến bay khứ hồi",
-            })
-          : [];
     }
 
     let payment = null;
@@ -794,6 +727,7 @@ router.get("/search", authorization, async (req, res) => {
         checkPayment_user[0].orderId
       } ${checkPayment_user[0].createdAt.toISOString()}`;
     } else if (checkPayment_userExpired.length > 0) {
+      await Payment.deleteMany({ userId: _id });
       payment = null;
     }
     return res.status(200).json({

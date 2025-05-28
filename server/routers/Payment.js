@@ -108,45 +108,6 @@ router.post("/delete", async (req, res) => {
       });
     }
 
-    const soVePhoThong = tickets.filter(
-      (ticket) =>
-        ticket.hangVe === "Vé phổ thông" && ticket.maChuyenBay === cbId
-    ).length;
-
-    const soVeThuongGia = tickets.filter(
-      (ticket) =>
-        ticket.hangVe === "Vé thương gia" && ticket.maChuyenBay === cbId
-    ).length;
-
-    let soVePhoThongRe, soVeThuongGiaRe;
-    if (cbIdRe) {
-      soVePhoThongRe = tickets.filter(
-        (ticket) =>
-          ticket.hangVe === "Vé phổ thông" && ticket.maChuyenBay === cbIdRe
-      ).length;
-
-      soVeThuongGiaRe = tickets.filter(
-        (ticket) =>
-          ticket.hangVe === "Vé thương gia" && ticket.maChuyenBay === cbIdRe
-      ).length;
-    }
-    console.log(soVePhoThong, soVeThuongGia, soVePhoThongRe, soVeThuongGiaRe);
-
-    const updateFlight = await Flight.findByIdAndUpdate(cbId, {
-      $inc: {
-        soGhePhoThong: +soVePhoThong,
-        soGheThuongGia: +soVeThuongGia,
-      },
-    });
-
-    if (cbIdRe) {
-      const updateFlightRe = await Flight.findByIdAndUpdate(cbIdRe, {
-        $inc: {
-          soGhePhoThong: +soVePhoThongRe,
-          soGheThuongGia: +soVeThuongGiaRe,
-        },
-      });
-    }
     const result = await Ticket.deleteMany({ maDon: orderId });
     if (result.deletedCount === 0) {
       return res.status(404).json({

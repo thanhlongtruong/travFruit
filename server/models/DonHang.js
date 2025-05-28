@@ -20,12 +20,11 @@ const DonHangSchema = mongoose.Schema({
   phuongThuc: {
     type: String,
   },
-  // email: {
-  //   type: String,
-  //   required: true,
-  // },
   createdAt: { type: Date, default: Date.now },
-  expiredAt: { type: Date },
+  expiredAt: {
+    type: Date,
+    default: () => new Date(Date.now() + 15 * 60 * 1000),
+  },
 });
 
 // TTL (Time to Life) index tự động xóa đơn hàng sau 1 giờ

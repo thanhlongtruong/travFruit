@@ -6,7 +6,6 @@ const helmet = require("helmet");
 
 const cookieParser = require("cookie-parser");
 const RouterAccount = require("./routers/Account.js");
-const RouterTicket = require("./routers/RouterTicket.js");
 const RouterFlight = require("./routers/RouterFlight.js");
 const RouterBotHandleFlight = require("./routers/RouterBotHandleFlight.js");
 const RouterDH = require("./routers/RouterOrder.js");
@@ -42,14 +41,10 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173/",
   "http://localhost:5173",
-  "https://travfruitv3.vercel.app/",
-  "https://travfruitv3.vercel.app",
+  "https://travfruitv4.vercel.app/",
+  "https://travfruitv4.vercel.app",
   "https://travfruitv3admin.vercel.app/",
   "https://travfruitv3admin.vercel.app",
-  "https://travfruitv3.netlify.app/",
-  "https://travfruitv3.netlify.app",
-  "http://192.168.0.111:3000/",
-  "http://192.168.0.111:3000",
 ];
 
 app.use(
@@ -78,7 +73,6 @@ app.use("/payment", authorization, RouterPayment);
 app.use("/flights", RouterFlight);
 app.use("/bot/flights", RouterBotHandleFlight);
 app.use("/user", RouterAccount);
-app.use(authorization, RouterTicket);
 app.use("/order", authorization, RouterDH);
 
 app.use((req, res, next) => {
